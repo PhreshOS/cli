@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command, Option } from "commander"
 import metadata from "../package.json" with { type: "json" }
-import { PromptCancelled } from "./prompts.ts"
+import { PromptCancelled, ReportedFailure } from "./prompts.ts"
 import create from "./create.ts"
 import install from "./install.ts"
 import launch from "./launch.ts"
@@ -27,6 +27,13 @@ const program = new Command()
     .showHelpAfterError()
 
     .showSuggestionAfterError()
+
+    .configureOutput({
+
+        writeOut: value => process.stdout.write(spaced(value)),
+
+        writeErr: value => process.stderr.write(spaced(value))
+    })
 
 program.addHelpText("after", "\nRun phresh <command> --help for detailed command guidance.\n")
 
@@ -252,12 +259,21 @@ catch (error) {
 
     if (error instanceof PromptCancelled) process.exitCode = 0
 
+    else if (error instanceof ReportedFailure) process.exitCode = 1
+
     else {
 
         console.error(`\n  phresh: ${error instanceof Error ? error.message : String(error)}\n`)
 
         process.exitCode = 1
     }
+}
+
+function spaced(value: string) {
+
+    if (value.endsWith("\n\n")) return value
+
+    return value.endsWith("\n") ? `${value}\n` : `${value}\n\n`
 }
 
 function attached(name: string, summary: string, detail: string[], mode: "production" | "development") {

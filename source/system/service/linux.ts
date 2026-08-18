@@ -127,8 +127,8 @@ ExecStart=${quote(definition.executable)} ${quote(definition.entry)}
 WorkingDirectory=${quote(definition.directory)}
 Restart=on-failure
 RestartSec=2
-StandardOutput=append:${quote(definition.output)}
-StandardError=append:${quote(definition.output)}
+StandardOutput=${quote(`append:${definition.output}`)}
+StandardError=${quote(`append:${definition.output}`)}
 
 [Install]
 WantedBy=default.target

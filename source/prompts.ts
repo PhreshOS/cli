@@ -1,9 +1,12 @@
 import { cancel, confirm, intro, isCancel, log, outro, select, spinner, text } from "@clack/prompts"
 import colors from "picocolors"
-import { column, heading, line } from "./style.ts"
+import { caution, column, ending, line, section } from "./style.ts"
 
 /** Signals an ordinary interactive cancellation rather than an operation failure. */
 export class PromptCancelled extends Error {}
+
+/** An unsuccessful command whose complete explanation has already been shown. */
+export class ReportedFailure extends Error {}
 
 /**
  * One interaction language shared by commands that can ask questions.
@@ -19,28 +22,35 @@ export default function prompts() {
 
         if (interactive) intro(`${colors.bold(title)}${context ? ` ${colors.dim(`· ${context}`)}` : ""}`)
 
-        else heading(title, context)
+        else section(title, context)
     }
 
     function finish(message: string) {
 
         if (interactive) outro(colors.bold(message))
 
-        else heading(message)
+        else ending(message)
     }
 
     function detail(label: string, value: string, source?: string) {
 
-        if (interactive) log.message(`${colors.dim(column(label))}${value}${source ? `  ${colors.dim(source)}` : ""}`)
+        if (interactive) log.message(`${colors.dim(column(label))}${value}${source ? `  ${colors.dim(source)}` : ""}`, { spacing: 0 })
 
         else line(label, value, source)
     }
 
     function message(value = "") {
 
-        if (interactive) log.message(value)
+        if (interactive) log.message(value, { spacing: 0 })
 
         else console.log(value ? `  ${value}` : "")
+    }
+
+    function warning(value: string) {
+
+        if (interactive) log.warning(value, { spacing: 0 })
+
+        else line("warning", caution(value))
     }
 
     async function progress<T>(message: string, completed: string, work: () => Promise<T>) {
@@ -74,7 +84,7 @@ export default function prompts() {
 
         if (!interactive) throw new Error(`${question} Supply the corresponding option when no terminal is attached`)
 
-        log.message(colors.dim(explanation))
+        log.message(colors.dim(explanation), { spacing: 0 })
 
         const value = await text({
 
@@ -94,7 +104,7 @@ export default function prompts() {
 
         if (!interactive) throw new Error(`${question} Supply the corresponding option when no terminal is attached`)
 
-        log.message(colors.dim(explanation))
+        log.message(colors.dim(explanation), { spacing: 0 })
 
         const value = await confirm({ message: question, initialValue: fallback })
 
@@ -107,7 +117,7 @@ export default function prompts() {
 
         if (!interactive) throw new Error(`${question} Supply the corresponding option when no terminal is attached`)
 
-        log.message(colors.dim(explanation))
+        log.message(colors.dim(explanation), { spacing: 0 })
 
         const value = await select({
 
@@ -141,6 +151,8 @@ export default function prompts() {
         detail,
 
         message,
+
+        warning,
 
         progress,
 

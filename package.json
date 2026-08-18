@@ -1,7 +1,7 @@
 {
     "name": "@phreshos/cli",
     "type": "module",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "The Phresh command-line interface for Program projects and system management.",
     "engines": {
         "node": ">=20.10"
@@ -13,6 +13,7 @@
         "test": "node --run compile && node --test tests/*.test.mjs",
         "verify": "node --run build && node --run test && node scripts/verify-package.mjs",
         "verify:system-release": "node --run compile && node scripts/verify-system-release.mjs",
+        "verify:linux-service": "node --run compile && node scripts/verify-linux-service.mjs",
         "verify:macos-service": "node --run compile && node scripts/verify-macos-service.mjs",
         "prepack": "node --run build"
     },

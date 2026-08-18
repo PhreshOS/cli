@@ -107,6 +107,8 @@ export default async function create(options: CreateOptions = {}, directory = pr
     console.log(accent(script))
 
     console.log(bold("\nYou can now open the project and start building your Program"))
+
+    console.log("")
 }
 
 function template() {

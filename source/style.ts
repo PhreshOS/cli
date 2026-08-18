@@ -7,6 +7,12 @@ export const bold = colors.bold
 
 export const accent = colors.cyan
 
+export const positive = colors.green
+
+export const caution = colors.yellow
+
+export const negative = colors.red
+
 // A label, what it says, and where that came from. The label is quiet
 // and the value is not, because the value is the thing being reported.
 //
@@ -27,7 +33,19 @@ export function heading(title: string, note?: string) {
 
     console.log("")
 
+    section(title, note)
+
+    console.log("")
+}
+
+export function section(title: string, note?: string) {
+
     console.log(`  ${bold(title)}${note ? `  ${dim("·")}  ${dim(note)}` : ""}`)
+}
+
+export function ending(message: string) {
+
+    console.log(`  ${bold(message)}`)
 
     console.log("")
 }

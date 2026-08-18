@@ -41,6 +41,7 @@ System.
 phresh system install
 phresh system uninstall
 phresh system status
+phresh system version
 phresh system start
 phresh system stop
 phresh system enable
@@ -59,9 +60,9 @@ It never reads a source checkout and never requires Bun or TypeScript.
 The System runs under `launchd` on macOS and `systemd --user` on Linux. The
 native manager owns it after the CLI exits and restarts a failed active
 service. `start` and `stop` change current execution only; `enable` and
-`disable` change automatic startup only. `status` reads installation,
-registration, startup, process, and local-intake readiness without changing
-any of them.
+`disable` change automatic startup only. `status` reports the installed version,
+service readiness, and automatic startup without changing them; `version`
+reports only the installed System release.
 
 Installation files and persistent System state have separate homes. Removing
 the System unregisters its service and removes its release files while keeping

@@ -37,11 +37,17 @@ try {
 
     const cli = join(temporary, "node_modules", "@phreshos", "cli", "dist", "cli.js")
 
-    assert.equal(execFileSync(process.execPath, [cli, "--version"], { encoding: "utf8" }).trim(), metadata.version)
+    const version = execFileSync(process.execPath, [cli, "--version"], { encoding: "utf8" })
+
+    assert.equal(version.trim(), metadata.version)
+
+    assert.match(version, /\n\n$/)
 
     const help = execFileSync(process.execPath, [cli, "system", "--help"], { encoding: "utf8" })
 
-    for (const word of ["install", "uninstall", "status", "start", "stop", "enable", "disable"]) assert.match(help, new RegExp(`\\b${word}\\b`))
+    for (const word of ["install", "uninstall", "status", "version", "start", "stop", "enable", "disable"]) assert.match(help, new RegExp(`\\b${word}\\b`))
+
+    assert.match(help, /\n\n$/)
 
     const created = join(temporary, "created")
 

@@ -6,6 +6,7 @@ import { intakeReady, waitForIntake } from "./readiness.ts"
 import systemPaths from "./paths.ts"
 import systemService from "./service/index.ts"
 import nodeExecutable from "./node.ts"
+import { existsSync } from "node:fs"
 import { join } from "node:path"
 
 export interface SystemStatus {
@@ -248,7 +249,9 @@ export default class SystemLifecycle {
 
             const message = error instanceof Error ? error.message : String(error)
 
-            throw new Error(`${message}. Service log: ${installation.paths.log}`, { cause: error })
+            const log = existsSync(installation.paths.log) ? `. Service log: ${installation.paths.log}` : ""
+
+            throw new Error(`${message}${log}`, { cause: error })
         }
     }
 

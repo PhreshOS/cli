@@ -20,6 +20,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run verify
       - run: bun run verify:system-release
+      - run: bun run verify:linux-service
 
   macos-service:
     runs-on: macos-latest

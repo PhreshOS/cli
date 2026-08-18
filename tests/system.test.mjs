@@ -334,6 +334,12 @@ test("native adapters keep startup enablement separate from current execution", 
 
         assert.match(unit, /ExecStart="\/absolute\/node" "\/absolute\/system\/server\/main.js"/)
 
+        assert.match(unit, new RegExp(`StandardOutput="append:${escape(definition.output)}"`))
+
+        assert.match(unit, new RegExp(`StandardError="append:${escape(definition.output)}"`))
+
+        assert.doesNotMatch(unit, /append:"/)
+
         assert.equal(calls.some(args => args.includes("start")), false)
     }
 
@@ -377,4 +383,9 @@ function distribution() {
     archive.addFile("client/index.html", Buffer.from("<!doctype html>"))
 
     return archive.toBuffer()
+}
+
+function escape(value) {
+
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
