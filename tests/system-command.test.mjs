@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { Command } from "commander"
 import test from "node:test"
+import { stripVTControlCharacters } from "node:util"
 import { ReportedFailure } from "../dist/prompts.js"
 import systemCommands from "../dist/system/command.js"
 
@@ -57,17 +58,19 @@ test("System status reports only its version, service, and startup state", async
 
     const { output, error } = await run("status", lifecycle)
 
+    const visible = stripVTControlCharacters(output)
+
     assert.equal(error, undefined)
 
-    assert.match(output, /version\s+0\.1\.0/)
+    assert.match(visible, /version\s+0\.1\.0/)
 
-    assert.match(output, /service\s+ready/)
+    assert.match(visible, /service\s+ready/)
 
-    assert.match(output, /startup\s+enabled/)
+    assert.match(visible, /startup\s+enabled/)
 
-    for (const hidden of ["installation", "process", "intake", "files", "log", "123", "/system"]) assert.doesNotMatch(output, new RegExp(hidden))
+    for (const hidden of ["installation", "process", "intake", "files", "log", "123", "/system"]) assert.doesNotMatch(visible, new RegExp(hidden))
 
-    const lines = output.split("\n")
+    const lines = visible.split("\n")
 
     assert.equal(lines.slice(0, -1).includes(""), false)
 
@@ -88,7 +91,7 @@ test("System version returns the installed System release", async function () {
 
     assert.equal(error, undefined)
 
-    assert.match(output, /PhreshOS 0\.1\.0/)
+    assert.match(stripVTControlCharacters(output), /PhreshOS 0\.1\.0/)
 })
 
 async function run(name, lifecycle) {
