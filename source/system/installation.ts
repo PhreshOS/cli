@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { mkdir, mkdtemp, open, readFile, readdir, readlink, rename, rm, symlink, writeFile } from "node:fs/promises"
 import { dirname, isAbsolute, join, relative, resolve } from "node:path"
 import { requireSuccess } from "./process.ts"
+import { minimumSystemNodeVersion } from "./node.ts"
 import AdmZip from "adm-zip"
 
 export interface PreparedSystem {
@@ -284,7 +285,19 @@ async function validateDistribution(directory: string) {
         throw new Error("The System release has no valid production package manifest")
     }
 
-    if (!record(manifest) || manifest.type !== "module" || !record(manifest.scripts) || manifest.scripts.start !== "node server/main.js" || !record(manifest.dependencies)) {
+    if (!record(manifest)
+
+        || manifest.type !== "module"
+
+        || !record(manifest.scripts)
+
+        || manifest.scripts.start !== "node server/main.js"
+
+        || !record(manifest.engines)
+
+        || manifest.engines.node !== `>=${minimumSystemNodeVersion}`
+
+        || !record(manifest.dependencies)) {
 
         throw new Error("The System release package manifest is invalid")
     }

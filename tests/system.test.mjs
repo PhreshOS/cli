@@ -13,6 +13,20 @@ import systemPaths from "../dist/system/paths.js"
 import { downloadSystemRelease, selectSystemRelease } from "../dist/system/release.js"
 import MacOSSystemService from "../dist/system/service/macos.js"
 import LinuxSystemService from "../dist/system/service/linux.js"
+import { minimumSystemNodeVersion, supportsSystemNode } from "../dist/system/node.js"
+
+test("requires the Node release that provides the supported built-in SQLite API", function () {
+
+    assert.equal(minimumSystemNodeVersion, "24.15.0")
+
+    assert.equal(supportsSystemNode("24.14.1"), false)
+
+    assert.equal(supportsSystemNode("24.15.0"), true)
+
+    assert.equal(supportsSystemNode("25.0.0"), true)
+
+    assert.equal(supportsSystemNode("24.15.0-rc.1"), false)
+})
 
 test("selects the newest complete release from the compatible stable line", function () {
 
@@ -442,7 +456,16 @@ function distribution() {
 
     const archive = new AdmZip()
 
-    archive.addFile("package.json", Buffer.from(JSON.stringify({ type: "module", scripts: { start: "node server/main.js" }, dependencies: {} })))
+    archive.addFile("package.json", Buffer.from(JSON.stringify({
+
+        type: "module",
+
+        scripts: { start: "node server/main.js" },
+
+        engines: { node: ">=24.15.0" },
+
+        dependencies: {}
+    })))
 
     archive.addFile("server/main.js", Buffer.from('console.log("ready")'))
 
