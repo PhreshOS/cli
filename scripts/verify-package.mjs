@@ -31,6 +31,10 @@ try {
 
     assert.ok(files.includes("dist/system/service/linux.js"))
 
+    assert.ok(files.includes("dist/system/service/background.js"))
+
+    assert.ok(files.includes("dist/system/service/systemd.js"))
+
     assert.equal(files.some(file => file.startsWith("source/") || file.startsWith("tests/") || file.startsWith("scripts/")), false)
 
     execFileSync("npm", ["install", archive, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })

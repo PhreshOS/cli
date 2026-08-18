@@ -57,12 +57,14 @@ native per-user service. The selected release and the service entry therefore
 cannot become two competing sources of truth if installation is interrupted.
 It never reads a source checkout and never requires Bun or TypeScript.
 
-The System runs under `launchd` on macOS and `systemd --user` on Linux. The
-native manager owns it after the CLI exits and restarts a failed active
-service. `start` and `stop` change current execution only; `enable` and
-`disable` change automatic startup only. `status` reports the installed version,
-service readiness, and automatic startup without changing them; `version`
-reports only the installed System release.
+The System runs under `launchd` on macOS and a real `systemd --user` manager on
+Linux. In Linux containers with no init manager, it runs as a detached
+user-owned background process that survives the terminal but ends with the
+container. Automatic startup is unavailable there rather than being reported
+as enabled. `start` and `stop` change current execution only; where a native
+manager exists, `enable` and `disable` change automatic startup only. `status`
+reports the installed version, service readiness, and automatic startup without
+changing them; `version` reports only the installed System release.
 
 Installation files and persistent System state have separate homes. Removing
 the System unregisters its service and removes its release files while keeping

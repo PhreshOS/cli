@@ -53,6 +53,8 @@ export default class MacOSSystemService implements SystemService {
 
             registered,
 
+            automaticStartup: true,
+
             enabled: registered && !explicitlyDisabled,
 
             running: service.code === 0 && /\bstate\s*=\s*running\b/.test(service.stdout),

@@ -15,6 +15,8 @@ export interface SystemStatus {
 
     registered: boolean
 
+    automaticStartup: boolean
+
     enabled: boolean
 
     running: boolean
@@ -99,7 +101,7 @@ export default class SystemLifecycle {
 
             await service.register(definition(installation, executable))
 
-            await service.enable()
+            if ((await service.inspect()).automaticStartup) await service.enable()
 
             await service.start()
 

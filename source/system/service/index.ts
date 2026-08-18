@@ -3,7 +3,7 @@ import { homedir } from "node:os"
 import LinuxSystemService from "./linux.ts"
 import MacOSSystemService from "./macos.ts"
 
-/** Select the native per-user service manager without changing its semantics. */
+/** Select the per-user service implementation available in this environment. */
 export default function systemService(platform = process.platform, userHome = homedir()): SystemService {
 
     if (platform === "darwin") return new MacOSSystemService(userHome)

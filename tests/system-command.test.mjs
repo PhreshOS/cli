@@ -134,6 +134,8 @@ function state(overrides = {}) {
 
         registered: false,
 
+        automaticStartup: true,
+
         enabled: false,
 
         running: false,

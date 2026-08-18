@@ -12,7 +12,14 @@ const entry = join(temporary, "service.mjs")
 
 const output = join(temporary, "state with spaces", "service.log")
 
-const success = async () => ({ code: 0, stdout: "", stderr: "" })
+const success = async (_command, args) => ({
+
+    code: 0,
+
+    stdout: args.includes("show-environment") ? `HOME=${temporary}\n` : "",
+
+    stderr: ""
+})
 
 try {
 

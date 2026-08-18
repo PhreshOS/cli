@@ -55,6 +55,8 @@ export interface SystemServiceState {
 
     registered: boolean
 
+    automaticStartup: boolean
+
     enabled: boolean
 
     running: boolean

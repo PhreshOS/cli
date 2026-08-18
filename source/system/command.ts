@@ -116,7 +116,7 @@ function report(interaction: ReturnType<typeof prompts>, status: SystemStatus) {
 
     interaction.detail("service", service(status))
 
-    interaction.detail("startup", status.enabled ? positive("enabled") : dim("disabled"))
+    interaction.detail("startup", status.automaticStartup ? status.enabled ? positive("enabled") : dim("disabled") : dim("unavailable"))
 }
 
 async function installed(lifecycle: SystemLifecycle): Promise<SystemStatus & { installed: NonNullable<SystemStatus["installed"]> }> {
