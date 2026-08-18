@@ -124,11 +124,11 @@ Description=PhreshOS System
 [Service]
 Type=simple
 ExecStart=${quote(definition.executable)} ${quote(definition.entry)}
-WorkingDirectory=${quote(definition.directory)}
+WorkingDirectory=${setting(definition.directory)}
 Restart=on-failure
 RestartSec=2
-StandardOutput=${quote(`append:${definition.output}`)}
-StandardError=${quote(`append:${definition.output}`)}
+StandardOutput=append:${setting(definition.output)}
+StandardError=append:${setting(definition.output)}
 
 [Install]
 WantedBy=default.target
@@ -138,4 +138,11 @@ WantedBy=default.target
 function quote(value: string) {
 
     return JSON.stringify(value)
+}
+
+function setting(value: string) {
+
+    if (value.includes("\n") || value.includes("\r")) throw new Error("A systemd service path cannot contain a line break")
+
+    return value.replaceAll("%", "%%")
 }

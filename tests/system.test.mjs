@@ -334,11 +334,13 @@ test("native adapters keep startup enablement separate from current execution", 
 
         assert.match(unit, /ExecStart="\/absolute\/node" "\/absolute\/system\/server\/main.js"/)
 
-        assert.match(unit, new RegExp(`StandardOutput="append:${escape(definition.output)}"`))
+        assert.match(unit, new RegExp(`StandardOutput=append:${escape(definition.output)}`))
 
-        assert.match(unit, new RegExp(`StandardError="append:${escape(definition.output)}"`))
+        assert.match(unit, new RegExp(`StandardError=append:${escape(definition.output)}`))
 
         assert.doesNotMatch(unit, /append:"/)
+
+        assert.match(unit, new RegExp(`WorkingDirectory=${escape(definition.directory)}`))
 
         assert.equal(calls.some(args => args.includes("start")), false)
     }
