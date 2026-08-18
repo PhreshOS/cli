@@ -33,7 +33,7 @@ test("every unavailable System command gives the same concise installation direc
     }
 })
 
-test("System status reports only its version, service, and startup state", async function () {
+test("System status reports only its version, desktop, service, and startup state", async function () {
 
     const lifecycle = {
 
@@ -64,6 +64,8 @@ test("System status reports only its version, service, and startup state", async
 
     assert.match(visible, /version\s+0\.1\.0/)
 
+    assert.match(visible, /desktop\s+http:\/\/localhost:4300/)
+
     assert.match(visible, /service\s+ready/)
 
     assert.match(visible, /startup\s+enabled/)
@@ -75,6 +77,38 @@ test("System status reports only its version, service, and startup state", async
     assert.equal(lines.slice(0, -1).includes(""), false)
 
     assert.equal(lines.at(-1), "")
+})
+
+test("successful System installation and start reveal the desktop address", async function () {
+
+    const ready = state({
+
+        installed: { version: "0.1.0", digest: "a".repeat(64), directory: "/system", installedAt: "now" },
+
+        registered: true,
+
+        running: true,
+
+        ready: true
+    })
+
+    const lifecycle = {
+
+        async status() { return ready },
+
+        async install() { return ready },
+
+        async start() { return ready }
+    }
+
+    for (const name of ["install", "start"]) {
+
+        const { output, error } = await run(name, lifecycle)
+
+        assert.equal(error, undefined)
+
+        assert.match(stripVTControlCharacters(output), /desktop\s+http:\/\/localhost:4300/)
+    }
 })
 
 test("System version returns the installed System release", async function () {
@@ -131,6 +165,8 @@ async function run(name, lifecycle) {
 function state(overrides = {}) {
 
     return {
+
+        desktop: "http://localhost:4300",
 
         registered: false,
 

@@ -13,6 +13,8 @@ export interface SystemStatus {
 
     installed?: InstalledSystem
 
+    desktop: string
+
     registered: boolean
 
     automaticStartup: boolean
@@ -211,6 +213,8 @@ export default class SystemLifecycle {
         return {
 
             ...(installed ? { installed } : {}),
+
+            desktop: "http://localhost:4300",
 
             ...state,
 

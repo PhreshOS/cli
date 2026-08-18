@@ -84,7 +84,7 @@ export default function prompts() {
 
         if (!interactive) throw new Error(`${question} Supply the corresponding option when no terminal is attached`)
 
-        log.message(colors.dim(explanation), { spacing: 0 })
+        log.message(colors.dim(explanation), { spacing: 1 })
 
         const value = await text({
 
@@ -104,7 +104,7 @@ export default function prompts() {
 
         if (!interactive) throw new Error(`${question} Supply the corresponding option when no terminal is attached`)
 
-        log.message(colors.dim(explanation), { spacing: 0 })
+        log.message(colors.dim(explanation), { spacing: 1 })
 
         const value = await confirm({ message: question, initialValue: fallback })
 
@@ -117,7 +117,7 @@ export default function prompts() {
 
         if (!interactive) throw new Error(`${question} Supply the corresponding option when no terminal is attached`)
 
-        log.message(colors.dim(explanation), { spacing: 0 })
+        log.message(colors.dim(explanation), { spacing: 1 })
 
         const value = await select({
 

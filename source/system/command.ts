@@ -25,6 +25,8 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
 
             const status = await interaction.progress("Installing PhreshOS", "PhreshOS installed", () => current().install())
 
+            interaction.detail("desktop", accent(status.desktop))
+
             interaction.finish(`PhreshOS ${accent(status.installed?.version ?? "")} installed`)
         })
 
@@ -104,7 +106,9 @@ function action(system: Command, name: string, description: string, current: () 
 
             interaction.begin(`System ${title(name)}`)
 
-            await interaction.progress(`${title(name)}ing PhreshOS`, `PhreshOS ${past(name)}`, () => work(lifecycle))
+            const status = await interaction.progress(`${title(name)}ing PhreshOS`, `PhreshOS ${past(name)}`, () => work(lifecycle))
+
+            if (name === "start") interaction.detail("desktop", accent(status.desktop))
 
             interaction.finish(`System ${past(name)}`)
         })
@@ -113,6 +117,8 @@ function action(system: Command, name: string, description: string, current: () 
 function report(interaction: ReturnType<typeof prompts>, status: SystemStatus) {
 
     interaction.detail("version", accent(status.installed?.version ?? "unknown"))
+
+    interaction.detail("desktop", accent(status.desktop))
 
     interaction.detail("service", service(status))
 

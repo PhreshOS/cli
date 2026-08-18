@@ -62,9 +62,10 @@ Linux. In Linux containers with no init manager, it runs as a detached
 user-owned background process that survives the terminal but ends with the
 container. Automatic startup is unavailable there rather than being reported
 as enabled. `start` and `stop` change current execution only; where a native
-manager exists, `enable` and `disable` change automatic startup only. `status`
-reports the installed version, service readiness, and automatic startup without
-changing them; `version` reports only the installed System release.
+manager exists, `enable` and `disable` change automatic startup only. Successful
+installation and startup show the desktop address. `status` reports that same
+address with the installed version, service readiness, and automatic startup
+without changing them; `version` reports only the installed System release.
 
 Installation files and persistent System state have separate homes. Removing
 the System unregisters its service and removes its release files while keeping
