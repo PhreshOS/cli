@@ -31,8 +31,6 @@ export function column(label: string) {
 
 export function heading(title: string, note?: string) {
 
-    console.log("")
-
     section(title, note)
 
     console.log("")
