@@ -56,8 +56,6 @@ export default async function pack(directory = process.cwd()) {
 
     if (config.icon) file(zip, directory, config.icon, "icon.png", "Program icon")
 
-    if (config.apiDocs) document(zip, directory, config.apiDocs)
-
     zip.addFile("program.json", Buffer.from(JSON.stringify(program(config, version), null, 4) + "\n"))
 
     const archive = `${config.identity}@${version ?? "0.0.0"}.zip`
@@ -90,8 +88,6 @@ function program(config: Config, version: string | undefined) {
 
         description: config.description,
 
-        apiDocs: config.apiDocs ? "api-docs.md" : undefined,
-
         icon: config.icon ? "icon.png" : undefined,
 
         ...config.server && { server: { location: "server", start: config.server.start, installCommand: config.server.installCommand, startCommand: config.server.startCommand } },
@@ -109,11 +105,6 @@ function place(zip: AdmZip, directory: string, location: string, half: string) {
     if (!existsSync(from)) throw new Error(`The ${half} files are not at ${location} — nothing was built there`)
 
     zip.addLocalFolder(from, half)
-}
-
-function document(zip: AdmZip, directory: string, location: string) {
-
-    file(zip, directory, location, "api-docs.md", "API documentation file")
 }
 
 function file(zip: AdmZip, directory: string, location: string, target: string, label: string) {

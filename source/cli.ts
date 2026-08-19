@@ -87,8 +87,6 @@ describe(
 
         .option("--name <name>", "human-readable Program name")
 
-        .option("--api-docs <path>", "official Program API documentation")
-
         .option("--build-command <command>", "prepare production files before use")
 
         .option("--server", "include a Server endpoint")
@@ -114,8 +112,6 @@ describe(
             await init({
 
                 name: options.name,
-
-                apiDocs: options.apiDocs,
 
                 buildCommand: options.buildCommand,
 
@@ -348,8 +344,6 @@ interface CreateCommandOptions {
 interface InitCommandOptions {
 
     name?: string
-
-    apiDocs?: string
 
     buildCommand?: string
 

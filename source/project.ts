@@ -46,8 +46,6 @@ function coherent(config: Config) {
         if (config[field] !== undefined && typeof config[field] !== "string") throw new Error(`A program's ${field} must be text`)
     }
 
-    if (config.apiDocs !== undefined && (typeof config.apiDocs !== "string" || config.apiDocs.trim().length === 0)) throw new Error("A program's apiDocs must be a non-empty path")
-
     if (config.buildCommand !== undefined && (typeof config.buildCommand !== "string" || config.buildCommand.trim().length === 0)) throw new Error("A program's buildCommand must be non-empty text")
 
     for (const half of ["server", "client"] as const) {

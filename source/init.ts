@@ -67,20 +67,6 @@ export default async function init(options: InitOptions = {}, directory = proces
 
     if (name !== undefined && name.trim().length === 0) throw new Error("--name must not be empty")
 
-    let apiDocs = options.apiDocs
-
-    if (interactive && apiDocs === undefined) {
-
-        const suggested = ["api-docs.md", "README.md"].find(file => existsSync(resolve(directory, file)))
-
-        if (await yes("API documentation explains only the services this Program itself provides.", "Does this Program provide API documentation?", false)) {
-
-            apiDocs = await ask("The path is resolved from the project root and becomes the official API entry point.", "Where is the API documentation file?", suggested)
-        }
-    }
-
-    if (apiDocs !== undefined && apiDocs.trim().length === 0) throw new Error("An API documentation path must not be empty")
-
     let buildCommand = options.buildCommand
 
     if (interactive && buildCommand === undefined) {
@@ -176,8 +162,6 @@ export default async function init(options: InitOptions = {}, directory = proces
 
         description: manifest.description,
 
-        apiDocs,
-
         buildCommand
     }
 
@@ -224,8 +208,6 @@ function compose(config: Config) {
         field("version", config.version),
 
         field("description", config.description),
-
-        field("apiDocs", config.apiDocs),
 
         field("buildCommand", config.buildCommand),
 
@@ -298,8 +280,6 @@ function httpUrl(value: string) {
 export interface InitOptions {
 
     name?: string
-
-    apiDocs?: string
 
     buildCommand?: string
 

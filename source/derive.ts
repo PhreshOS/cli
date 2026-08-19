@@ -74,12 +74,6 @@ export default function derive(config: Config, directory: string, which: Which) 
 
         description: config.description,
 
-        // Like the icon, the document stays where the author put it for an
-        // attached run. Installation and packaging give it its canonical
-        // name; the runtime receives an absolute source path here because a
-        // derived description has no file beside which to resolve it.
-        apiDocs: config.apiDocs && resolve(directory, config.apiDocs),
-
         // Where it already is. Unlike pack, which gives it its canonical
         // name, this points into the authoring tree and leaves it alone.
         icon: config.icon && resolve(directory, config.icon),

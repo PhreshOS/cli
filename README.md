@@ -151,8 +151,6 @@ export default defineConfig({
 
     description: "A file manager",
 
-    apiDocs: "api.md",
-
     icon: "icon.png",
 
     buildCommand: "bun run build",
@@ -397,20 +395,11 @@ are the canonical locations the package just created. An explicit
 `start: false` crosses with its half; an omitted value remains omitted
 and means `true`. At least one declared half must resolve to true.
 
-When `apiDocs` is declared, its Markdown file is copied to `api-docs.md` and
-the packaged description names that canonical entry point. A missing declared
-file is an error, not an undocumented Program.
-
-The document covers only what the Program owns: its capabilities, operation
-and event names, payloads, behavior, state, and Program-defined failures. It
-does not explain how to find a Program, obtain an Endpoint, publish or ask, or
-register a subscription. Those are system contracts documented once by the
-SDKs; `api-docs.md` supplies only the Program-specific meaning carried through
-them.
-
 There is **no wrapping directory**: `program.json`, `server/`, `client/`,
-optional `icon.png`, and optional `api-docs.md` sit at the package's root, and the system names the
-directory it installs into from your program's `identity`.
+and optional `icon.png` sit at the package's root, and the system names the
+directory it installs into from your program's `identity`. Service API
+documentation belongs to the live service that exposes it and is therefore
+not part of the Program package.
 
 Nothing about the system moves because this exists. `program.json` is
 still the only thing the system reads, and a package assembled by hand
