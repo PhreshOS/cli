@@ -9,11 +9,13 @@ const repository = resolve(import.meta.dirname, "..")
 
 const temporary = await mkdtemp(join(tmpdir(), "phresh-cli-package-"))
 
+const npm = process.platform === "win32" ? "npm.cmd" : "npm"
+
 let archive
 
 try {
 
-    const packed = JSON.parse(execFileSync("npm", ["pack", "--json", "--ignore-scripts"], { cwd: repository, encoding: "utf8" }))
+    const packed = JSON.parse(execFileSync(npm, ["pack", "--json", "--ignore-scripts"], { cwd: repository, encoding: "utf8" }))
 
     const artifact = packed[0]
 
@@ -35,9 +37,11 @@ try {
 
     assert.ok(files.includes("dist/system/service/systemd.js"))
 
+    assert.ok(files.includes("dist/system/service/windows.js"))
+
     assert.equal(files.some(file => file.startsWith("source/") || file.startsWith("tests/") || file.startsWith("scripts/")), false)
 
-    execFileSync("npm", ["install", archive, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })
+    execFileSync(npm, ["install", archive, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })
 
     const cli = join(temporary, "node_modules", "@phreshos", "cli", "dist", "cli.js")
 
