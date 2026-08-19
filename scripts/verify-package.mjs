@@ -53,6 +53,14 @@ try {
 
     assert.match(help, /\n\n$/)
 
+    const installHelp = execFileSync(process.execPath, [cli, "install", "--help"], { encoding: "utf8" })
+
+    assert.match(installHelp, /\[name\]/)
+
+    assert.match(installHelp, /--run/)
+
+    assert.match(installHelp, /--startup/)
+
     const created = join(temporary, "created")
 
     execFileSync(process.execPath, [cli, "create", created, "--name", "Created Program", "--package-manager", "npm", "--no-install"], { cwd: temporary, stdio: "pipe" })

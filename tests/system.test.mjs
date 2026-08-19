@@ -271,6 +271,101 @@ test("rolls installation back when the native service cannot start", async funct
     assert.deepEqual(events.slice(-3), ["stop", "rollback", "unregister"])
 })
 
+test("provisions Setup after the System commits and before installation returns", async function () {
+
+    const events = []
+
+    const installed = { version: "0.1.0", digest: "a".repeat(64), directory: "/installation/releases/0.1.0", installedAt: "now" }
+
+    let current
+
+    let running = false
+
+    const installation = {
+
+        paths: {
+
+            root: "/installation",
+
+            releases: "/installation/releases",
+
+            current: "/installation/current",
+
+            storage: "/state",
+
+            intake: "/state/intake.sock",
+
+            log: "/state/service.log"
+        },
+
+        async exclusive(work) { return await work() },
+
+        async current() { return current },
+
+        async prepare(release) { events.push("prepare"); return { release, directory: "/staging" } },
+
+        async activate() {
+
+            events.push("activate")
+
+            current = installed
+
+            return {
+
+                installed,
+
+                async commit() { events.push("commit") },
+
+                async rollback() { events.push("rollback") }
+            }
+        }
+    }
+
+    const service = {
+
+        async inspect() { return { registered: running, automaticStartup: false, enabled: false, running } },
+
+        async register() { events.push("register") },
+
+        async unregister() { events.push("unregister") },
+
+        async start() { running = true; events.push("start") },
+
+        async stop() { running = false; events.push("stop") },
+
+        async enable() {},
+
+        async disable() {}
+    }
+
+    const lifecycle = new SystemLifecycle({
+
+        installation,
+
+        service,
+
+        async resolveRelease() { return { version: "0.1.0", archive: "archive", checksum: "checksum" } },
+
+        async downloadRelease(release) { return { ...release, bytes: Buffer.alloc(0), digest: installed.digest } },
+
+        async ready() { return running },
+
+        async wait() { events.push("ready") },
+
+        async provisionSetup() { events.push("setup") }
+    })
+
+    const status = await lifecycle.install()
+
+    assert.equal(status.installed?.version, "0.1.0")
+
+    assert(events.indexOf("start") < events.indexOf("ready"))
+
+    assert(events.indexOf("ready") < events.indexOf("commit"))
+
+    assert(events.indexOf("commit") < events.indexOf("setup"))
+})
+
 test("native adapters keep startup enablement separate from current execution", async function () {
 
     const temporary = await mkdtemp(join(tmpdir(), "phresh-system-services-"))

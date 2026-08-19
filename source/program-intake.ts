@@ -15,10 +15,11 @@ import { isAbsolute, join } from "node:path"
  * question would make lifetime ambiguous. A line delimiter keeps the
  * connection available for the stream of events that follows a launch.
  *
- * One question, then events until the system closes. Installing and
- * uninstalling say one thing and end; running says one thing, then whatever
- * the Program says, then how it ended. None pretends to be a remote method
- * returning through an unrelated transport.
+ * One question, then events until the system closes. Installation confirms
+ * each requested outcome — laid out, startup enabled, running — and then
+ * ends. Uninstalling says one thing and ends; an attached run says how it
+ * began, whatever the Program says, and how it ended. None pretends to be a
+ * remote method returning through an unrelated transport.
  */
 export function programIntakePath(environment: NodeJS.ProcessEnv = process.env, userHome = homedir()) {
 

@@ -1,6 +1,7 @@
 import type { Config } from "@phreshos/core"
 import { readConfig, readManifest } from "./project.ts"
-import { existsSync, readFileSync, statSync } from "node:fs"
+import { createHash } from "node:crypto"
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 import AdmZip from "adm-zip"
 import build from "./build-command.ts"
@@ -61,7 +62,13 @@ export default async function pack(directory = process.cwd()) {
 
     const archive = `${config.identity}@${version ?? "0.0.0"}.zip`
 
-    zip.writeZip(resolve(directory, archive))
+    const bytes = zip.toBuffer()
+
+    writeFileSync(resolve(directory, archive), bytes)
+
+    const digest = createHash("sha256").update(bytes).digest("hex")
+
+    writeFileSync(resolve(directory, `${archive}.sha256`), `${digest}  ${archive}\n`)
 
     console.log(`\nPacked ${archive}`)
 

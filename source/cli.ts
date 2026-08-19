@@ -172,18 +172,26 @@ describe(
 
     program.command("install")
 
-        .description("install this Program")
+        .description("install a local or official Program")
 
-        .action(async function () {
+        .argument("[name]", "name of an official Program")
 
-            await install()
+        .option("--run", "run the installed Program now")
+
+        .option("--startup", "run the Program when the System starts")
+
+        .action(async function (name: string | undefined, options: InstallCommandOptions) {
+
+            await install({ name, run: options.run === true, startup: options.startup === true })
         }),
 
     [
 
-        "Builds and installs the Program declared by this project. Running",
+        "Without a name, builds and installs the Program declared by this project.",
 
-        "Processes end before installed paths change; Program data is preserved."
+        "A name installs its verified official production release. --run launches",
+
+        "it now; --startup persists the same default launch for future starts."
     ]
 )
 
@@ -367,4 +375,11 @@ interface InitCommandOptions {
 interface UninstallCommandOptions {
 
     everything?: boolean
+}
+
+interface InstallCommandOptions {
+
+    run?: boolean
+
+    startup?: boolean
 }

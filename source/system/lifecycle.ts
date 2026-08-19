@@ -6,6 +6,7 @@ import { intakeReady, waitForIntake } from "./readiness.ts"
 import systemPaths from "./paths.ts"
 import systemService from "./service/index.ts"
 import nodeExecutable from "./node.ts"
+import installProgram from "../install.ts"
 import { existsSync } from "node:fs"
 import { join } from "node:path"
 
@@ -47,6 +48,8 @@ interface LifecycleDependencies {
     ready(path: string): Promise<boolean>
 
     wait(path: string, running: () => Promise<boolean>): Promise<void>
+
+    provisionSetup(): Promise<void>
 }
 
 /** Coordinates acquisition, immutable files, and the native service as one transaction. */
@@ -72,7 +75,9 @@ export default class SystemLifecycle {
 
             ready: dependencies?.ready ?? intakeReady,
 
-            wait: dependencies?.wait ?? waitForIntake
+            wait: dependencies?.wait ?? waitForIntake,
+
+            provisionSetup: dependencies?.provisionSetup ?? provisionSetup
         }
     }
 
@@ -110,8 +115,6 @@ export default class SystemLifecycle {
             await this.waitUntilReady()
 
             await activation.commit()
-
-            return await this.status()
         }
 
         catch (error) {
@@ -122,6 +125,21 @@ export default class SystemLifecycle {
 
             return await this.restoredFailure(error, previous, previousService)
         }
+
+        // The System transaction is complete before a Program crosses its
+        // live intake. A provisioning failure therefore leaves a healthy
+        // System available for a retry instead of rolling it back around a
+        // separate Program installation that may already have succeeded.
+        try { await this.dependencies.provisionSetup() }
+
+        catch (error) {
+
+            const reason = error instanceof Error ? error.message : String(error)
+
+            throw new Error(`The PhreshOS System is running, but Setup could not be provisioned: ${reason}`, { cause: error })
+        }
+
+        return await this.status()
     }
 
     public async uninstall() {
@@ -319,6 +337,11 @@ export default class SystemLifecycle {
 
         throw error
     }
+}
+
+async function provisionSetup() {
+
+    await installProgram({ name: "setup", run: true, startup: true, announce: false })
 }
 
 function definition(installation: SystemInstallation, executable: string): SystemServiceDefinition {

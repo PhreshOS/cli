@@ -1,52 +1,73 @@
 import derive from "./derive.ts"
 import { readConfig } from "./project.ts"
-import { dim, heading } from "./style.ts"
-import speak from "./program-intake.ts"
+import { dim, heading, line } from "./style.ts"
+import installProgram, { type ProgramInstallationOptions } from "./program-installation.ts"
+import { prepareOfficialProgram } from "./program-release.ts"
 import build from "./build-command.ts"
 
 /**
  * Lay this program out on this machine's system.
  *
- * What is sent is the description the config derives — the same one
- * `phresh start` runs from — and the system copies what it names into
- * place. A program's parts are already on this disk at the locations it
- * names, so there is nothing an archive would carry that the description
- * does not already point at.
- *
- * **Installing takes no package, and neither does the system.** A
- * package is a way of *carrying* a program to another machine, which is
- * a different act from laying one out — and installing programs at all
- * is work for a program rather than for the core, so what a person
- * installs *from* is not this command's business either. `phresh pack`
- * makes a package when you have somewhere to send it, and stops there.
+ * A local project is built and derived from its authoring declaration. An
+ * official name resolves a verified production package and turns its
+ * canonical paths into the same concrete description. From that point on,
+ * both sources cross the exact same intake and the System performs the exact
+ * same authoritative installation.
  *
  * When the author config declares `buildCommand`, it runs here before the
  * production Program is derived and sent. The command remains authoring
  * metadata and never becomes part of the installed Program.
  *
- * Installing is not running. A program laid out here stays until
- * something removes it, and `phresh start` and `phresh dev` are for the
- * other way a program is used — attached to the terminal that began it,
- * and gone when that ends.
+ * Installation remains distinct from execution unless `run` or `startup`
+ * is explicitly requested. A run created here belongs to the installed
+ * Program and therefore outlives this command; `phresh start` and `phresh
+ * dev` remain attached authoring runs whose lifetime is the terminal's.
  */
-export default async function install(directory = process.cwd()) {
+export default async function install(options: InstallOptions = {}) {
+
+    const directory = options.directory ?? process.cwd()
+
+    const prepared = options.name ? await prepareOfficialProgram(options.name) : null
+
+    try {
+
+        const program = prepared?.program ?? await localProgram(directory)
+
+        const result = await installProgram(program, options)
+
+        if (options.announce !== false) {
+
+            const { name, identity, version } = result.program
+
+            heading(`${name || identity}${version ? ` ${version}` : ""}`, result.replaced ? "reinstalled" : "installed")
+
+            if (result.replaced) console.log(`  ${dim("its storage was kept, and its previous processes were ended")}\n`)
+
+            if (result.startupEnabled) line("startup", "enabled")
+
+            if (result.process) line("process", result.process)
+        }
+
+        return result
+    }
+
+    finally { await prepared?.dispose() }
+}
+
+async function localProgram(directory: string) {
 
     const config = await readConfig(directory)
 
     await build(config, directory)
 
-    const program = derive(config, directory, "production")
+    return derive(config, directory, "production")
+}
 
-    await speak({ word: "install", program }, function (event) {
+export interface InstallOptions extends ProgramInstallationOptions {
 
-        if (event.event !== "installed") return
+    name?: string
 
-        const said = event.program as { identity?: string, name?: string, version?: string | null }
+    directory?: string
 
-        heading(`${said.name ?? String(said.identity)}${said.version ? ` ${said.version}` : ""}`, event.replaced ? "reinstalled" : "installed")
-
-        // What it kept. Every process ended before the installed paths
-        // changed, while storage stayed in its canonical place.
-        if (event.replaced) console.log(`  ${dim("its storage was kept, and its previous processes were ended")}\n`)
-    })
+    announce?: boolean
 }
