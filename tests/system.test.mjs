@@ -72,9 +72,9 @@ test("keeps installation files separate from persistent System state", function 
 
     const paths = systemPaths("darwin", "/Users/person", { PHRESHOS_HOME: "/temporary" })
 
-    assert.equal(paths.root, "/Users/person/Library/Application Support/PhreshOS/System")
+    assert.equal(paths.root, join("/Users/person", "Library", "Application Support", "PhreshOS", "System"))
 
-    assert.equal(paths.intake, "/Users/person/.phreshos/intake.sock")
+    assert.equal(paths.intake, join("/Users/person", ".phreshos", "intake.sock"))
 })
 
 test("gives each Windows user or isolated instance one stable named pipe", function () {
@@ -279,7 +279,7 @@ test("rolls installation back when the native service cannot start", async funct
 
     assert.equal(rolledBack, true)
 
-    assert.equal(registered.entry, "/installation/current/server/main.js")
+    assert.equal(registered.entry, join("/installation/current", "server", "main.js"))
 
     assert.deepEqual(events.slice(-3), ["stop", "rollback", "unregister"])
 })
@@ -426,7 +426,7 @@ test("native adapters keep startup enablement separate from current execution", 
 
     try {
 
-        const mac = new MacOSSystemService(temporary, run)
+        const mac = new MacOSSystemService(temporary, run, undefined, 501)
 
         await mac.register(definition)
 

@@ -23,10 +23,10 @@ export default class MacOSSystemService implements SystemService {
 
         private readonly run: (command: string, args: string[]) => Promise<ProcessResult> = execute,
 
-        private readonly label = defaultLabel
-    ) {
+        private readonly label = defaultLabel,
 
-        const uid = process.getuid?.()
+        uid = process.getuid?.()
+    ) {
 
         if (uid === undefined) throw new Error("The current macOS user could not be identified")
 
