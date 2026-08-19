@@ -13,7 +13,9 @@ import systemPaths from "../dist/system/paths.js"
 import { downloadSystemRelease, selectSystemRelease } from "../dist/system/release.js"
 import MacOSSystemService from "../dist/system/service/macos.js"
 import LinuxSystemService from "../dist/system/service/linux.js"
+import WindowsSystemService from "../dist/system/service/windows.js"
 import { minimumSystemNodeVersion, supportsSystemNode } from "../dist/system/node.js"
+import intakeAddress from "../dist/intake-address.js"
 
 test("requires the Node release that provides the supported built-in SQLite API", function () {
 
@@ -73,6 +75,17 @@ test("keeps installation files separate from persistent System state", function 
     assert.equal(paths.root, "/Users/person/Library/Application Support/PhreshOS/System")
 
     assert.equal(paths.intake, "/Users/person/.phreshos/intake.sock")
+})
+
+test("gives each Windows user or isolated instance one stable named pipe", function () {
+
+    const first = intakeAddress("C:\\Users\\Person\\.phreshos", "win32")
+
+    assert.match(first, /^\\\\\.\\pipe\\phreshos-[a-f0-9]{32}-intake$/)
+
+    assert.equal(first, intakeAddress("c:/users/person/.phreshos/", "win32"))
+
+    assert.notEqual(first, intakeAddress("C:\\Users\\Other\\.phreshos", "win32"))
 })
 
 test("stages, validates, activates, and reads one production distribution", async function () {
@@ -456,6 +469,109 @@ test("native adapters keep startup enablement separate from current execution", 
         assert.match(unit, new RegExp(`WorkingDirectory=${escape(definition.directory)}`))
 
         assert.equal(calls.some(args => args.includes("start")), false)
+    }
+
+    finally {
+
+        await rm(temporary, { recursive: true, force: true })
+    }
+})
+
+test("Windows keeps scheduled startup separate from current execution", async function () {
+
+    const temporary = await mkdtemp(join(tmpdir(), "phresh-windows-service-"))
+
+    let registered = false
+
+    let enabled = false
+
+    let running = false
+
+    let xml
+
+    const run = async function (command, args) {
+
+        if (command === "powershell.exe") {
+
+            const script = args.at(-1)
+
+            if (script.includes("WindowsIdentity")) return { code: 0, stdout: "S-1-5-21-1000", stderr: "" }
+
+            return registered
+
+                ? { code: 0, stdout: `${running ? 4 : enabled ? 3 : 1},${enabled ? 1 : 0}`, stderr: "" }
+
+                : { code: 3, stdout: "", stderr: "" }
+        }
+
+        if (args[0] === "/Create") {
+
+            xml = await readFile(args[args.indexOf("/XML") + 1], "utf16le")
+
+            registered = true
+
+            enabled = true
+        }
+
+        if (args[0] === "/Run") running = true
+
+        if (args[0] === "/End") running = false
+
+        if (args[0] === "/Delete") registered = false
+
+        if (args[0] === "/Change") enabled = args.includes("/Enable")
+
+        return { code: 0, stdout: "", stderr: "" }
+    }
+
+    const definition = {
+
+        executable: "C:\\Program Files\\nodejs\\node.exe",
+
+        entry: "C:\\People & Work\\System\\server\\main.js",
+
+        directory: "C:\\People & Work\\System",
+
+        output: join(temporary, "state with spaces", "service.log")
+    }
+
+    const service = new WindowsSystemService(temporary, run)
+
+    try {
+
+        await service.register(definition)
+
+        assert.equal((await service.inspect()).running, false)
+
+        assert.match(xml, /<LogonTrigger>/)
+
+        assert.match(xml, /<LogonType>InteractiveToken<\/LogonType>/)
+
+        assert.match(xml, /<WorkingDirectory>C:\\People &amp; Work\\System<\/WorkingDirectory>/)
+
+        const encoded = /-EncodedCommand ([A-Za-z0-9+/=]+)/.exec(xml)?.[1]
+
+        assert.ok(encoded)
+
+        const invocation = Buffer.from(encoded, "base64").toString("utf16le")
+
+        assert.match(invocation, /C:\\Program Files\\nodejs\\node\.exe/)
+
+        assert.match(invocation, /C:\\People & Work\\System\\server\\main\.js/)
+
+        await service.disable()
+
+        await service.start()
+
+        assert.equal((await service.inspect()).running, true)
+
+        assert.equal((await service.inspect()).enabled, false)
+
+        await service.stop()
+
+        await service.unregister()
+
+        assert.equal((await service.inspect()).registered, false)
     }
 
     finally {

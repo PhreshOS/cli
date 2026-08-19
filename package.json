@@ -15,6 +15,7 @@
         "verify:system-release": "node --run compile && node scripts/verify-system-release.mjs",
         "verify:linux-service": "node --run compile && node scripts/verify-linux-service.mjs",
         "verify:macos-service": "node --run compile && node scripts/verify-macos-service.mjs",
+        "verify:windows-service": "node --run compile && node scripts/verify-windows-service.mjs",
         "prepack": "node --run build"
     },
     "bin": {

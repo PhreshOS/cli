@@ -1,4 +1,5 @@
 import type { SystemPaths } from "./types.ts"
+import intakeAddress from "../intake-address.ts"
 import { homedir } from "node:os"
 import { isAbsolute, join } from "node:path"
 
@@ -31,7 +32,7 @@ export default function systemPaths(platform = process.platform, userHome = home
 
         storage,
 
-        intake: join(storage, "intake.sock"),
+        intake: intakeAddress(storage, platform),
 
         log: join(storage, "service.log")
     }

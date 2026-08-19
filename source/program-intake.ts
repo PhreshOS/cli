@@ -1,15 +1,16 @@
 import { connect } from "node:net"
 import { homedir } from "node:os"
 import { isAbsolute, join } from "node:path"
+import intakeAddress from "./intake-address.ts"
 
 /**
  * The local Program intake, from the CLI's side.
  *
- * A socket file rather than a port, because the file's permissions are
- * the authorization: only the account that owns this machine can open
- * it, and that account is exactly who may run and install programs on
- * it. Nothing is sent to prove anything, because being able to connect
- * is the proof.
+ * An owner-local IPC address rather than a port: a mode-0600 socket file
+ * on POSIX and an owner-created duplex named pipe on Windows. Only the
+ * account that owns this machine can complete the channel, and that account
+ * is exactly who may run and install programs on it. Nothing is sent to
+ * prove anything, because being able to connect is the proof.
  *
  * A message is a line. Closing our own side to mark the end of a
  * question would make lifetime ambiguous. A line delimiter keeps the
@@ -25,11 +26,11 @@ export function programIntakePath(environment: NodeJS.ProcessEnv = process.env, 
 
     const instanceHome = environment.PHRESHOS_HOME
 
-    if (instanceHome === undefined) return join(userHome, ".phreshos", "intake.sock")
+    if (instanceHome === undefined) return intakeAddress(join(userHome, ".phreshos"))
 
     if (!isAbsolute(instanceHome)) throw new Error("PHRESHOS_HOME must be an absolute filesystem path")
 
-    return join(instanceHome, "intake.sock")
+    return intakeAddress(instanceHome)
 }
 
 export const socketPath = programIntakePath()
