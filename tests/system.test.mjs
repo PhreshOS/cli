@@ -560,6 +560,8 @@ test("Windows keeps scheduled startup separate from current execution", async fu
 
         assert.match(xml, /<LogonType>InteractiveToken<\/LogonType>/)
 
+        assert.match(xml, /<RestartOnFailure>[\s\S]*<Interval>PT1M<\/Interval>/)
+
         assert.match(xml, /<WorkingDirectory>C:\\People &amp; Work\\System<\/WorkingDirectory>/)
 
         const encoded = /-EncodedCommand ([A-Za-z0-9+/=]+)/.exec(xml)?.[1]
