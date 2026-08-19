@@ -43,6 +43,8 @@ try {
 
     assert.ok(files.includes("dist/system/service/windows.js"))
 
+    assert.ok(files.includes("dist/system/service/windows-runner.js"))
+
     assert.equal(files.some(file => file.startsWith("source/") || file.startsWith("tests/") || file.startsWith("scripts/")), false)
 
     execFileSync(npm.command, [...npm.prefix, "install", archive, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })

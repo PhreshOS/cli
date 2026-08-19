@@ -564,15 +564,17 @@ test("Windows keeps scheduled startup separate from current execution", async fu
 
         assert.match(xml, /<WorkingDirectory>C:\\People &amp; Work\\System<\/WorkingDirectory>/)
 
-        const encoded = /-EncodedCommand ([A-Za-z0-9+/=]+)/.exec(xml)?.[1]
+        assert.match(xml, /<Command>C:\\Program Files\\nodejs\\node\.exe<\/Command>/)
+
+        const encoded = /<Arguments>&quot;.*windows-runner\.js&quot; ([A-Za-z0-9_-]+)<\/Arguments>/.exec(xml)?.[1]
 
         assert.ok(encoded)
 
-        const invocation = Buffer.from(encoded, "base64").toString("utf16le")
+        const invocation = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"))
 
-        assert.match(invocation, /C:\\Program Files\\nodejs\\node\.exe/)
+        assert.equal(invocation.definition.executable, "C:\\Program Files\\nodejs\\node.exe")
 
-        assert.match(invocation, /C:\\People & Work\\System\\server\\main\.js/)
+        assert.equal(invocation.definition.entry, "C:\\People & Work\\System\\server\\main.js")
 
         await service.disable()
 
