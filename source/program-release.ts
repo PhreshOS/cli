@@ -7,6 +7,13 @@ import AdmZip from "adm-zip"
 
 const officialPrograms = {
 
+    phresh: {
+
+        identity: "phresh-program",
+
+        repository: "PhreshOS/phresh-program"
+    },
+
     setup: {
 
         identity: "setup",

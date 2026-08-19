@@ -9,9 +9,9 @@ const repository = "PhreshOS/phresh-program"
 
 const release = {
 
-    version: "0.1.1",
+    version: "0.1.2",
 
-    sha256: "9e29d6c04435f4095a4e03410e77bc0f3d25ac6658316f2d14558b935b10a36c"
+    sha256: "dba5f1fd868c46501d5bd3463f4f8f0e098c7a231cb75794c01118689dc69339"
 } as const
 
 const archiveUrl = `https://github.com/${repository}/archive/refs/tags/v${release.version}.zip`

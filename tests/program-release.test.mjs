@@ -3,7 +3,7 @@ import { createHash } from "node:crypto"
 import { existsSync } from "node:fs"
 import test from "node:test"
 import AdmZip from "adm-zip"
-import { prepareOfficialProgram, selectProgramRelease } from "../dist/program-release.js"
+import { prepareOfficialProgram, resolveOfficialProgramRelease, selectProgramRelease } from "../dist/program-release.js"
 
 test("selects the newest complete stable Program release", function () {
 
@@ -66,6 +66,32 @@ test("verifies and prepares an official Program package", async function () {
     await prepared.dispose()
 
     assert.equal(existsSync(location), false)
+})
+
+test("maps phresh to the official Phresh Program release", async function () {
+
+    let requested
+
+    const selected = await resolveOfficialProgramRelease("phresh", async url => {
+
+        requested = String(url)
+
+        return Response.json([release("v0.1.2", {
+
+            assets: [
+
+                { name: "phresh-program@0.1.2.zip", browser_download_url: "https://example.test/phresh-program@0.1.2.zip" },
+
+                { name: "phresh-program@0.1.2.zip.sha256", browser_download_url: "https://example.test/phresh-program@0.1.2.zip.sha256" }
+            ]
+        })])
+    })
+
+    assert.equal(requested, "https://api.github.com/repos/PhreshOS/phresh-program/releases?per_page=100")
+
+    assert.equal(selected.identity, "phresh-program")
+
+    assert.equal(selected.version, "0.1.2")
 })
 
 function release(tag, overrides = {}) {
