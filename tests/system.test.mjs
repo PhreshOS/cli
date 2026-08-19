@@ -16,6 +16,7 @@ import LinuxSystemService from "../dist/system/service/linux.js"
 import WindowsSystemService from "../dist/system/service/windows.js"
 import { minimumSystemNodeVersion, supportsSystemNode } from "../dist/system/node.js"
 import intakeAddress from "../dist/intake-address.js"
+import npmInvocation from "../dist/system/npm.js"
 
 test("requires the Node release that provides the supported built-in SQLite API", function () {
 
@@ -86,6 +87,18 @@ test("gives each Windows user or isolated instance one stable named pipe", funct
     assert.equal(first, intakeAddress("c:/users/person/.phreshos/", "win32"))
 
     assert.notEqual(first, intakeAddress("C:\\Users\\Other\\.phreshos", "win32"))
+})
+
+test("runs Windows npm through Node instead of a command-shell shim", function () {
+
+    const invocation = npmInvocation(["install", "--omit=dev"], "win32", "C:\\Runtime\\node.exe")
+
+    assert.deepEqual(invocation, {
+
+        command: "C:\\Runtime\\node.exe",
+
+        args: ["C:\\Runtime\\node_modules\\npm\\bin\\npm-cli.js", "install", "--omit=dev"]
+    })
 })
 
 test("stages, validates, activates, and reads one production distribution", async function () {

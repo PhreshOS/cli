@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { mkdir, mkdtemp, open, readFile, readdir, readlink, rename, rm, symlink, writeFile } from "node:fs/promises"
 import { dirname, isAbsolute, join, relative, resolve } from "node:path"
 import { requireSuccess } from "./process.ts"
+import npmInvocation from "./npm.ts"
 import { minimumSystemNodeVersion } from "./node.ts"
 import AdmZip from "adm-zip"
 
@@ -345,9 +346,9 @@ function requireDirectory(path: string) {
 
 async function installProductionDependencies(directory: string) {
 
-    const npm = process.platform === "win32" ? "npm.cmd" : "npm"
+    const npm = npmInvocation(["install", "--omit=dev", "--no-audit", "--no-fund", "--package-lock=false"])
 
-    await requireSuccess(npm, ["install", "--omit=dev", "--no-audit", "--no-fund", "--package-lock=false"], { cwd: directory })
+    await requireSuccess(npm.command, npm.args, { cwd: directory })
 }
 
 interface ReleaseRecord {

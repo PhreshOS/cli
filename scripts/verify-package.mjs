@@ -2,20 +2,24 @@ import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { mkdtemp, readFile, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join, resolve } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import metadata from "../package.json" with { type: "json" }
 
 const repository = resolve(import.meta.dirname, "..")
 
 const temporary = await mkdtemp(join(tmpdir(), "phresh-cli-package-"))
 
-const npm = process.platform === "win32" ? "npm.cmd" : "npm"
+const npm = process.platform === "win32"
+
+    ? { command: process.execPath, prefix: [join(dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js")] }
+
+    : { command: "npm", prefix: [] }
 
 let archive
 
 try {
 
-    const packed = JSON.parse(execFileSync(npm, ["pack", "--json", "--ignore-scripts"], { cwd: repository, encoding: "utf8" }))
+    const packed = JSON.parse(execFileSync(npm.command, [...npm.prefix, "pack", "--json", "--ignore-scripts"], { cwd: repository, encoding: "utf8" }))
 
     const artifact = packed[0]
 
@@ -41,7 +45,7 @@ try {
 
     assert.equal(files.some(file => file.startsWith("source/") || file.startsWith("tests/") || file.startsWith("scripts/")), false)
 
-    execFileSync(npm, ["install", archive, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })
+    execFileSync(npm.command, [...npm.prefix, "install", archive, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })
 
     const cli = join(temporary, "node_modules", "@phreshos", "cli", "dist", "cli.js")
 
