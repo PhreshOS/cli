@@ -81,6 +81,17 @@ try {
 
     assert.equal(manifest.devDependencies[metadata.name], `^${metadata.version}`)
 
+    execFileSync(npm.command, [...npm.prefix, "install", "--no-save", archive, "--ignore-scripts", "--no-audit", "--no-fund"], {
+
+        cwd: created,
+
+        stdio: "pipe"
+    })
+
+    const typescript = join(created, "node_modules", "typescript", "bin", "tsc")
+
+    execFileSync(process.execPath, [typescript, "--noEmit"], { cwd: created, stdio: "pipe" })
+
     console.log(`Verified ${metadata.name}@${metadata.version} as an installed package`)
 }
 

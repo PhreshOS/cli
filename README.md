@@ -78,10 +78,11 @@ Windows; neither becomes a network endpoint or introduces a bearer secret.
 
 `phresh create <directory>` creates a complete Server and Client Program from
 the maintained `PhreshOS/phresh-program` repository. The CLI build downloads
-one exact tagged source release, verifies its SHA-256 checksum, removes
-repository-only material, and bundles the resulting authoring project. The
-installed CLI therefore creates projects offline without reading a live branch
-or maintaining a second template by hand.
+the newest complete stable release, validates its source identity and version,
+removes repository-only material, and bundles that exact authoring project.
+The resolved source digest is recorded with the bundle. The installed CLI
+therefore creates projects offline without reading a live branch or maintaining
+a release pin or second template by hand.
 
 The directory name becomes the stable kebab-case Program identity. In a
 terminal, `create` asks for the directory when it is omitted, the readable

@@ -1,17 +1,18 @@
 {
     "name": "@phreshos/cli",
     "type": "module",
-  "version": "0.1.14",
+    "version": "0.1.15",
     "description": "The Phresh command-line interface for Program projects and system management.",
     "engines": {
         "node": ">=20.10"
     },
     "scripts": {
         "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+        "check:scripts": "tsc --project tsconfig.scripts.json",
         "compile": "tsc --noEmit false --outDir dist --rootDir source --rewriteRelativeImportExtensions true --allowImportingTsExtensions true",
-        "build": "node --run clean && node --run compile && node dist/build-template.js",
+        "build": "node --run clean && node --run compile && vite-node scripts/build-template.ts",
         "test": "node --run compile && node --test tests/*.test.mjs",
-        "verify": "node --run build && node --run test && node scripts/verify-package.mjs",
+        "verify": "node --run check:scripts && node --run build && node --run test && node scripts/verify-package.mjs",
         "verify:system-release": "node --run compile && node scripts/verify-system-release.mjs",
         "verify:linux-service": "node --run compile && node scripts/verify-linux-service.mjs",
         "verify:macos-service": "node --run compile && node scripts/verify-macos-service.mjs",
@@ -56,6 +57,7 @@
     "devDependencies": {
         "@types/adm-zip": "^0.5.8",
         "@types/node": "^25.9.5",
-        "typescript": "^6.0.3"
+        "typescript": "^6.0.3",
+        "vite-node": "^6.0.0"
     }
 }

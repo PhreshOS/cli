@@ -3,22 +3,18 @@ import { createHash } from "node:crypto"
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, resolve, sep } from "node:path"
 import AdmZip from "adm-zip"
-import { readConfig } from "./project.ts"
+import { readConfig } from "../source/project.ts"
+import { resolveOfficialProgramRelease } from "../source/program-release.ts"
 
 const repository = "PhreshOS/phresh-program"
 
-const release = {
-
-    version: "0.1.2",
-
-    sha256: "dba5f1fd868c46501d5bd3463f4f8f0e098c7a231cb75794c01118689dc69339"
-} as const
+const release = await resolveOfficialProgramRelease("phresh")
 
 const archiveUrl = `https://github.com/${repository}/archive/refs/tags/v${release.version}.zip`
 
-const output = resolve(import.meta.dirname, "template")
+const output = resolve(import.meta.dirname, "../dist/template")
 
-const descriptionOutput = resolve(import.meta.dirname, "template.json")
+const descriptionOutput = resolve(import.meta.dirname, "../dist/template.json")
 
 const excludedDirectories = new Set([".github", "dist", "node_modules", "scripts", "storage"])
 
@@ -41,8 +37,6 @@ if (!response.ok) throw new Error(`Could not download ${repository} v${release.v
 const bytes = Buffer.from(await response.arrayBuffer())
 
 const digest = createHash("sha256").update(bytes).digest("hex")
-
-if (digest !== release.sha256) throw new Error(`The ${repository} v${release.version} source archive failed integrity verification`)
 
 const archive = new AdmZip(bytes)
 
@@ -85,6 +79,11 @@ if (!manifestSource) throw new Error(`The ${repository} v${release.version} sour
 
 const manifest = JSON.parse(manifestSource.toString("utf8")) as PackageManifest
 
+if (manifest.name !== release.identity || manifest.version !== release.version) {
+
+    throw new Error(`The ${repository} source manifest does not match release v${release.version}`)
+}
+
 manifest.scripts = select(manifest.scripts, ["dev", "start"])
 
 manifest.devDependencies = {
@@ -110,7 +109,10 @@ writeFileSync(manifestPath, JSON.stringify(manifest, null, 4) + "\n")
 
 const config = await readConfig(output)
 
-if (config.identity !== "phresh-program" || config.name !== "Phresh Program") throw new Error(`The ${repository} release is not Phresh Program`)
+if (config.identity !== release.identity || config.name !== "Phresh Program" || config.version !== release.version) {
+
+    throw new Error(`The ${repository} source declaration does not match release v${release.version}`)
+}
 
 writeFileSync(descriptionOutput, JSON.stringify({
 
@@ -118,12 +120,16 @@ writeFileSync(descriptionOutput, JSON.stringify({
 
     version: release.version,
 
+    sha256: digest,
+
     development: Boolean(config.server?.development || config.client?.development)
 }, null, 4) + "\n")
 
 function included(local: string) {
 
     const parts = local.split("/")
+
+    if (local === "scripts/build.ts") return true
 
     if (parts.some(part => excludedDirectories.has(part))) return false
 
@@ -140,6 +146,10 @@ function select<Value>(source: Record<string, Value> | undefined, names: readonl
 }
 
 interface PackageManifest {
+
+    name?: unknown
+
+    version?: unknown
 
     scripts?: Record<string, string>
 
