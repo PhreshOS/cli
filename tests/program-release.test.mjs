@@ -7,7 +7,7 @@ import { prepareOfficialProgram, resolveOfficialProgramRelease, selectProgramRel
 
 test("selects the newest complete stable Program release", function () {
 
-    const selected = selectProgramRelease("setup", [
+    const selected = selectProgramRelease([
 
         release("v0.1.0"),
 
@@ -68,7 +68,7 @@ test("verifies and prepares an official Program package", async function () {
     assert.equal(existsSync(location), false)
 })
 
-test("maps phresh to the official Phresh Program release", async function () {
+test("derives the official repository and release identity from its assets", async function () {
 
     let requested
 
@@ -92,6 +92,42 @@ test("maps phresh to the official Phresh Program release", async function () {
     assert.equal(selected.identity, "phresh-program")
 
     assert.equal(selected.version, "0.1.2")
+})
+
+test("derives Flambo from the Program repository convention", async function () {
+
+    let requested
+
+    const selected = await resolveOfficialProgramRelease("flambo", async url => {
+
+        requested = String(url)
+
+        return Response.json([release("v0.1.0", {
+
+            assets: [
+
+                { name: "flambo@0.1.0.zip", browser_download_url: "https://example.test/flambo@0.1.0.zip" },
+
+                { name: "flambo@0.1.0.zip.sha256", browser_download_url: "https://example.test/flambo@0.1.0.zip.sha256" }
+            ]
+        })])
+    })
+
+    assert.equal(requested, "https://api.github.com/repos/PhreshOS/flambo-program/releases?per_page=100")
+
+    assert.equal(selected.identity, "flambo")
+
+    assert.equal(selected.version, "0.1.0")
+})
+
+test("rejects names that cannot identify an official Program repository", async function () {
+
+    await assert.rejects(
+
+        resolveOfficialProgramRelease("../flambo", async () => { throw new Error("fetch must not run") }),
+
+        /official Program name/
+    )
 })
 
 function release(tag, overrides = {}) {

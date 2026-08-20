@@ -5,23 +5,6 @@ import { tmpdir } from "node:os"
 import { dirname, isAbsolute, join, relative, resolve } from "node:path"
 import AdmZip from "adm-zip"
 
-const officialPrograms = {
-
-    phresh: {
-
-        identity: "phresh-program",
-
-        repository: "PhreshOS/phresh-program"
-    },
-
-    setup: {
-
-        identity: "setup",
-
-        repository: "PhreshOS/setup-program"
-    }
-} as const
-
 export interface PreparedProgramRelease {
 
     program: unknown
@@ -77,11 +60,9 @@ export async function prepareOfficialProgram(name: string, fetcher: typeof fetch
 
 export async function resolveOfficialProgramRelease(name: string, fetcher: typeof fetch = fetch) {
 
-    const official = officialPrograms[name as keyof typeof officialPrograms]
+    const requested = programName(name)
 
-    if (!official) throw new Error(`No official Program is named "${name}"`)
-
-    const response = await fetcher(`https://api.github.com/repos/${official.repository}/releases?per_page=100`, {
+    const response = await fetcher(`https://api.github.com/repos/PhreshOS/${requested}-program/releases?per_page=100`, {
 
         headers: {
 
@@ -95,12 +76,12 @@ export async function resolveOfficialProgramRelease(name: string, fetcher: typeo
 
     if (!response.ok) throw new Error(`The ${name} release list could not be read (${response.status} ${response.statusText})`)
 
-    return selectProgramRelease(official.identity, await response.json())
+    return selectProgramRelease(await response.json())
 }
 
-export function selectProgramRelease(identity: string, value: unknown): ProgramRelease {
+export function selectProgramRelease(value: unknown): ProgramRelease {
 
-    if (!Array.isArray(value)) throw new Error(`The ${identity} release list is invalid`)
+    if (!Array.isArray(value)) throw new Error("The Program release list is invalid")
 
     const releases = value.flatMap(function (item): ProgramRelease[] {
 
@@ -110,20 +91,16 @@ export function selectProgramRelease(identity: string, value: unknown): ProgramR
 
         if (!version) return []
 
-        const archiveName = `${identity}@${version}.zip`
+        const files = programAssets(item.assets, version)
 
-        const archive = asset(item.assets, archiveName)
-
-        const checksum = asset(item.assets, `${archiveName}.sha256`)
-
-        return archive && checksum ? [{ identity, version, archive, checksum }] : []
+        return files ? [{ version, ...files }] : []
     })
 
     releases.sort((left, right) => compare(right.version, left.version))
 
     const selected = releases[0]
 
-    if (!selected) throw new Error(`No stable ${identity} Program release is available`)
+    if (!selected) throw new Error("No stable Program release is available")
 
     return selected
 }
@@ -252,6 +229,38 @@ function asset(assets: unknown[], name: string) {
     const found = assets.find(item => record(item) && item.name === name && typeof item.browser_download_url === "string")
 
     return record(found) && typeof found.browser_download_url === "string" ? found.browser_download_url : undefined
+}
+
+function programAssets(assets: unknown[], version: string) {
+
+    const suffix = `@${version}.zip`
+
+    const archives = assets.flatMap(function (item) {
+
+        if (!record(item) || typeof item.name !== "string" || typeof item.browser_download_url !== "string" || !item.name.endsWith(suffix)) return []
+
+        const identity = item.name.slice(0, -suffix.length)
+
+        if (!validProgramName(identity)) return []
+
+        const checksum = asset(assets, `${item.name}.sha256`)
+
+        return checksum ? [{ identity, archive: item.browser_download_url, checksum }] : []
+    })
+
+    return archives.length === 1 ? archives[0] : undefined
+}
+
+function programName(name: string) {
+
+    if (!validProgramName(name)) throw new Error(`The official Program name "${name}" is invalid`)
+
+    return name
+}
+
+function validProgramName(name: string) {
+
+    return name.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)
 }
 
 function parseVersion(tag: string) {
