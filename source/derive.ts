@@ -91,7 +91,7 @@ export default function derive(config: Config, directory: string, which: Which) 
 
             start: server.start,
 
-            serviceable: server.serviceable,
+            serviceDocs: server.serviceDocs && resolve(directory, server.serviceDocs),
 
             installCommand: config.server?.installCommand,
 
@@ -107,7 +107,7 @@ export default function derive(config: Config, directory: string, which: Which) 
 
             start: client.start,
 
-            serviceable: client.serviceable,
+            serviceDocs: client.serviceDocs && resolve(directory, client.serviceDocs),
 
             title: config.client?.title,
 

@@ -60,7 +60,7 @@ function coherent(config: Config) {
 
         if (declared.start !== undefined && typeof declared.start !== "boolean") throw new Error(`A declared ${half} endpoint's start default must be true or false`)
 
-        if (declared.serviceable !== undefined && typeof declared.serviceable !== "boolean") throw new Error(`A declared ${half} endpoint's serviceable capability must be true or false`)
+        if (declared.serviceDocs !== undefined && (typeof declared.serviceDocs !== "string" || declared.serviceDocs.trim().length === 0)) throw new Error(`A declared ${half} endpoint's serviceDocs must be a non-empty path`)
     }
 
     if (!(config.server && (config.server.start ?? true)) && !(config.client && (config.client.start ?? true))) throw new Error("A Program's default Process must start a server endpoint, a client endpoint, or both")

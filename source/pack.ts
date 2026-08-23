@@ -20,7 +20,8 @@ import build from "./build-command.ts"
  * a declared half always has a location, even when the system chose it.
  *
  * There is **no wrapping directory**. `program.json`, `server/`,
- * `client/` and optional `icon.png` sit at the package's root, and the directory
+ * `client/`, optional `icon.png`, and declared `server-docs.md` or
+ * `client-docs.md` sit at the package's root, and the directory
  * the system installs into is named from the program's own `identity`.
  * The archive itself therefore needs no second naming layer.
  *
@@ -56,6 +57,10 @@ export default async function pack(directory = process.cwd()) {
 
     if (config.icon) file(zip, directory, config.icon, "icon.png", "Program icon")
 
+    if (config.server?.serviceDocs) file(zip, directory, config.server.serviceDocs, "server-docs.md", "Server service documentation")
+
+    if (config.client?.serviceDocs) file(zip, directory, config.client.serviceDocs, "client-docs.md", "Client service documentation")
+
     zip.addFile("program.json", Buffer.from(JSON.stringify(program(config, version), null, 4) + "\n"))
 
     const archive = `${config.identity}@${version ?? "0.0.0"}.zip`
@@ -90,9 +95,9 @@ function program(config: Config, version: string | undefined) {
 
         icon: config.icon ? "icon.png" : undefined,
 
-        ...config.server && { server: { location: "server", start: config.server.start, serviceable: config.server.serviceable, installCommand: config.server.installCommand, startCommand: config.server.startCommand } },
+        ...config.server && { server: { location: "server", start: config.server.start, serviceDocs: config.server.serviceDocs ? "server-docs.md" : undefined, installCommand: config.server.installCommand, startCommand: config.server.startCommand } },
 
-        ...config.client && { client: { location: "client", start: config.client.start, serviceable: config.client.serviceable, title: config.client.title, size: config.client.size, position: config.client.position, layer: config.client.layer, minimize: config.client.minimize } }
+        ...config.client && { client: { location: "client", start: config.client.start, serviceDocs: config.client.serviceDocs ? "client-docs.md" : undefined, title: config.client.title, size: config.client.size, position: config.client.position, layer: config.client.layer, minimize: config.client.minimize } }
     }
 }
 
