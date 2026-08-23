@@ -91,6 +91,8 @@ export default function derive(config: Config, directory: string, which: Which) 
 
             start: server.start,
 
+            serviceable: server.serviceable,
+
             installCommand: config.server?.installCommand,
 
             startCommand: server.startCommand
@@ -104,6 +106,8 @@ export default function derive(config: Config, directory: string, which: Which) 
             location: /^https?:\/\//i.test(client.location) ? client.location : resolve(directory, client.location),
 
             start: client.start,
+
+            serviceable: client.serviceable,
 
             title: config.client?.title,
 

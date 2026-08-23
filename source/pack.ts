@@ -90,9 +90,9 @@ function program(config: Config, version: string | undefined) {
 
         icon: config.icon ? "icon.png" : undefined,
 
-        ...config.server && { server: { location: "server", start: config.server.start, installCommand: config.server.installCommand, startCommand: config.server.startCommand } },
+        ...config.server && { server: { location: "server", start: config.server.start, serviceable: config.server.serviceable, installCommand: config.server.installCommand, startCommand: config.server.startCommand } },
 
-        ...config.client && { client: { location: "client", start: config.client.start, title: config.client.title, size: config.client.size, position: config.client.position, layer: config.client.layer, minimize: config.client.minimize } }
+        ...config.client && { client: { location: "client", start: config.client.start, serviceable: config.client.serviceable, title: config.client.title, size: config.client.size, position: config.client.position, layer: config.client.layer, minimize: config.client.minimize } }
     }
 }
 

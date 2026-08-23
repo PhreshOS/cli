@@ -59,6 +59,8 @@ function coherent(config: Config) {
         if (typeof declared.location !== "string") throw new Error(`A declared ${half} half must have a location`)
 
         if (declared.start !== undefined && typeof declared.start !== "boolean") throw new Error(`A declared ${half} endpoint's start default must be true or false`)
+
+        if (declared.serviceable !== undefined && typeof declared.serviceable !== "boolean") throw new Error(`A declared ${half} endpoint's serviceable capability must be true or false`)
     }
 
     if (!(config.server && (config.server.start ?? true)) && !(config.client && (config.client.start ?? true))) throw new Error("A Program's default Process must start a server endpoint, a client endpoint, or both")
