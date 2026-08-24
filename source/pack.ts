@@ -20,8 +20,8 @@ import build from "./build-command.ts"
  * a declared half always has a location, even when the system chose it.
  *
  * There is **no wrapping directory**. `program.json`, `server/`,
- * `client/`, optional `icon.png`, and declared `server-docs.md` or
- * `client-docs.md` sit at the package's root, and the directory
+ * `client/`, optional `icon.png`, and optional `agent.md` sit at the package's
+ * root, and the directory
  * the system installs into is named from the program's own `identity`.
  * The archive itself therefore needs no second naming layer.
  *
@@ -57,9 +57,7 @@ export default async function pack(directory = process.cwd()) {
 
     if (config.icon) file(zip, directory, config.icon, "icon.png", "Program icon")
 
-    if (config.server?.serviceDocs) file(zip, directory, config.server.serviceDocs, "server-docs.md", "Server service documentation")
-
-    if (config.client?.serviceDocs) file(zip, directory, config.client.serviceDocs, "client-docs.md", "Client service documentation")
+    if (config.agent) file(zip, directory, config.agent, "agent.md", "Program agent documentation")
 
     zip.addFile("program.json", Buffer.from(JSON.stringify(program(config, version), null, 4) + "\n"))
 
@@ -95,9 +93,11 @@ function program(config: Config, version: string | undefined) {
 
         icon: config.icon ? "icon.png" : undefined,
 
-        ...config.server && { server: { location: "server", start: config.server.start, serviceDocs: config.server.serviceDocs ? "server-docs.md" : undefined, installCommand: config.server.installCommand, startCommand: config.server.startCommand } },
+        agent: config.agent ? "agent.md" : undefined,
 
-        ...config.client && { client: { location: "client", start: config.client.start, serviceDocs: config.client.serviceDocs ? "client-docs.md" : undefined, title: config.client.title, size: config.client.size, position: config.client.position, layer: config.client.layer, minimize: config.client.minimize } }
+        ...config.server && { server: { location: "server", start: config.server.start, installCommand: config.server.installCommand, startCommand: config.server.startCommand } },
+
+        ...config.client && { client: { location: "client", start: config.client.start, title: config.client.title, size: config.client.size, position: config.client.position, layer: config.client.layer, minimize: config.client.minimize } }
     }
 }
 

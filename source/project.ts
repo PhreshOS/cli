@@ -41,10 +41,12 @@ function coherent(config: Config) {
 
     if (!config.server && !config.client) throw new Error("A program must have a server half, a client half, or both")
 
-    for (const field of ["name", "version", "description", "icon"] as const) {
+    for (const field of ["name", "version", "description", "icon", "agent"] as const) {
 
         if (config[field] !== undefined && typeof config[field] !== "string") throw new Error(`A program's ${field} must be text`)
     }
+
+    if (config.agent !== undefined && config.agent.trim().length === 0) throw new Error("A program's agent documentation must be a non-empty path")
 
     if (config.buildCommand !== undefined && (typeof config.buildCommand !== "string" || config.buildCommand.trim().length === 0)) throw new Error("A program's buildCommand must be non-empty text")
 
@@ -60,7 +62,6 @@ function coherent(config: Config) {
 
         if (declared.start !== undefined && typeof declared.start !== "boolean") throw new Error(`A declared ${half} endpoint's start default must be true or false`)
 
-        if (declared.serviceDocs !== undefined && (typeof declared.serviceDocs !== "string" || declared.serviceDocs.trim().length === 0)) throw new Error(`A declared ${half} endpoint's serviceDocs must be a non-empty path`)
     }
 
     if (!(config.server && (config.server.start ?? true)) && !(config.client && (config.client.start ?? true))) throw new Error("A Program's default Process must start a server endpoint, a client endpoint, or both")

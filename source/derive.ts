@@ -78,6 +78,8 @@ export default function derive(config: Config, directory: string, which: Which) 
         // name, this points into the authoring tree and leaves it alone.
         icon: config.icon && resolve(directory, config.icon),
 
+        agent: config.agent && resolve(directory, config.agent),
+
         // Beside the source, and said out loud. A program built from an
         // object resolves what it leaves unsaid against the *system's*
         // working directory — so silence here means a program keeps what
@@ -90,8 +92,6 @@ export default function derive(config: Config, directory: string, which: Which) 
             location: resolve(directory, server.location),
 
             start: server.start,
-
-            serviceDocs: server.serviceDocs && resolve(directory, server.serviceDocs),
 
             installCommand: config.server?.installCommand,
 
@@ -106,8 +106,6 @@ export default function derive(config: Config, directory: string, which: Which) 
             location: /^https?:\/\//i.test(client.location) ? client.location : resolve(directory, client.location),
 
             start: client.start,
-
-            serviceDocs: client.serviceDocs && resolve(directory, client.serviceDocs),
 
             title: config.client?.title,
 

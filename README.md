@@ -399,10 +399,10 @@ are the canonical locations the package just created. An explicit
 and means `true`. At least one declared half must resolve to true.
 
 There is **no wrapping directory**: `program.json`, `server/`, `client/`,
-optional `icon.png`, and declared `server-docs.md` or `client-docs.md` sit at
-the package's root. The system names the directory it installs into from your
-program's `identity`. Endpoint Service documentation is installed with its
-Program so its policies can be inspected before the Endpoint starts.
+optional `icon.png`, and optional `agent.md` sit at the package's root. The
+system names the directory it installs into from your program's `identity`.
+An authored agent document may use any project-relative path, while packaging
+normalizes it to `agent.md`.
 
 Nothing about the system moves because this exists. `program.json` is
 still the only thing the system reads, and a package assembled by hand
