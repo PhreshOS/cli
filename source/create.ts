@@ -144,7 +144,12 @@ function customize(directory: string, identity: string, name: string, manager: P
 
         let content = readFileSync(path, "utf-8")
 
-        content = content.replaceAll("phresh-program", identity).replaceAll("Phresh Program", name)
+        if (basename(path) === "phresh.config.ts") {
+
+            content = content.replace('identity: "phresh"', `identity: ${JSON.stringify(identity)}`)
+        }
+
+        content = content.replaceAll("Phresh Program", name)
 
         if (basename(path) === "README.md") {
 

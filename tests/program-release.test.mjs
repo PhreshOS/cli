@@ -76,22 +76,22 @@ test("derives the official repository and release identity from its assets", asy
 
         requested = String(url)
 
-        return Response.json([release("v0.1.2", {
+        return Response.json([release("v0.1.12", {
 
             assets: [
 
-                { name: "phresh-program@0.1.2.zip", browser_download_url: "https://example.test/phresh-program@0.1.2.zip" },
+                { name: "phresh@0.1.12.zip", browser_download_url: "https://example.test/phresh@0.1.12.zip" },
 
-                { name: "phresh-program@0.1.2.zip.sha256", browser_download_url: "https://example.test/phresh-program@0.1.2.zip.sha256" }
+                { name: "phresh@0.1.12.zip.sha256", browser_download_url: "https://example.test/phresh@0.1.12.zip.sha256" }
             ]
         })])
     })
 
     assert.equal(requested, "https://api.github.com/repos/PhreshOS/phresh-program/releases?per_page=100")
 
-    assert.equal(selected.identity, "phresh-program")
+    assert.equal(selected.identity, "phresh")
 
-    assert.equal(selected.version, "0.1.2")
+    assert.equal(selected.version, "0.1.12")
 })
 
 test("derives Flambo from the Program repository convention", async function () {
