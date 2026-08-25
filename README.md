@@ -368,6 +368,10 @@ The command installs through the machine's local intake. A running
 Program may also install itself through the server SDK; installation is not a
 client capability.
 
+When a Server declares `installCommand`, `phresh install` writes that command's
+`stdout` and `stderr` chunks as the System emits them. The final installed
+confirmation appears only after the output stream completes successfully.
+
 That is also why it names **paths** rather than sending bytes: install
 used to want an upload because the installer was a browser, which has
 bytes and no path. You have the paths.
