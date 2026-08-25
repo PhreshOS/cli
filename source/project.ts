@@ -41,12 +41,30 @@ function coherent(config: Config) {
 
     if (!config.server && !config.client) throw new Error("A program must have a server half, a client half, or both")
 
-    for (const field of ["name", "version", "description", "icon", "agent"] as const) {
+    for (const field of ["name", "version", "description", "icon", "agent", "website"] as const) {
 
         if (config[field] !== undefined && typeof config[field] !== "string") throw new Error(`A program's ${field} must be text`)
     }
 
     if (config.agent !== undefined && config.agent.trim().length === 0) throw new Error("A program's agent documentation must be a non-empty path")
+
+    if (config.website !== undefined) {
+
+        try { new URL(config.website) }
+
+        catch { throw new Error("A program's website must be a valid URL") }
+    }
+
+    for (const [field, maximum] of [["categories", 20], ["keywords", 50]] as const) {
+
+        const values = config[field]
+
+        if (values === undefined) continue
+
+        if (!Array.isArray(values) || values.length > maximum || values.some(value => typeof value !== "string" || value.trim().length === 0 || value.trim().length > 50)) {
+            throw new Error(`A program's ${field} must contain at most ${maximum} non-empty values of at most 50 characters`)
+        }
+    }
 
     if (config.buildCommand !== undefined && (typeof config.buildCommand !== "string" || config.buildCommand.trim().length === 0)) throw new Error("A program's buildCommand must be non-empty text")
 
@@ -69,6 +87,8 @@ function coherent(config: Config) {
     if (config.server && (typeof config.server.startCommand !== "string" || config.server.startCommand.length === 0)) throw new Error("A server half must say what starts it")
 
     if (config.server?.installCommand !== undefined && typeof config.server.installCommand !== "string") throw new Error("A server half's install command must be text")
+
+    if (config.server?.uninstallCommand !== undefined && typeof config.server.uninstallCommand !== "string") throw new Error("A server half's uninstall command must be text")
 
     if (config.client?.title !== undefined && typeof config.client.title !== "string") throw new Error("A client half's title must be text")
 

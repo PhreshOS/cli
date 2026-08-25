@@ -1,4 +1,5 @@
 import speak from "./program-intake.ts"
+import writeProgramCommandOutput from "./program-command-output.ts"
 
 export interface ProgramInstallationOptions {
 
@@ -48,7 +49,7 @@ export default async function installProgram(program: unknown, options: ProgramI
 
     }, function (event) {
 
-        if (event.event === "output") writeInstallOutput(event)
+        if (event.event === "output") writeProgramCommandOutput(event)
 
         else if (event.event === "installed") {
 
@@ -82,18 +83,6 @@ export default async function installProgram(program: unknown, options: ProgramI
 
         process
     } satisfies ProgramInstallationResult
-}
-
-function writeInstallOutput(event: Record<string, unknown>) {
-
-    if ((event.stream !== "stdout" && event.stream !== "stderr") || typeof event.text !== "string") {
-
-        throw new Error("The System returned an invalid Program installation output chunk")
-    }
-
-    const output = event.stream === "stderr" ? process.stderr : process.stdout
-
-    output.write(event.text)
 }
 
 function processIdentity(value: unknown) {

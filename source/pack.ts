@@ -26,8 +26,9 @@ import build from "./build-command.ts"
  * The archive itself therefore needs no second naming layer.
  *
  * The files go into the archive directly rather than through a staging
- * directory: a copy of a build is a thing that can be stale, and there
- * is nothing a staging directory was doing that the archive does not.
+ * directory: a copy of a build is a thing that can be stale. The generated
+ * standalone program.json is also placed beside the archive for release
+ * discovery; both declarations are made from the same bytes.
  */
 export default async function pack(directory = process.cwd()) {
 
@@ -59,7 +60,14 @@ export default async function pack(directory = process.cwd()) {
 
     if (config.agent) file(zip, directory, config.agent, "agent.md", "Program agent documentation")
 
-    zip.addFile("program.json", Buffer.from(JSON.stringify(program(config, version), null, 4) + "\n"))
+    const declaration = Buffer.from(JSON.stringify(program(config, version), null, 4) + "\n")
+
+    zip.addFile("program.json", declaration)
+
+    // The standalone release declaration and the declaration inside the
+    // archive are the same bytes. There is no separately authored catalog
+    // description that can drift from the installable Program.
+    writeFileSync(resolve(directory, "program.json"), declaration)
 
     const archive = `${config.identity}@${version ?? "0.0.0"}.zip`
 
@@ -95,7 +103,13 @@ function program(config: Config, version: string | undefined) {
 
         agent: config.agent ? "agent.md" : undefined,
 
-        ...config.server && { server: { location: "server", start: config.server.start, installCommand: config.server.installCommand, startCommand: config.server.startCommand } },
+        categories: config.categories,
+
+        keywords: config.keywords,
+
+        website: config.website,
+
+        ...config.server && { server: { location: "server", start: config.server.start, installCommand: config.server.installCommand, uninstallCommand: config.server.uninstallCommand, startCommand: config.server.startCommand } },
 
         ...config.client && { client: { location: "client", start: config.client.start, title: config.client.title, size: config.client.size, position: config.client.position, layer: config.client.layer, minimize: config.client.minimize } }
     }

@@ -74,6 +74,12 @@ export default function derive(config: Config, directory: string, which: Which) 
 
         description: config.description,
 
+        categories: config.categories,
+
+        keywords: config.keywords,
+
+        website: config.website,
+
         // Where it already is. Unlike pack, which gives it its canonical
         // name, this points into the authoring tree and leaves it alone.
         icon: config.icon && resolve(directory, config.icon),
@@ -94,6 +100,8 @@ export default function derive(config: Config, directory: string, which: Which) 
             start: server.start,
 
             installCommand: config.server?.installCommand,
+
+            uninstallCommand: config.server?.uninstallCommand,
 
             startCommand: server.startCommand
         } },

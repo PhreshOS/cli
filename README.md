@@ -156,6 +156,12 @@ export default defineConfig({
 
     icon: "icon.png",
 
+    categories: ["Utilities"],
+
+    keywords: ["files", "storage"],
+
+    website: "https://example.com/file-manager",
+
     buildCommand: "bun run build",
 
     server: {
@@ -163,6 +169,8 @@ export default defineConfig({
         location: "build/server",
 
         installCommand: "npm ci",
+
+        uninstallCommand: "npm run clean:external",
 
         startCommand: "node main.js",
 
@@ -388,13 +396,19 @@ running Processes, stored data, and runtime Program. `--everything` explicitly
 ends those Processes, removes everything the system owns for the Program, and
 forgets its runtime record.
 
+When the installed Server declares `uninstallCommand`, the System runs it from
+that Server directory before removing files. `phresh uninstall` writes its
+ordered `stdout` and `stderr` chunks as they arrive. A failed cleanup command
+aborts removal and reports the failure.
+
 The identity comes from this project's `phresh.config.ts`; the command does not
 accept an arbitrary Program identity.
 
 ## What pack produces
 
-`pack` takes what is at each half's `location` and writes
-`<identity>@<version>.zip`. Your program may leave its halves anywhere; the
+`pack` takes what is at each half's `location` and writes both `program.json`
+and `<identity>@<version>.zip`. The exact generated declaration is also stored
+inside the archive. Your program may leave its halves anywhere; the
 package always keeps them in the same places, so the artifact's shape
 belongs to the contract rather than to your project. That is why the
 `program.json` it writes names `server` and `client` explicitly — those
@@ -409,5 +423,7 @@ An authored agent document may use any project-relative path, while packaging
 normalizes it to `agent.md`.
 
 Nothing about the system moves because this exists. `program.json` is
-still the only thing the system reads, and a package assembled by hand
-is still a package. This just means you do not have to.
+still the only declaration the system and release catalog read. Root
+`categories`, `keywords`, and `website` values are optional and cross into it
+without affecting execution. The file is generated output; `phresh.config.ts`
+remains the authored source.

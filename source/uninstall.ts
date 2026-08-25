@@ -1,6 +1,7 @@
 import { readConfig } from "./project.ts"
 import { dim, heading } from "./style.ts"
 import speak from "./program-intake.ts"
+import writeProgramCommandOutput from "./program-command-output.ts"
 
 /** Uninstall the Program declared by the current project. */
 export default async function uninstall(everything = false, directory = process.cwd()) {
@@ -8,6 +9,8 @@ export default async function uninstall(everything = false, directory = process.
     const config = await readConfig(directory)
 
     await speak({ word: "uninstall", identity: config.identity, everything }, function (event) {
+
+        if (event.event === "output") return writeProgramCommandOutput(event)
 
         if (event.event !== "uninstalled") return
 
