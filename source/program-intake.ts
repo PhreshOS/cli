@@ -4,23 +4,10 @@ import { isAbsolute, join } from "node:path"
 import intakeAddress from "./intake-address.ts"
 
 /**
- * The local Program intake, from the CLI's side.
+ * Speak to the owner-local Program intake.
  *
- * An owner-local IPC address rather than a port: a mode-0600 socket file
- * on POSIX and an owner-created duplex named pipe on Windows. Only the
- * account that owns this machine can complete the channel, and that account
- * is exactly who may run and install programs on it. Nothing is sent to
- * prove anything, because being able to connect is the proof.
- *
- * A message is a line. Closing our own side to mark the end of a
- * question would make lifetime ambiguous. A line delimiter keeps the
- * connection available for the stream of events that follows a launch.
- *
- * One question, then events until the system closes. Installation confirms
- * each requested outcome — laid out, startup enabled, running — and then
- * ends. Uninstalling says one thing and ends; an attached run says how it
- * began, whatever the Program says, and how it ended. None pretends to be a
- * remote method returning through an unrelated transport.
+ * One line carries the request. Installation and attached execution may emit
+ * multiple events; the System closes the connection when the operation ends.
  */
 export function programIntakePath(environment: NodeJS.ProcessEnv = process.env, userHome = homedir()) {
 

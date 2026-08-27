@@ -3,6 +3,7 @@ import type { SystemStatus } from "./lifecycle.ts"
 import SystemLifecycle from "./lifecycle.ts"
 import prompts, { ReportedFailure } from "../prompts.ts"
 import { accent, caution, dim, negative, positive } from "../style.ts"
+import controlCommands from "./control/command.ts"
 
 /** Attach the System lifecycle without mixing it with Program commands. */
 export default function systemCommands(program: Command, provided?: SystemLifecycle) {
@@ -86,6 +87,8 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
     action(system, "enable", "enable automatic startup", current, lifecycle => lifecycle.enable())
 
     action(system, "disable", "disable automatic startup", current, lifecycle => lifecycle.disable())
+
+    controlCommands(system)
 
     return system
 }
