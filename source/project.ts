@@ -1,7 +1,7 @@
 import { isRelativeValue, layers, type Config, type Position, type Size } from "@phreshos/core"
 import { existsSync } from "node:fs"
 import { isAbsolute, normalize, resolve, sep } from "node:path"
-import { pathToFileURL } from "node:url"
+import { createJiti } from "jiti"
 
 export const configFile = "phresh.config.ts"
 
@@ -11,15 +11,12 @@ export async function readConfig(directory = process.cwd()) {
 
     if (!existsSync(path)) throw new Error(`There is no ${configFile} here — run: phresh init`)
 
-    // The supported Node runtime reads erasable TypeScript directly. Keeping
-    // this file typed gives an author editor assistance without another config
-    // format or a build step.
-    const loaded = await import(pathToFileURL(path).href).catch(function (error: Error) {
+    // Program declarations remain typed authoring files independently of the
+    // Node version that happens to execute the CLI.
+    const config = await createJiti(import.meta.url).import<Config>(path, { default: true }).catch(function (error: Error) {
 
         throw new Error(`${configFile} could not be read (${error.message})`)
-    }) as { default?: Config }
-
-    const config = loaded.default
+    })
 
     if (!config) throw new Error(`${configFile} must export its config as the default export`)
 

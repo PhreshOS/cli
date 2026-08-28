@@ -42,7 +42,11 @@ test("packages entryFile as the installable worker declaration", async function 
     await mkdir(join(directory, "server"))
     await writeFile(join(directory, "server", "main.js"), "export {}\n")
     await writeFile(join(directory, "package.json"), JSON.stringify({ name: "worker-package", version: "1.0.0", type: "module" }))
-    await writeFile(join(directory, "phresh.config.ts"), `export default { identity: "worker-package", server: { location: "server", entryFile: "main.js" } }\n`)
+    await writeFile(join(directory, "phresh.config.ts"), `
+type Execution = { location: string, entryFile: string }
+const server: Execution = { location: "server", entryFile: "main.js" }
+export default { identity: "worker-package", server } as const
+`)
 
     const config = await readConfig(directory)
 

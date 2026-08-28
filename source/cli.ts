@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command, Option } from "commander"
-import metadata from "../package.json" with { type: "json" }
+import { createRequire } from "node:module"
 import { PromptCancelled, ReportedFailure } from "./prompts.ts"
 import create from "./create.ts"
 import install from "./install.ts"
@@ -12,6 +12,11 @@ import systemCommands from "./system/command.ts"
 import controlCommands from "./control-command.ts"
 import describeCommands from "./describe-command.ts"
 import { commandContract } from "./command-contract.ts"
+
+const metadata = createRequire(import.meta.url)("../package.json") as Readonly<{
+    version: string
+    dependencies: Readonly<Record<string, string>>
+}>
 
 const { version } = metadata
 
