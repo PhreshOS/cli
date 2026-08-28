@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join, resolve } from "node:path"
+import { join, normalize, resolve } from "node:path"
 import test from "node:test"
 import { pathToFileURL } from "node:url"
 import AdmZip from "adm-zip"
@@ -73,13 +73,15 @@ test("keeps installation files separate from persistent System state", function 
 
     const paths = systemPaths("darwin", "/Users/person", { PHRESHOS_HOME: "/temporary" })
 
+    const storage = normalize("/temporary")
+
     assert.equal(paths.root, join("/Users/person", "Library", "Application Support", "PhreshOS", "System"))
 
-    assert.equal(paths.storage, "/temporary")
+    assert.equal(paths.storage, storage)
 
     assert.equal(paths.gateway, join("/temporary", "gateway.sock"))
 
-    assert.equal(paths.transientHome, "/temporary")
+    assert.equal(paths.transientHome, storage)
 
     assert.equal(paths.homeRequest, join(paths.root, "next-home"))
 })
