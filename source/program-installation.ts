@@ -1,4 +1,6 @@
-import { streamProgram } from "./gateway.ts"
+import { Gateway } from "@phreshos/gateway"
+import type { Project } from "@phreshos/gateway"
+import type { ProgramDescription } from "@phreshos/core"
 import writeProgramCommandOutput from "./program-command-output.ts"
 
 export interface ProgramInstallationOptions {
@@ -27,7 +29,7 @@ export interface ProgramInstallationResult {
 }
 
 /** Install one prepared Program and await every explicitly requested outcome. */
-export default async function installProgram(program: unknown, options: ProgramInstallationOptions = {}) {
+export default async function installProgram(program: Project | ProgramDescription, options: ProgramInstallationOptions = {}) {
 
     let installedValue: unknown
 
@@ -37,17 +39,10 @@ export default async function installProgram(program: unknown, options: ProgramI
 
     let processValue: unknown
 
-    await streamProgram({
+    const gateway = await Gateway.open()
 
-        word: "install",
-
-        program,
-
-        run: options.run === true,
-
-        startup: options.startup === true
-
-    }, function (event) {
+    try {
+      for await (const event of gateway.install(program, options)) {
 
         if (event.event === "output") writeProgramCommandOutput(event)
 
@@ -61,7 +56,10 @@ export default async function installProgram(program: unknown, options: ProgramI
         else if (event.event === "startupEnabled") startupEnabled = true
 
         else if (event.event === "running") processValue = event.process
-    })
+      }
+    }
+
+    finally { await gateway.close() }
 
     if (installedValue === undefined) throw new Error("The System ended Program installation without confirming it")
 

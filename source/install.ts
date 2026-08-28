@@ -1,9 +1,8 @@
-import derive from "./derive.ts"
-import { readConfig } from "./project.ts"
+import { Project } from "@phreshos/gateway"
+import type { ProgramDescription } from "@phreshos/core"
 import { dim, heading, line } from "./style.ts"
 import installProgram, { type ProgramInstallationOptions } from "./program-installation.ts"
 import { prepareOfficialProgram } from "./program-release.ts"
-import build from "./build-command.ts"
 
 /**
  * Lay this program out on this machine's system.
@@ -31,7 +30,9 @@ export default async function install(options: InstallOptions = {}) {
 
     try {
 
-        const program = prepared?.program ?? await localProgram(directory)
+        const program = prepared ? prepared.program as ProgramDescription : await Project.open(directory)
+
+        if (program instanceof Project && program.config.buildCommand) line("build", program.config.buildCommand)
 
         const result = await installProgram(program, options)
 
@@ -52,15 +53,6 @@ export default async function install(options: InstallOptions = {}) {
     }
 
     finally { await prepared?.dispose() }
-}
-
-async function localProgram(directory: string) {
-
-    const config = await readConfig(directory)
-
-    await build(config, directory)
-
-    return derive(config, directory, "production")
 }
 
 export interface InstallOptions extends ProgramInstallationOptions {

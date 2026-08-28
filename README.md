@@ -10,8 +10,9 @@ active testing. The architecture's components will be released in stages as
 their contracts and integrations are verified.
 
 `@phreshos/cli` is not intended to be used independently of that architecture.
-Its Program commands depend on `@phreshos/core`, and its runtime operations
-require a compatible system installation.
+Its Program commands use `@phreshos/gateway`, whose `Project` model owns local
+project behavior and whose `system` value exposes the same Core contract used
+inside Server Programs. Runtime operations require a compatible System.
 
 ```bash
 phresh create app # create a complete new Program

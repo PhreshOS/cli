@@ -1,9 +1,10 @@
 # Contributing
 
-The CLI owns the `phresh` command language, Program project workflows, official
-System acquisition, and native background-service lifecycle. It consumes
-published contracts and release artifacts; it never reaches into another
-repository's source checkout.
+The CLI owns the `phresh` command language, official System acquisition, and
+native background-service lifecycle. Reusable Project and running-System
+operations belong to `@phreshos/gateway`; the CLI parses arguments and presents
+their results. It consumes published contracts and release artifacts and never
+reaches into another repository's source checkout.
 
 ## Development
 

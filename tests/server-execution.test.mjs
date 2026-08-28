@@ -2,38 +2,9 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join, resolve } from "node:path"
-import derive from "../dist/derive.js"
+import { join } from "node:path"
 import pack from "../dist/pack.js"
 import { readConfig } from "../dist/project.js"
-
-test("derives one Server execution mode without retaining the other", function () {
-  const directory = resolve("project")
-  const config = {
-    identity: "worker-program",
-    server: {
-      location: "dist/server",
-      entryFile: "main.js",
-      development: { startCommand: "tsx source/server/main.ts" }
-    }
-  }
-
-  assert.deepEqual(derive(config, directory, "production").server, {
-    location: join(directory, "dist", "server"),
-    start: undefined,
-    installCommand: undefined,
-    uninstallCommand: undefined,
-    entryFile: "main.js"
-  })
-
-  assert.deepEqual(derive(config, directory, "development").server, {
-    location: directory,
-    start: undefined,
-    installCommand: undefined,
-    uninstallCommand: undefined,
-    startCommand: "tsx source/server/main.ts"
-  })
-})
 
 test("packages entryFile as the installable worker declaration", async function () {
   const directory = await mkdtemp(join(tmpdir(), "phresh-worker-package-"))
