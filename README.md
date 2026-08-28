@@ -40,17 +40,6 @@ namespaces. System execution and native lifecycle remain isolated under
 
 ## System lifecycle
 
-Run a System project or prepared release directly while selecting an independent
-absolute state home:
-
-```bash
-PHRESHOS_HOME=/absolute/state phresh system .
-```
-
-When `PHRESHOS_HOME` is omitted here, the CLI passes `~/.phreshos`. Running the
-System project itself without the CLI instead defaults to that project's
-`storage/` directory.
-
 ```bash
 phresh system install
 phresh system uninstall

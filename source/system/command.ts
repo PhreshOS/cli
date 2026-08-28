@@ -3,7 +3,6 @@ import type { SystemStatus } from "./lifecycle.ts"
 import SystemLifecycle from "./lifecycle.ts"
 import prompts, { ReportedFailure } from "../prompts.ts"
 import { accent, caution, dim, negative, positive } from "../style.ts"
-import runSystem from "./run.ts"
 import { commandContract } from "../command-contract.ts"
 
 /** Attach the System lifecycle without mixing it with Program commands. */
@@ -14,17 +13,9 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
     const current = (): SystemLifecycle => lifecycle ?? (lifecycle = new SystemLifecycle())
 
     const system = commandContract(program.command("system")
-        .description("run, install, and manage the PhreshOS System")
-        .argument("[source]", "System project or prepared release to run directly")
-        .action(async function (source: string | undefined) {
-
-            if (!source) return system.help()
-
-            await runSystem(source)
-        }), {
+        .description("install and manage the PhreshOS System"), {
             guidance: [
-                "A source argument runs that System directly; it is resolved independently from PHRESHOS_HOME.",
-                "Without a source argument, choose one native lifecycle operation.",
+                "Choose one native System lifecycle operation.",
                 "Running-System Programs, Processes, Endpoints, and Windows are top-level capabilities, not System subcommands."
             ]
         })
