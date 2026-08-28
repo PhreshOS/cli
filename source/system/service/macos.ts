@@ -25,7 +25,9 @@ export default class MacOSSystemService implements SystemService {
 
         private readonly label = defaultLabel,
 
-        uid = process.getuid?.()
+        uid = process.getuid?.(),
+
+        private readonly environment: NodeJS.ProcessEnv = process.env
     ) {
 
         if (uid === undefined) throw new Error("The current macOS user could not be identified")
@@ -75,7 +77,7 @@ export default class MacOSSystemService implements SystemService {
 
         try {
 
-            await writeFile(temporary, plist(this.label, definition), { mode: 0o600 })
+            await writeFile(temporary, plist(this.label, definition, this.environment), { mode: 0o600 })
 
             await rename(temporary, this.plist)
         }
@@ -137,7 +139,9 @@ export default class MacOSSystemService implements SystemService {
     }
 }
 
-function plist(label: string, definition: SystemServiceDefinition) {
+function plist(label: string, definition: SystemServiceDefinition, environment: NodeJS.ProcessEnv) {
+
+    const path = environmentPath(environment)
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -153,6 +157,12 @@ ${definition.arguments.map(argument => `        <string>${xml(argument)}</string
     </array>
     <key>WorkingDirectory</key>
     <string>${xml(definition.directory)}</string>
+${path === undefined ? "" : `    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>${xml(path)}</string>
+    </dict>
+`}
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
@@ -169,6 +179,13 @@ ${definition.arguments.map(argument => `        <string>${xml(argument)}</string
 </dict>
 </plist>
 `
+}
+
+function environmentPath(environment: NodeJS.ProcessEnv) {
+
+    const key = Object.keys(environment).find(name => name.toLowerCase() === "path")
+
+    return key === undefined ? undefined : environment[key]
 }
 
 function xml(value: string) {

@@ -486,7 +486,7 @@ test("native adapters keep startup enablement separate from current execution", 
 
     try {
 
-        const mac = new MacOSSystemService(temporary, run, undefined, 501)
+        const mac = new MacOSSystemService(temporary, run, undefined, 501, { PATH: "/custom/bin:/usr/bin" })
 
         await mac.register(definition)
 
@@ -503,6 +503,8 @@ test("native adapters keep startup enablement separate from current execution", 
         const plist = await readFile(join(temporary, "Library", "LaunchAgents", "com.phreshos.system.plist"), "utf8")
 
         assert.match(plist, /<string>\/absolute\/node<\/string>/)
+
+        assert.match(plist, /<key>PATH<\/key>\s*<string>\/custom\/bin:\/usr\/bin<\/string>/)
 
         assert.equal(calls.some(args => args.includes("bootstrap") || args.includes("kickstart")), false)
 
