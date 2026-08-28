@@ -6,7 +6,7 @@
       "name": "@phreshos/cli",
       "dependencies": {
         "@clack/prompts": "^1.7.0",
-        "@phreshos/core": "^0.1.18",
+        "@phreshos/core": "^0.1.19",
         "adm-zip": "^0.6.0",
         "commander": "^15.0.0",
         "picocolors": "^1.1.1",
@@ -26,7 +26,7 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.146.0", "", {}, "sha512-XC0QsnnhVe7sLIWmYmdPw7x5P0h4W8vUU3Nv1ySgWXtvCz8NizoAEpGXA0sOYoJQV2Rl13LgURAHQ5cI5ILCSA=="],
 
-    "@phreshos/core": ["@phreshos/core@0.1.18", "", {}, "sha512-i7uPHI/reP0yd0rJ3wRqQunYAdJypFtZLq30WsiaDieB90Sj0a9estmvj5CVrGNXgAVqLeEXzjQX1sD8m8IsOQ=="],
+    "@phreshos/core": ["@phreshos/core@0.1.19", "", {}, "sha512-DaHmNQuou1E9O4Uzl3DUffrLMXTOjlMYNKPDQIjKjBLW6xEJw47pcznnIKu2kDyZTVIxmyj7ZJB96Gk6v490Pg=="],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.5", "", { "os": "android", "cpu": "arm" }, "sha512-DLe/i+l8ynIBY7XEQ191TeZvCoowIGa18R+dIV30GW7DiOtp74i/xX8hs8GUjW5ARV7VZuie3d6AumSmCwbeRA=="],
 
