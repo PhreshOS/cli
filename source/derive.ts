@@ -1,4 +1,4 @@
-import type { Config } from "@phreshos/core"
+import type { Config, ServerExecution } from "@phreshos/core"
 import { resolve } from "node:path"
 
 /**
@@ -48,6 +48,8 @@ export default function derive(config: Config, directory: string, which: Which) 
             "        …",
 
             "        development: { startCommand: \"tsx source/server/main.ts\" }",
+
+            "        // or: development: { entryFile: \"source/server/main.js\" }",
 
             "    }",
 
@@ -103,7 +105,7 @@ export default function derive(config: Config, directory: string, which: Which) 
 
             uninstallCommand: config.server?.uninstallCommand,
 
-            startCommand: server.startCommand
+            ...serverExecution(server)
         } },
 
         // A URL stands as written; a directory is made absolute. The
@@ -135,18 +137,32 @@ function serverHalf(half: Config["server"], which: Which) {
 
     if (!half) return null
 
-    const { development, ...declared } = half
+    const { development, startCommand, entryFile, ...description } = half
 
-    if (which === "production" || !development) return declared
+    if (which === "production" || !development) return {
+
+        ...description,
+
+        ...serverExecution({ startCommand, entryFile } as ServerExecution)
+    }
 
     return {
 
-        ...declared,
+        ...description,
 
         location: ".",
 
-        startCommand: development.startCommand
+        ...serverExecution(development)
     }
+}
+
+function serverExecution(server: ServerExecution) {
+
+    return server.startCommand !== undefined
+
+        ? { startCommand: server.startCommand }
+
+        : { entryFile: server.entryFile }
 }
 
 function clientHalf(half: Config["client"], which: Which) {

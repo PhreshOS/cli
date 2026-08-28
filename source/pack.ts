@@ -1,4 +1,4 @@
-import type { Config } from "@phreshos/core"
+import type { Config, ServerExecution } from "@phreshos/core"
 import { readConfig, readManifest } from "./project.ts"
 import { createHash } from "node:crypto"
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs"
@@ -109,10 +109,30 @@ function program(config: Config, version: string | undefined) {
 
         website: config.website,
 
-        ...config.server && { server: { location: "server", start: config.server.start, installCommand: config.server.installCommand, uninstallCommand: config.server.uninstallCommand, startCommand: config.server.startCommand } },
+        ...config.server && { server: {
+
+            location: "server",
+
+            start: config.server.start,
+
+            installCommand: config.server.installCommand,
+
+            uninstallCommand: config.server.uninstallCommand,
+
+            ...serverExecution(config.server)
+        } },
 
         ...config.client && { client: { location: "client", start: config.client.start, title: config.client.title, size: config.client.size, position: config.client.position, layer: config.client.layer, minimize: config.client.minimize } }
     }
+}
+
+function serverExecution(server: ServerExecution) {
+
+    return server.startCommand !== undefined
+
+        ? { startCommand: server.startCommand }
+
+        : { entryFile: server.entryFile }
 }
 
 // What is at a half's location, where the package keeps it. A half that

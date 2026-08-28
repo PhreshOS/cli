@@ -100,7 +100,11 @@ describe(
 
         .option("--server-start-command <command>", "production Server command")
 
+        .option("--server-entry-file <path>", "production Server worker entry")
+
         .option("--server-development-start-command <command>", "development Server command")
+
+        .option("--server-development-entry-file <path>", "development Server worker entry")
 
         .option("--client", "include a Client endpoint")
 
@@ -120,13 +124,17 @@ describe(
 
                 buildCommand: options.buildCommand,
 
-                server: options.server === true || options.serverLocation !== undefined || options.serverStartCommand !== undefined,
+                server: options.server === true || options.serverLocation !== undefined || options.serverStartCommand !== undefined || options.serverEntryFile !== undefined,
 
                 serverLocation: options.serverLocation,
 
                 serverStartCommand: options.serverStartCommand,
 
+                serverEntryFile: options.serverEntryFile,
+
                 serverDevelopmentStartCommand: options.serverDevelopmentStartCommand,
+
+                serverDevelopmentEntryFile: options.serverDevelopmentEntryFile,
 
                 client: options.client === true || options.clientLocation !== undefined,
 
@@ -368,7 +376,11 @@ interface InitCommandOptions {
 
     serverStartCommand?: string
 
+    serverEntryFile?: string
+
     serverDevelopmentStartCommand?: string
+
+    serverDevelopmentEntryFile?: string
 
     client?: boolean
 

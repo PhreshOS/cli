@@ -1,6 +1,6 @@
 import { isRelativeValue, layers, type Config, type Position, type Size } from "@phreshos/core"
 import { existsSync } from "node:fs"
-import { resolve } from "node:path"
+import { isAbsolute, normalize, resolve, sep } from "node:path"
 import { pathToFileURL } from "node:url"
 
 export const configFile = "phresh.config.ts"
@@ -84,7 +84,7 @@ function coherent(config: Config) {
 
     if (!(config.server && (config.server.start ?? true)) && !(config.client && (config.client.start ?? true))) throw new Error("A Program's default Process must start a server endpoint, a client endpoint, or both")
 
-    if (config.server && (typeof config.server.startCommand !== "string" || config.server.startCommand.length === 0)) throw new Error("A server half must say what starts it")
+    if (config.server) execution(config.server, "A server half")
 
     if (config.server?.installCommand !== undefined && typeof config.server.installCommand !== "string") throw new Error("A server half's install command must be text")
 
@@ -109,7 +109,7 @@ function coherent(config: Config) {
 
     if (serverDevelopment !== undefined && (typeof serverDevelopment !== "object" || serverDevelopment === null || Array.isArray(serverDevelopment))) throw new Error("server.development must be a declaration")
 
-    if (serverDevelopment !== undefined && (typeof serverDevelopment.startCommand !== "string" || serverDevelopment.startCommand.trim().length === 0)) throw new Error("server.development.startCommand must be non-empty text")
+    if (serverDevelopment !== undefined) execution(serverDevelopment, "server.development")
 
     const clientDevelopment = config.client?.development
 
@@ -129,6 +129,30 @@ function coherent(config: Config) {
 
         if (!pair.every(isRelativeValue)) throw new Error(`A window's ${what} is a finite pixel number or a relative expression such as "50% + 10"`)
     }
+}
+
+function execution(value: { startCommand?: unknown, entryFile?: unknown }, owner: string) {
+
+    const command = typeof value.startCommand === "string" && value.startCommand.trim().length > 0
+
+    const entry = typeof value.entryFile === "string" && value.entryFile.trim().length > 0
+
+    if (value.startCommand !== undefined && !command) throw new Error(`${owner}'s startCommand must be non-empty text`)
+
+    if (value.entryFile !== undefined && !entry) throw new Error(`${owner}'s entryFile must be a non-empty path`)
+
+    if (command === entry) throw new Error(`${owner} must declare exactly one non-empty startCommand or entryFile`)
+
+    if (entry && !containedServerEntry(value.entryFile as string)) throw new Error(`${owner}'s entryFile must remain inside its Server directory`)
+}
+
+export function containedServerEntry(entry: string) {
+
+    if (isAbsolute(entry)) return false
+
+    const path = normalize(entry)
+
+    return path !== ".." && !path.startsWith(`..${sep}`)
 }
 
 function httpUrl(value: unknown) {

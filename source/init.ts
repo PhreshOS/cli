@@ -1,5 +1,5 @@
 import { type ClientConfig, type Config, type ServerConfig } from "@phreshos/core"
-import { configFile, readManifest } from "./project.ts"
+import { configFile, containedServerEntry, readManifest } from "./project.ts"
 import { dim } from "./style.ts"
 import ensureProjectDependency, { projectScript } from "./project-dependency.ts"
 import prompts from "./prompts.ts"
@@ -86,13 +86,15 @@ export default async function init(options: InitOptions = {}, directory = proces
 
         const location = options.serverLocation ?? (interactive ? await ask("The system runs the production Server from this project-relative directory.", "Where are the production Server files?", clientSelected ? "dist/server" : "dist") : "")
 
-        const startCommand = options.serverStartCommand ?? (interactive ? await ask("This command runs inside the production Server directory.", "What command starts the production Server?", "node main.js") : "")
-
         if (!location) throw new Error("--server-location is required without a terminal")
 
-        if (!startCommand) throw new Error("--server-start-command is required without a terminal")
+        const production = options.serverStartCommand === undefined && options.serverEntryFile === undefined && interactive
 
-        let development = options.serverDevelopmentStartCommand
+            ? await askExecution(interaction, "production", "node main.js")
+
+            : execution(options.serverStartCommand, options.serverEntryFile, "production Server")
+
+        let development = explicitExecution(options.serverDevelopmentStartCommand, options.serverDevelopmentEntryFile, "development Server")
 
         if (interactive && development === undefined) {
 
@@ -100,13 +102,11 @@ export default async function init(options: InitOptions = {}, directory = proces
 
             if (await yes("Development mode can run the Server directly from the project source.", "Run the Server from source during development?", Boolean(suggested && !clientSelected))) {
 
-                development = await ask("This command remains attached to the phresh dev session.", "What command starts the development Server?", suggested || undefined)
+                development = await askExecution(interaction, "development", suggested || undefined)
             }
         }
 
-        if (development !== undefined && development.trim().length === 0) throw new Error("A server development command must not be empty")
-
-        server = { location, startCommand, ...development && { development: { startCommand: development } } }
+        server = { location, ...production, ...development && { development } }
     }
 
     let client: ClientConfig | undefined
@@ -175,7 +175,7 @@ export default async function init(options: InitOptions = {}, directory = proces
 
     writeFileSync(path, compose(config))
 
-    if (config.server) interaction.detail("server", config.server.startCommand, `./${config.server.location}`)
+    if (config.server) interaction.detail(config.server.startCommand ? "server" : "server worker", config.server.startCommand ?? config.server.entryFile, `./${config.server.location}`)
 
     if (config.client) interaction.detail("client", `./${config.client.location}`)
 
@@ -215,7 +215,11 @@ function compose(config: Config) {
 
             location: config.server.location,
 
-            startCommand: config.server.startCommand,
+            ...(config.server.startCommand !== undefined
+
+                ? { startCommand: config.server.startCommand }
+
+                : { entryFile: config.server.entryFile }),
 
             ...config.server.development && { development: config.server.development }
         }),
@@ -289,7 +293,11 @@ export interface InitOptions {
 
     serverStartCommand?: string
 
+    serverEntryFile?: string
+
     serverDevelopmentStartCommand?: string
+
+    serverDevelopmentEntryFile?: string
 
     client?: boolean
 
@@ -308,10 +316,59 @@ interface ComposedHalf {
 
     startCommand?: string
 
+    entryFile?: string
+
     development?: {
 
         url?: string
 
         startCommand?: string
+
+        entryFile?: string
+    }
+}
+
+function execution(startCommand: string | undefined, entryFile: string | undefined, owner: string) {
+
+    const selected = explicitExecution(startCommand, entryFile, owner)
+
+    if (!selected) throw new Error(`Choose exactly one --server-start-command or --server-entry-file for the ${owner}`)
+
+    return selected
+}
+
+function explicitExecution(startCommand: string | undefined, entryFile: string | undefined, owner: string) {
+
+    if (startCommand !== undefined && entryFile !== undefined) throw new Error(`The ${owner} cannot declare both a start command and an entry file`)
+
+    if (startCommand !== undefined) {
+
+        if (startCommand.trim().length === 0) throw new Error(`The ${owner} command must not be empty`)
+
+        return { startCommand }
+    }
+
+    if (entryFile !== undefined) {
+
+        if (entryFile.trim().length === 0) throw new Error(`The ${owner} entry file must not be empty`)
+
+        if (!containedServerEntry(entryFile)) throw new Error(`The ${owner} entry file must remain inside its Server directory`)
+
+        return { entryFile }
+    }
+}
+
+async function askExecution(interaction: ReturnType<typeof prompts>, mode: "production" | "development", suggestedCommand?: string) {
+
+    const worker = await interaction.yes("A Worker uses fewer resources but shares the System's Node.js process.", `Run the ${mode} Server as a System-owned Worker?`, false)
+
+    if (worker) return {
+
+        entryFile: await interaction.ask("This JavaScript module remains inside the Server files.", `What is the ${mode} Server entry file?`, mode === "production" ? "main.js" : "source/server/main.js")
+    }
+
+    return {
+
+        startCommand: await interaction.ask(`This command runs from the ${mode === "production" ? "production Server directory" : "project directory"}.`, `What command starts the ${mode} Server?`, suggestedCommand)
     }
 }

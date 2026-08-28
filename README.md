@@ -146,7 +146,7 @@ rule everything else here follows from.
 
 It follows that every field which lands in a `program.json` is spelled
 the way the contract spells it and crosses untouched: `size`, not a
-width and a height; `startCommand`, not a command.
+width and a height; `startCommand` or `entryFile`, not a generic command.
 
 An optional top-level `buildCommand` is authoring metadata. `phresh start`,
 `phresh install`, and `phresh pack` run it from this project before consuming
@@ -244,10 +244,18 @@ Say how the server runs or where the client is served:
 ```
 
 Each half may carry a `development` block, but the two shapes are deliberately
-different. A server block requires `startCommand`; `phresh dev` runs it from the
-directory containing `phresh.config.ts`, and that directory becomes the derived
-server location. A client block requires an HTTP(S) `url`; development clients
+different. A Server and its development block each select exactly one of
+`startCommand` or `entryFile`. A command starts an isolated operating-system
+process tree; an entry module runs as a Worker owned by the System. In
+development, the directory containing `phresh.config.ts` becomes the derived
+Server location. A client block requires an HTTP(S) `url`; development clients
 are never resolved from filesystem paths.
+
+An `entryFile` is a path inside its Server location. Packaging copies it with
+the rest of that directory, and the System rejects a path that escapes those
+files. A Worker has no independent process working directory and is not a
+security boundary; resolve module-owned resources with `import.meta.url` and
+use the Server SDK for Program storage.
 
 The client development shape may also declare `startCommand`. `phresh dev`
 runs it from the project directory as a foreground development tool; the
@@ -267,9 +275,10 @@ identity, version, and description from `package.json`, ensures the project has
 the matching `@phreshos/core` development dependency, and writes the typed
 `phresh.config.ts` authoring description.
 
-In a terminal, `init` asks for the production locations and commands needed by
-`start` and `install`, including whether a package build should prepare those
-locations. It then offers the development command and URL needed by `dev`.
+In a terminal, `init` asks for the production locations and Server execution
+modes needed by `start` and `install`, including whether a package build should
+prepare those locations. It then offers the development Server mode, Client
+command, and URL needed by `dev`.
 Existing `build` and `dev` package scripts become editable suggestions, never
 silent assumptions. A single Endpoint defaults to `dist`; when both Endpoints
 exist, their defaults are `dist/server` and `dist/client`. API documentation is

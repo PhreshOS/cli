@@ -58,7 +58,7 @@ export default async function launch(which: Which, directory = process.cwd(), op
 
     heading(`${program.name ?? program.identity}${program.version ? ` ${program.version}` : ""}`, which)
 
-    if (program.server) line("server", String(program.server.startCommand), place(directory, program.server.location))
+    if (program.server) line(program.server.startCommand ? "server" : "server worker", String(program.server.startCommand ?? program.server.entryFile), place(directory, program.server.location))
 
     if (program.client) line("client", clientStartCommand ?? place(directory, program.client.location), clientStartCommand ? place(directory, program.client.location) : undefined)
 
