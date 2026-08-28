@@ -70,7 +70,7 @@ test("System status reports only its version, desktop, service, and startup stat
 
     assert.match(visible, /startup\s+enabled/)
 
-    for (const hidden of ["installation", "process", "intake", "files", "log", "123", "/system"]) assert.doesNotMatch(visible, new RegExp(hidden))
+    for (const hidden of ["installation", "process", "gateway", "files", "log", "123", "/system"]) assert.doesNotMatch(visible, new RegExp(hidden))
 
     const lines = visible.split("\n")
 
@@ -180,7 +180,7 @@ function state(overrides = {}) {
 
         root: "/system",
 
-        intake: "/state/intake.sock",
+        gateway: "/state/gateway.sock",
 
         log: "/state/service.log",
 

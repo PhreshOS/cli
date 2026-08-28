@@ -9,6 +9,9 @@ import init from "./init.ts"
 import pack from "./pack.ts"
 import uninstall from "./uninstall.ts"
 import systemCommands from "./system/command.ts"
+import controlCommands from "./control-command.ts"
+import describeCommands from "./describe-command.ts"
+import { commandContract } from "./command-contract.ts"
 
 const { version } = metadata
 
@@ -34,6 +37,8 @@ const program = new Command()
 
         writeErr: value => process.stderr.write(spaced(value))
     })
+
+commandContract(program)
 
 program.addHelpText("after", "\nRun phresh <command> --help for detailed command guidance.\n")
 
@@ -195,18 +200,22 @@ describe(
 
     program.command("uninstall")
 
-        .description("uninstall this Program")
+        .description("uninstall a local or installed Program")
+
+        .argument("[name]", "name of an installed Program")
 
         .option("--everything", "also remove Processes, data, and runtime state")
 
-        .action(async function (options: UninstallCommandOptions) {
+        .action(async function (name: string | undefined, options: UninstallCommandOptions) {
 
-            await uninstall(options.everything === true)
+            await uninstall({ name, everything: options.everything === true })
         }),
 
     [
 
-        "Removes the installed Program files while preserving its Processes, data,",
+        "Without a name, uses the Program declared by this project. Removes its",
+
+        "installed files while preserving its Processes, data,",
 
         "and runtime Program. --everything removes all system-owned state."
     ]
@@ -247,6 +256,10 @@ attached(
 )
 
 systemCommands(program)
+
+controlCommands(program)
+
+describeCommands(program)
 
 // Every command begins with the same breathing room. Keep this at the entry
 // point so individual commands never need to manufacture their own opening.
@@ -304,6 +317,8 @@ function attached(name: string, summary: string, detail: string[], mode: "produc
 function describe(command: Command, paragraphs: string[]) {
 
     command.addHelpText("after", `\n${paragraphs.map(line => line ? `  ${line}` : "").join("\n")}\n`)
+
+    commandContract(command, { guidance: paragraphs.filter(Boolean) })
 
     return command
 }

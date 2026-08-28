@@ -11,7 +11,7 @@ import build from "./build-command.ts"
  * A local project is built and derived from its authoring declaration. An
  * official name resolves a verified production package and turns its
  * canonical paths into the same concrete description. From that point on,
- * both sources cross the exact same intake and the System performs the exact
+ * both sources cross the exact same gateway and the System performs the exact
  * same authoritative installation.
  *
  * When the author config declares `buildCommand`, it runs here before the

@@ -16,7 +16,8 @@ const paths = {
 
     storage: join(temporary, "state"),
 
-    intake: join(temporary, "state", "intake.sock"),
+    gateway: join(temporary, "state", "gateway.sock"),
+    homeRequest: join(temporary, "system", "next-home"),
 
     log: join(temporary, "state", "service.log")
 }

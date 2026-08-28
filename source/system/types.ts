@@ -8,7 +8,11 @@ export interface SystemPaths {
 
     storage: string
 
-    intake: string
+    gateway: string
+
+    homeRequest: string
+
+    transientHome?: string
 
     log: string
 }
@@ -45,6 +49,8 @@ export interface SystemServiceDefinition {
     executable: string
 
     entry: string
+
+    arguments: string[]
 
     directory: string
 

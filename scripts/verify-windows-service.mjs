@@ -18,7 +18,7 @@ try {
 
     await writeFile(entry, "console.log('ready'); setInterval(() => undefined, 1000)\n")
 
-    await service.register({ executable: process.execPath, entry, directory: temporary, output })
+    await service.register({ executable: process.execPath, entry, arguments: [], directory: temporary, output })
 
     await service.disable()
 

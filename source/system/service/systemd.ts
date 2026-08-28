@@ -126,7 +126,7 @@ Description=PhreshOS System
 
 [Service]
 Type=simple
-ExecStart=${quote(definition.executable)} ${quote(definition.entry)}
+ExecStart=${[definition.executable, definition.entry, ...definition.arguments].map(quote).join(" ")}
 WorkingDirectory=${setting(definition.directory)}
 Restart=on-failure
 RestartSec=2

@@ -8,7 +8,7 @@ const output = await open(payload.definition.output, "a", 0o600)
 
 try {
 
-    const child = spawn(payload.definition.executable, [payload.definition.entry], {
+    const child = spawn(payload.definition.executable, [payload.definition.entry, ...payload.definition.arguments], {
 
         cwd: payload.definition.directory,
 
@@ -69,6 +69,8 @@ function definition(value: unknown): value is SystemServiceDefinition {
     const candidate = value as Record<string, unknown>
 
     return ["executable", "entry", "directory", "output"].every(name => typeof candidate[name] === "string" && candidate[name] !== "")
+        && Array.isArray(candidate.arguments)
+        && candidate.arguments.every(value => typeof value === "string")
 }
 
 interface RunnerPayload {

@@ -1,4 +1,4 @@
-import speak, { socketPath } from "./program-intake.ts"
+import { gatewayPath, streamProgram } from "./gateway.ts"
 
 /**
  * Run a program on this machine's system, and stay with it.
@@ -12,11 +12,11 @@ import speak, { socketPath } from "./program-intake.ts"
  * end — when the program ends, the system says so and closes, and this
  * resolves with the program's own status.
  */
-export default async function attach(program: unknown, options: Record<string, string> = {}, watching: Watching = {}, path = socketPath, signal?: AbortSignal) {
+export default async function attach(program: unknown, options: Record<string, string> = {}, watching: Watching = {}, path = gatewayPath(), signal?: AbortSignal) {
 
     let ended: Ended | null = null
 
-    await speak({ word: "run", program, options }, function (event) {
+    await streamProgram({ word: "run", program, options }, function (event) {
 
         if (event.event === "started") watching.started?.(String(event.process))
 

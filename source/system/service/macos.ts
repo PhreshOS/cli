@@ -149,6 +149,7 @@ function plist(label: string, definition: SystemServiceDefinition) {
     <array>
         <string>${xml(definition.executable)}</string>
         <string>${xml(definition.entry)}</string>
+${definition.arguments.map(argument => `        <string>${xml(argument)}</string>`).join("\n")}
     </array>
     <key>WorkingDirectory</key>
     <string>${xml(definition.directory)}</string>

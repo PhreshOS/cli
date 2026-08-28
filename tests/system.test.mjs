@@ -15,7 +15,7 @@ import MacOSSystemService from "../dist/system/service/macos.js"
 import LinuxSystemService from "../dist/system/service/linux.js"
 import WindowsSystemService from "../dist/system/service/windows.js"
 import { minimumSystemNodeVersion, supportsSystemNode } from "../dist/system/node.js"
-import intakeAddress from "../dist/intake-address.js"
+import { gatewayPath } from "../dist/gateway.js"
 import npmInvocation from "../dist/system/npm.js"
 
 test("requires the Node release that provides the supported built-in SQLite API", function () {
@@ -75,18 +75,24 @@ test("keeps installation files separate from persistent System state", function 
 
     assert.equal(paths.root, join("/Users/person", "Library", "Application Support", "PhreshOS", "System"))
 
-    assert.equal(paths.intake, join("/Users/person", ".phreshos", "intake.sock"))
+    assert.equal(paths.storage, "/temporary")
+
+    assert.equal(paths.gateway, join("/temporary", "gateway.sock"))
+
+    assert.equal(paths.transientHome, "/temporary")
+
+    assert.equal(paths.homeRequest, join(paths.root, "next-home"))
 })
 
 test("gives each Windows user or isolated instance one stable named pipe", function () {
 
-    const first = intakeAddress("C:\\Users\\Person\\.phreshos", "win32")
+    const first = gatewayPath("C:\\Users\\Person\\.phreshos", "win32")
 
-    assert.match(first, /^\\\\\.\\pipe\\phreshos-[a-f0-9]{32}-intake$/)
+    assert.match(first, /^\\\\\.\\pipe\\phreshos-[a-f0-9]{32}-gateway$/)
 
-    assert.equal(first, intakeAddress("c:/users/person/.phreshos/", "win32"))
+    assert.equal(first, gatewayPath("c:/users/person/.phreshos/", "win32"))
 
-    assert.notEqual(first, intakeAddress("C:\\Users\\Other\\.phreshos", "win32"))
+    assert.notEqual(first, gatewayPath("C:\\Users\\Other\\.phreshos", "win32"))
 })
 
 test("runs Windows npm through Node instead of a command-shell shim", function () {
@@ -115,7 +121,9 @@ test("stages, validates, activates, and reads one production distribution", asyn
 
         storage: join(temporary, "storage"),
 
-        intake: join(temporary, "storage", "intake.sock"),
+        gateway: join(temporary, "storage", "gateway.sock"),
+
+        homeRequest: join(temporary, "system", "next-home"),
 
         log: join(temporary, "storage", "service.log")
     }
@@ -174,7 +182,9 @@ test("serializes operations that can change installation or service state", asyn
 
         storage: join(temporary, "storage"),
 
-        intake: join(temporary, "storage", "intake.sock"),
+        gateway: join(temporary, "storage", "gateway.sock"),
+
+        homeRequest: join(temporary, "system", "next-home"),
 
         log: join(temporary, "storage", "service.log")
     }
@@ -222,7 +232,9 @@ test("rolls installation back when the native service cannot start", async funct
 
         storage: "/state",
 
-        intake: "/state/intake.sock",
+        gateway: "/state/gateway.sock",
+
+        homeRequest: "/installation/next-home",
 
         log: "/state/service.log"
     }
@@ -294,6 +306,8 @@ test("rolls installation back when the native service cannot start", async funct
 
     assert.equal(registered.entry, join("/installation/current", "server", "main.js"))
 
+    assert.deepEqual(registered.arguments.slice(-2), ["--home-request", "/installation/next-home"])
+
     assert.deepEqual(events.slice(-3), ["stop", "rollback", "unregister"])
 })
 
@@ -319,7 +333,9 @@ test("provisions Setup after the System commits and before installation returns"
 
             storage: "/state",
 
-            intake: "/state/intake.sock",
+            gateway: "/state/gateway.sock",
+
+            homeRequest: "/installation/next-home",
 
             log: "/state/service.log"
         },
@@ -432,6 +448,8 @@ test("native adapters keep startup enablement separate from current execution", 
 
         entry: "/absolute/system/server/main.js",
 
+        arguments: [],
+
         directory: "/absolute/system",
 
         output: join(temporary, "state", "service.log")
@@ -543,6 +561,8 @@ test("Windows keeps scheduled startup separate from current execution", async fu
 
         entry: "C:\\People & Work\\System\\server\\main.js",
 
+        arguments: [],
+
         directory: "C:\\People & Work\\System",
 
         output: join(temporary, "state with spaces", "service.log")
@@ -624,7 +644,7 @@ test("Linux containers without systemd run one detached user service", async fun
 
         const implementation = pathToFileURL(resolve("dist/system/service/background.js")).href
 
-        await writeFile(launcher, `import Service from ${JSON.stringify(implementation)}\nconst service = new Service(${JSON.stringify(temporary)})\nawait service.register(${JSON.stringify({ executable: process.execPath, entry, directory: temporary, output })})\nawait service.start()\n`)
+        await writeFile(launcher, `import Service from ${JSON.stringify(implementation)}\nconst service = new Service(${JSON.stringify(temporary)})\nawait service.register(${JSON.stringify({ executable: process.execPath, entry, arguments: [], directory: temporary, output })})\nawait service.start()\n`)
 
         execFileSync(process.execPath, [launcher])
 

@@ -72,7 +72,7 @@ export default class BackgroundSystemService implements SystemService {
 
         try {
 
-            const child = spawn(definition.executable, [definition.entry], {
+            const child = spawn(definition.executable, [definition.entry, ...definition.arguments], {
 
                 cwd: definition.directory,
 
@@ -219,4 +219,6 @@ function definition(value: unknown): value is SystemServiceDefinition {
     const candidate = value as Record<string, unknown>
 
     return ["executable", "entry", "directory", "output"].every(name => typeof candidate[name] === "string" && candidate[name] !== "")
+        && Array.isArray(candidate.arguments)
+        && candidate.arguments.every(value => typeof value === "string")
 }

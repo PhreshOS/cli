@@ -27,7 +27,7 @@ try {
 
     const service = new LinuxSystemService(temporary, success)
 
-    await service.register({ executable: process.execPath, entry, directory: temporary, output })
+    await service.register({ executable: process.execPath, entry, arguments: [], directory: temporary, output })
 
     const unit = join(temporary, ".config", "systemd", "user", "phreshos.service")
 

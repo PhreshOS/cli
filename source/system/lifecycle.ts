@@ -2,13 +2,16 @@ import type { InstalledSystem, SystemService, SystemServiceDefinition } from "./
 import type { PreparedSystem, SystemActivation } from "./installation.ts"
 import SystemInstallation from "./installation.ts"
 import { downloadSystemRelease, resolveSystemRelease } from "./release.ts"
-import { intakeReady, waitForIntake } from "./readiness.ts"
+import { gatewayReady, waitForGateway } from "./gateway-readiness.ts"
 import systemPaths from "./paths.ts"
 import systemService from "./service/index.ts"
 import nodeExecutable from "./node.ts"
 import installProgram from "../install.ts"
+import phreshosHome from "../home.ts"
 import { existsSync } from "node:fs"
-import { join } from "node:path"
+import { mkdir, rm, writeFile } from "node:fs/promises"
+import { homedir } from "node:os"
+import { dirname, join } from "node:path"
 
 export interface SystemStatus {
 
@@ -30,7 +33,7 @@ export interface SystemStatus {
 
     root: string
 
-    intake: string
+    gateway: string
 
     log: string
 }
@@ -73,9 +76,9 @@ export default class SystemLifecycle {
 
             downloadRelease: dependencies?.downloadRelease ?? downloadSystemRelease,
 
-            ready: dependencies?.ready ?? intakeReady,
+            ready: dependencies?.ready ?? gatewayReady,
 
-            wait: dependencies?.wait ?? waitForIntake,
+            wait: dependencies?.wait ?? waitForGateway,
 
             provisionSetup: dependencies?.provisionSetup ?? provisionSetup
         }
@@ -110,7 +113,7 @@ export default class SystemLifecycle {
 
             if ((await service.inspect()).automaticStartup) await service.enable()
 
-            await service.start()
+            await this.launchService()
 
             await this.waitUntilReady()
 
@@ -127,7 +130,7 @@ export default class SystemLifecycle {
         }
 
         // The System transaction is complete before a Program crosses its
-        // live intake. A provisioning failure therefore leaves a healthy
+        // live gateway. A provisioning failure therefore leaves a healthy
         // System available for a retry instead of rolling it back around a
         // separate Program installation that may already have succeeded.
         try { await this.dependencies.provisionSetup() }
@@ -171,7 +174,7 @@ export default class SystemLifecycle {
 
         await this.requireInstalledService()
 
-        await this.dependencies.service.start()
+        await this.launchService()
 
         await this.waitUntilReady()
 
@@ -226,7 +229,7 @@ export default class SystemLifecycle {
 
         const [installed, state] = await Promise.all([installation.current(), service.inspect()])
 
-        const ready = state.running && await this.dependencies.ready(installation.paths.intake)
+        const ready = state.running && await this.dependencies.ready(installation.paths.gateway)
 
         return {
 
@@ -240,7 +243,7 @@ export default class SystemLifecycle {
 
             root: installation.paths.root,
 
-            intake: installation.paths.intake,
+            gateway: installation.paths.gateway,
 
             log: installation.paths.log
         }
@@ -266,7 +269,7 @@ export default class SystemLifecycle {
 
         try {
 
-            await this.dependencies.wait(installation.paths.intake, async () => (await service.inspect()).running)
+            await this.dependencies.wait(installation.paths.gateway, async () => (await service.inspect()).running)
         }
 
         catch (error) {
@@ -317,7 +320,7 @@ export default class SystemLifecycle {
 
         if (state.running) {
 
-            await service.start()
+            await this.launchService()
 
             await this.waitUntilReady()
         }
@@ -337,6 +340,27 @@ export default class SystemLifecycle {
 
         throw error
     }
+
+    private async launchService() {
+
+        const { installation, service } = this.dependencies
+        const { homeRequest, transientHome } = installation.paths
+
+        await rm(homeRequest, { force: true })
+
+        if (transientHome) {
+
+            await mkdir(dirname(homeRequest), { recursive: true })
+            await writeFile(homeRequest, transientHome, { mode: 0o600 })
+        }
+
+        try { await service.start() }
+        catch (error) {
+
+            await rm(homeRequest, { force: true })
+            throw error
+        }
+    }
 }
 
 async function provisionSetup() {
@@ -351,6 +375,13 @@ function definition(installation: SystemInstallation, executable: string): Syste
         executable,
 
         entry: join(installation.paths.current, "server", "main.js"),
+
+        arguments: [
+            "--default-home",
+            phreshosHome({}, homedir()),
+            "--home-request",
+            installation.paths.homeRequest
+        ],
 
         directory: installation.paths.current,
 

@@ -1,4 +1,4 @@
-import speak from "./program-intake.ts"
+import { streamProgram } from "./gateway.ts"
 import writeProgramCommandOutput from "./program-command-output.ts"
 
 export interface ProgramInstallationOptions {
@@ -37,7 +37,7 @@ export default async function installProgram(program: unknown, options: ProgramI
 
     let processValue: unknown
 
-    await speak({
+    await streamProgram({
 
         word: "install",
 

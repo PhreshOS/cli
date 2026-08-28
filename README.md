@@ -22,20 +22,34 @@ phresh uninstall # remove its installed form
 phresh start    # run what your build left, and stay with it
 phresh dev      # run from source, and stay with it
 phresh system status # inspect the local System and its background service
+phresh program list # inspect authoritative state in the running System
+phresh describe endpoint ask # read one capability's exact contract
 ```
 
 `phresh --help` lists them, `phresh <command> --help` explains one, and
-`phresh --version` says which CLI you have. Nothing is guessed: an
+`phresh --version` says which CLI you have. `phresh describe [path...]` exposes
+the same complete command tree as machine-readable contracts. Nothing is guessed: an
 unknown command, an unknown flag and a malformed option are each refused
 and named.
 
-Every top-level Program command acts on the current project, and that list ends
-there. It accepts no arbitrary Program identity and has no word for a Process,
-Window, store, or setting. Machine lifecycle is isolated under `phresh system`;
-it manages the System installation and native service, not the state inside the
-System.
+Program authoring commands act on the current project when no Program name is
+provided. `install` and `uninstall` accept a direct Program name. Running-System
+capabilities live in the top-level `program`, `process`, `endpoint`, and `window`
+namespaces. System execution and native lifecycle remain isolated under
+`phresh system`.
 
 ## System lifecycle
+
+Run a System project or prepared release directly while selecting an independent
+absolute state home:
+
+```bash
+PHRESHOS_HOME=/absolute/state phresh system .
+```
+
+When `PHRESHOS_HOME` is omitted here, the CLI passes `~/.phreshos`. Running the
+System project itself without the CLI instead defaults to that project's
+`storage/` directory.
 
 ```bash
 phresh system install
@@ -70,7 +84,7 @@ changing them; `version` reports only the installed System release.
 
 Installation files and persistent System state have separate homes. Removing
 the System unregisters its service and removes its release files while keeping
-`~/.phreshos`, including Programs and owner data. Local Program intake uses an
+`~/.phreshos`, including Programs and owner data. The owner-local gateway uses an
 owner-only socket file on POSIX and an owner-created duplex named pipe on
 Windows; neither becomes a network endpoint or introduces a bearer secret.
 
@@ -297,9 +311,9 @@ say `start: false`.
 Both **run your program without installing it, and stay attached.** They
 print the `program.json` it will be declared as, hand that to the system
 through the socket below the selected system home. With no override, that is
-`~/.phreshos/intake.sock`. Set `PHRESHOS_HOME` to an absolute system home to
+`~/.phreshos/gateway.sock`. Set `PHRESHOS_HOME` to an absolute system home to
 address another system instance; the CLI derives
-`<PHRESHOS_HOME>/intake.sock` from it. The socket is not selected
+`<PHRESHOS_HOME>/gateway.sock` from it. The socket is not selected
 separately from its instance. Only your account can open it, so nothing is
 sent to prove anything, and then the command holds.
 
@@ -326,7 +340,7 @@ untouched while the attached Program becomes the sole runtime occupant. Its
 root process tethers the whole Program to this command; when it exits, remaining
 processes end and the runtime record disappears. A later `phresh install` can
 replace the preserved installed files and immediately register the identity as
-installed again. If no system is listening, the intake says so plainly rather
+installed again. If no system is listening, the gateway says so plainly rather
 than exposing `ENOENT`.
 
 An attached Program still owns persistent project storage. The authoring tool
@@ -354,14 +368,18 @@ beside your source. A client development URL remains the URL the author wrote.
 
 ```bash
 phresh install   # this project, laid out on this machine
+phresh install flambo   # the official Flambo Program
 ```
 
-**It takes no package, and neither does the system.** What is sent is
+Without a name, what is sent is
 the description this directory derives, and the system copies what it
 names into place — your program's parts are already on this disk at the
 locations it names, so there is nothing an archive would carry that the
 description does not already point at. `phresh pack` is for when you have
 somewhere to send a program; installing here is a different act.
+
+With a name, the CLI resolves and verifies that official Program's production
+release directly; the current directory is irrelevant.
 
 If `buildCommand` is declared, it completes successfully before anything is
 sent to the system. Without it, install uses the production files exactly as
@@ -372,7 +390,7 @@ marked installed, and reconstructed after a restart. Running is the other one:
 `phresh start` / `phresh dev` register it under its declared identity and
 attach its whole lifetime to your terminal.
 
-The command installs through the machine's local intake. A running
+The command installs through the machine's local gateway. A running
 Program may also install itself through the server SDK; installation is not a
 client capability.
 
@@ -388,6 +406,7 @@ bytes and no path. You have the paths.
 
 ```bash
 phresh uninstall
+phresh uninstall flambo
 phresh uninstall --everything
 ```
 
@@ -401,8 +420,9 @@ that Server directory before removing files. `phresh uninstall` writes its
 ordered `stdout` and `stderr` chunks as they arrive. A failed cleanup command
 aborts removal and reports the failure.
 
-The identity comes from this project's `phresh.config.ts`; the command does not
-accept an arbitrary Program identity.
+Without a name, the identity comes from this project's `phresh.config.ts`.
+With a name, the installed Program is addressed directly and the current
+directory is irrelevant.
 
 ## What pack produces
 

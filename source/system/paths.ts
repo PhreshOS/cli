@@ -1,12 +1,13 @@
 import type { SystemPaths } from "./types.ts"
-import intakeAddress from "../intake-address.ts"
+import { gatewayPath } from "../gateway.ts"
+import phreshosHome from "../home.ts"
 import { homedir } from "node:os"
 import { isAbsolute, join } from "node:path"
 
 /** The installation is separate from the persistent state it operates on. */
 export default function systemPaths(platform = process.platform, userHome = homedir(), variables: NodeJS.ProcessEnv = process.env): SystemPaths {
 
-    const storage = join(userHome, ".phreshos")
+    const storage = phreshosHome(variables, userHome)
 
     const root = platform === "darwin"
 
@@ -32,7 +33,11 @@ export default function systemPaths(platform = process.platform, userHome = home
 
         storage,
 
-        intake: intakeAddress(storage, platform),
+        gateway: gatewayPath(storage, platform),
+
+        homeRequest: join(root, "next-home"),
+
+        ...(variables.PHRESHOS_HOME === undefined ? {} : { transientHome: storage }),
 
         log: join(storage, "service.log")
     }
