@@ -2,13 +2,13 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { join, resolve } from "node:path"
 import derive from "../dist/derive.js"
 import pack from "../dist/pack.js"
 import { readConfig } from "../dist/project.js"
 
 test("derives one Server execution mode without retaining the other", function () {
-  const directory = "/project"
+  const directory = resolve("project")
   const config = {
     identity: "worker-program",
     server: {
@@ -19,7 +19,7 @@ test("derives one Server execution mode without retaining the other", function (
   }
 
   assert.deepEqual(derive(config, directory, "production").server, {
-    location: "/project/dist/server",
+    location: join(directory, "dist", "server"),
     start: undefined,
     installCommand: undefined,
     uninstallCommand: undefined,
@@ -27,7 +27,7 @@ test("derives one Server execution mode without retaining the other", function (
   })
 
   assert.deepEqual(derive(config, directory, "development").server, {
-    location: "/project",
+    location: directory,
     start: undefined,
     installCommand: undefined,
     uninstallCommand: undefined,
