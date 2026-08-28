@@ -26,10 +26,17 @@ export async function waitForGateway(path: string, running: () => Promise<boolea
 
     const until = Date.now() + timeout
 
+    let observedRunning = false
+
     while (Date.now() < until) {
 
         if (await gatewayReady(path)) return
-        if (!await running()) throw new Error("The PhreshOS System stopped before its gateway became ready")
+
+        const isRunning = await running()
+
+        if (observedRunning && !isRunning) throw new Error("The PhreshOS System stopped before its gateway became ready")
+
+        observedRunning ||= isRunning
 
         await new Promise(resolve => setTimeout(resolve, 100))
     }

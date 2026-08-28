@@ -16,6 +16,7 @@ import LinuxSystemService from "../dist/system/service/linux.js"
 import WindowsSystemService from "../dist/system/service/windows.js"
 import { minimumSystemNodeVersion, supportsSystemNode } from "../dist/system/node.js"
 import { gatewayPath } from "../dist/gateway.js"
+import { waitForGateway } from "../dist/system/gateway-readiness.js"
 import npmInvocation from "../dist/system/npm.js"
 
 test("requires the Node release that provides the supported built-in SQLite API", function () {
@@ -107,6 +108,32 @@ test("runs Windows npm through Node instead of a command-shell shim", function (
 
         args: ["C:\\Runtime\\node_modules\\npm\\bin\\npm-cli.js", "install", "--omit=dev"]
     })
+})
+
+test("allows a native service time to enter its running state", async function () {
+
+    let checks = 0
+
+    await assert.rejects(
+
+        waitForGateway(join(tmpdir(), `missing-gateway-${process.pid}`), async () => ++checks > 1, 250),
+
+        /did not become ready/
+    )
+
+    assert.ok(checks > 1)
+})
+
+test("detects a service that stops after it was running", async function () {
+
+    let checks = 0
+
+    await assert.rejects(
+
+        waitForGateway(join(tmpdir(), `missing-gateway-${process.pid}`), async () => ++checks === 2, 1_000),
+
+        /stopped before its gateway became ready/
+    )
 })
 
 test("stages, validates, activates, and reads one production distribution", async function () {
