@@ -33,10 +33,18 @@ test("verifies and prepares an official Program package", async function () {
 
         version: "0.1.0",
 
+        icon: "icon.png",
+
+        agent: "agent.md",
+
         client: { location: "client" }
     })))
 
     archive.addFile("client/index.html", Buffer.from("<!doctype html>"))
+
+    archive.addFile("icon.png", Buffer.from("icon"))
+
+    archive.addFile("agent.md", Buffer.from("# Setup"))
 
     const bytes = archive.toBuffer()
 
@@ -61,11 +69,23 @@ test("verifies and prepares an official Program package", async function () {
 
     assert.equal(existsSync(program.client.location), true)
 
+    assert.equal(existsSync(program.icon), true)
+
+    assert.equal(existsSync(program.agent), true)
+
     const location = program.client.location
+
+    const icon = program.icon
+
+    const agent = program.agent
 
     await prepared.dispose()
 
     assert.equal(existsSync(location), false)
+
+    assert.equal(existsSync(icon), false)
+
+    assert.equal(existsSync(agent), false)
 })
 
 test("derives the official repository and release identity from its assets", async function () {

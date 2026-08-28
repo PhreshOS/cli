@@ -152,6 +152,8 @@ async function readProgram(directory: string, release: ProgramRelease) {
 
         ...pathField(value, directory, "icon", "icon.png"),
 
+        ...pathField(value, directory, "agent", "agent.md"),
+
         ...half(value, directory, "server"),
 
         ...half(value, directory, "client")
@@ -169,7 +171,7 @@ function half(value: Record<string, unknown>, directory: string, name: "server" 
     return { [name]: { ...declared, location: join(directory, name) } }
 }
 
-function pathField(value: Record<string, unknown>, directory: string, field: "icon", canonical: string) {
+function pathField(value: Record<string, unknown>, directory: string, field: "icon" | "agent", canonical: string) {
 
     const declared = value[field]
 
