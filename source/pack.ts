@@ -1,4 +1,4 @@
-import { Project } from "@phreshos/gateway"
+import { Project } from "@phreshos/node"
 import { line } from "./style.ts"
 
 /** Package the current Project and present only its command-facing progress. */

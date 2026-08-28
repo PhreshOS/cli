@@ -1,6 +1,6 @@
 import { readConfig } from "./project.ts"
 import { dim, heading } from "./style.ts"
-import { Gateway } from "@phreshos/gateway"
+import { Gateway } from "@phreshos/node"
 import writeProgramCommandOutput from "./program-command-output.ts"
 
 /** Uninstall an installed Program by name or by the current project's identity. */

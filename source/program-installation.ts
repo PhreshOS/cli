@@ -1,5 +1,5 @@
-import { Gateway } from "@phreshos/gateway"
-import type { Project } from "@phreshos/gateway"
+import { Gateway } from "@phreshos/node"
+import type { Project } from "@phreshos/node"
 import type { ProgramDescription } from "@phreshos/core"
 import writeProgramCommandOutput from "./program-command-output.ts"
 

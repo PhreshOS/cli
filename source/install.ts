@@ -1,4 +1,4 @@
-import { Project } from "@phreshos/gateway"
+import { Project } from "@phreshos/node"
 import type { ProgramDescription } from "@phreshos/core"
 import { dim, heading, line } from "./style.ts"
 import installProgram, { type ProgramInstallationOptions } from "./program-installation.ts"

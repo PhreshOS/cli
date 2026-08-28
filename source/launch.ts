@@ -1,4 +1,4 @@
-import { Gateway, Project, type GatewayEvent, type ProjectMode } from "@phreshos/gateway"
+import { Gateway, Project, type GatewayEvent, type ProjectMode } from "@phreshos/node"
 import { relative } from "node:path"
 import { dim, heading, line } from "./style.ts"
 

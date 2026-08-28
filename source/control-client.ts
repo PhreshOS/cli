@@ -1,5 +1,5 @@
 import type { SystemControlClient, SystemControlRequest } from "@phreshos/core"
-import { Gateway } from "@phreshos/gateway"
+import { Gateway } from "@phreshos/node"
 
 /** Owner-local client for the authoritative running-System contract. */
 export default class LocalSystemControl implements SystemControlClient {

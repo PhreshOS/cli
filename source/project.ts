@@ -1,5 +1,5 @@
 import type { Config } from "@phreshos/core"
-import { Project, type Manifest } from "@phreshos/gateway"
+import { Project, type Manifest } from "@phreshos/node"
 import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { isAbsolute, normalize, resolve, sep } from "node:path"
