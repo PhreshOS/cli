@@ -150,6 +150,8 @@ async function readProgram(directory: string, release: ProgramRelease) {
 
         ...value,
 
+        storage: join(directory, "storage"),
+
         ...pathField(value, directory, "icon", "icon.png"),
 
         ...pathField(value, directory, "agent", "agent.md"),

@@ -1,5 +1,4 @@
-import { Gateway } from "@phreshos/node"
-import type { Project } from "@phreshos/node"
+import { Project } from "@phreshos/node"
 import type { ProgramDescription } from "@phreshos/core"
 import writeProgramCommandOutput from "./program-command-output.ts"
 
@@ -31,49 +30,69 @@ export interface ProgramInstallationResult {
 /** Install one prepared Program and await every explicitly requested outcome. */
 export default async function installProgram(program: Project | ProgramDescription, options: ProgramInstallationOptions = {}) {
 
-    let installedValue: unknown
+    const system = await (await import("@phreshos/node")).System.connect()
 
-    let replaced = false
+    const identity = program instanceof Project ? program.config.identity : program.identity
+
+    const current = await system.program.find(identity)
+
+    const replaced = await current?.installed() ?? false
+
+    let installed: Awaited<ReturnType<Project["install"]>> | null = null
 
     let startupEnabled = false
 
-    let processValue: unknown
+    let process: string | null = null
 
-    const gateway = await Gateway.open()
+    let installationFinished = false
 
     try {
-      for await (const event of gateway.install(program, options)) {
 
-        if (event.event === "output") writeProgramCommandOutput(event)
+        if (program instanceof Project) installed = await program.install(system)
 
-        else if (event.event === "installed") {
+        else {
 
-            installedValue = event.program
+            installed = await system.forceCreateProgram(program)
 
-            replaced = event.replaced === true
+            for await (const chunk of installed.install()) writeProgramCommandOutput(chunk)
         }
 
-        else if (event.event === "startupEnabled") startupEnabled = true
+        installationFinished = true
 
-        else if (event.event === "running") processValue = event.process
-      }
+        if (options.startup) {
+
+            await installed.startup.enable()
+
+            startupEnabled = true
+        }
+
+        if (options.run) process = (await installed.process.create()).identity
     }
 
-    finally { await gateway.close() }
+    catch (error) {
 
-    if (installedValue === undefined) throw new Error("The System ended Program installation without confirming it")
+        if (installed && !installationFinished) {
 
-    const installed = installedProgram(installedValue)
+            try { await installed.forget() }
+
+            catch { /* Preserve the installation failure. */ }
+        }
+
+        throw error
+    }
+
+    finally { await system.disconnect() }
+
+
+    if (!installed) throw new Error("The System ended Program installation without confirming it")
 
     if (options.startup && !startupEnabled) throw new Error("The System installed the Program without confirming startup")
-
-    const process = processValue === undefined ? null : processIdentity(processValue)
 
     if (options.run && !process) throw new Error("The System installed the Program without confirming that it is running")
 
     return {
 
-        program: installed,
+        program: { identity: installed.identity, name: installed.name, version: installed.version },
 
         replaced,
 
@@ -81,32 +100,4 @@ export default async function installProgram(program: Project | ProgramDescripti
 
         process
     } satisfies ProgramInstallationResult
-}
-
-function processIdentity(value: unknown) {
-
-    if (typeof value !== "string" || !value) throw new Error("The System returned an invalid Process identity")
-
-    return value
-}
-
-function installedProgram(value: unknown): ProgramInstallationResult["program"] {
-
-    if (!record(value)
-
-        || typeof value.identity !== "string"
-
-        || typeof value.name !== "string"
-
-        || value.version !== null && typeof value.version !== "string") {
-
-        throw new Error("The System returned an invalid installed Program")
-    }
-
-    return { identity: value.identity, name: value.name, version: value.version }
-}
-
-function record(value: unknown): value is Record<string, unknown> {
-
-    return typeof value === "object" && value !== null && !Array.isArray(value)
 }

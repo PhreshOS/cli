@@ -6,7 +6,7 @@ import { isAbsolute, normalize, resolve, sep } from "node:path"
 
 export const configFile = "phresh.config.ts"
 
-/** Read the current Project through the reusable Gateway project model. */
+/** Read the current Project through the reusable Node project model. */
 export async function readConfig(directory = process.cwd()): Promise<Config> {
     return (await Project.open(directory)).config
 }
