@@ -1,7 +1,7 @@
 import type { SystemService, SystemServiceDefinition } from "../types.ts"
 import { execute, type ProcessResult } from "../process.ts"
 import { existsSync } from "node:fs"
-import { mkdir, rename, rm, writeFile } from "node:fs/promises"
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { randomUUID } from "node:crypto"
 
@@ -11,7 +11,9 @@ const defaultLabel = "com.phreshos.system"
 
 export default class MacOSSystemService implements SystemService {
 
-    private readonly plist: string
+    private readonly definition: string
+
+    private readonly startup: string
 
     private readonly domain: string
 
@@ -32,7 +34,9 @@ export default class MacOSSystemService implements SystemService {
 
         if (uid === undefined) throw new Error("The current macOS user could not be identified")
 
-        this.plist = join(userHome, "Library", "LaunchAgents", `${this.label}.plist`)
+        this.definition = join(userHome, "Library", "Application Support", "PhreshOS", "System", `${this.label}.plist`)
+
+        this.startup = join(userHome, "Library", "LaunchAgents", `${this.label}.plist`)
 
         this.domain = `gui/${uid}`
 
@@ -41,13 +45,11 @@ export default class MacOSSystemService implements SystemService {
 
     public async inspect() {
 
-        const registered = existsSync(this.plist)
+        await this.migrate()
+
+        const registered = existsSync(this.definition)
 
         const service = await this.run(command, ["print", this.target])
-
-        const disabled = await this.run(command, ["print-disabled", this.domain])
-
-        const explicitlyDisabled = new RegExp(`"${escapePattern(this.label)}"\\s*=>\\s*(?:true|disabled)`).test(disabled.stdout)
 
         const pid = /\bpid\s*=\s*(\d+)/.exec(service.stdout)?.[1]
 
@@ -57,7 +59,7 @@ export default class MacOSSystemService implements SystemService {
 
             automaticStartup: true,
 
-            enabled: registered && !explicitlyDisabled,
+            enabled: registered && existsSync(this.startup),
 
             running: service.code === 0 && /\bstate\s*=\s*running\b/.test(service.stdout),
 
@@ -67,47 +69,55 @@ export default class MacOSSystemService implements SystemService {
 
     public async register(definition: SystemServiceDefinition) {
 
-        await this.stop()
+        await this.migrate()
 
-        await mkdir(dirname(this.plist), { recursive: true })
+        await this.stop()
 
         await mkdir(dirname(definition.output), { recursive: true })
 
-        const temporary = `${this.plist}.${randomUUID()}.tmp`
+        const content = plist(this.label, definition, this.environment)
 
-        try {
+        await atomic(this.definition, content)
 
-            await writeFile(temporary, plist(this.label, definition, this.environment), { mode: 0o600 })
-
-            await rename(temporary, this.plist)
-        }
-
-        finally {
-
-            await rm(temporary, { force: true })
-        }
+        if (existsSync(this.startup)) await atomic(this.startup, content)
     }
 
     public async unregister() {
 
+        await this.migrate()
+
         await this.stop()
 
-        await rm(this.plist, { force: true })
+        await Promise.all([
+
+            rm(this.definition, { force: true }),
+
+            rm(this.startup, { force: true })
+        ])
+
+        await this.run(command, ["enable", this.target])
     }
 
     public async start() {
 
-        if (!existsSync(this.plist)) throw new Error("The PhreshOS System service is not registered")
+        await this.migrate()
+
+        if (!existsSync(this.definition)) throw new Error("The PhreshOS System service is not registered")
 
         const state = await this.inspect()
 
         if (state.running) return
 
+        // launchctl disable prevents manual execution as well as login startup.
+        // Automatic startup is represented by the LaunchAgents copy instead,
+        // leaving the canonical definition eligible for an explicit start.
+        await this.require(["enable", this.target])
+
         const loaded = await this.run(command, ["print", this.target])
 
         if (loaded.code === 0) await this.require(["kickstart", "-k", this.target])
 
-        else await this.require(["bootstrap", this.domain, this.plist])
+        else await this.require(["bootstrap", this.domain, this.definition])
     }
 
     public async stop() {
@@ -119,16 +129,43 @@ export default class MacOSSystemService implements SystemService {
 
     public async enable() {
 
-        if (!existsSync(this.plist)) throw new Error("The PhreshOS System service is not registered")
+        await this.migrate()
+
+        if (!existsSync(this.definition)) throw new Error("The PhreshOS System service is not registered")
+
+        await atomic(this.startup, await readFile(this.definition, "utf8"))
 
         await this.require(["enable", this.target])
     }
 
     public async disable() {
 
-        if (!existsSync(this.plist)) throw new Error("The PhreshOS System service is not registered")
+        await this.migrate()
 
-        await this.require(["disable", this.target])
+        if (!existsSync(this.definition)) throw new Error("The PhreshOS System service is not registered")
+
+        await rm(this.startup, { force: true })
+
+        await this.require(["enable", this.target])
+    }
+
+    /** Convert the former launchctl-disabled representation without changing its setting. */
+    private async migrate() {
+
+        if (existsSync(this.definition) || !existsSync(this.startup)) return
+
+        const disabled = await this.run(command, ["print-disabled", this.domain])
+
+        const automatic = !new RegExp(`"${escapePattern(this.label)}"\\s*=>\\s*(?:true|disabled)`).test(disabled.stdout)
+
+        await atomic(this.definition, await readFile(this.startup, "utf8"))
+
+        if (!automatic) {
+
+            await rm(this.startup, { force: true })
+
+            await this.require(["enable", this.target])
+        }
     }
 
     private async require(args: string[]) {
@@ -186,6 +223,25 @@ function environmentPath(environment: NodeJS.ProcessEnv) {
     const key = Object.keys(environment).find(name => name.toLowerCase() === "path")
 
     return key === undefined ? undefined : environment[key]
+}
+
+async function atomic(path: string, content: string) {
+
+    await mkdir(dirname(path), { recursive: true })
+
+    const temporary = `${path}.${randomUUID()}.tmp`
+
+    try {
+
+        await writeFile(temporary, content, { mode: 0o600 })
+
+        await rename(temporary, path)
+    }
+
+    finally {
+
+        await rm(temporary, { force: true })
+    }
 }
 
 function xml(value: string) {

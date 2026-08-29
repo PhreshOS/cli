@@ -1,5 +1,5 @@
 import { Project } from "@phreshos/node"
-import type { ProgramDescription } from "@phreshos/core"
+import type { ProgramDefinition } from "@phreshos/core"
 import { dim, heading, line } from "./style.ts"
 import installProgram, { type ProgramInstallationOptions } from "./program-installation.ts"
 import { prepareOfficialProgram } from "./program-release.ts"
@@ -9,7 +9,7 @@ import { prepareOfficialProgram } from "./program-release.ts"
  *
  * A local project is built and derived from its authoring declaration. An
  * official name resolves a verified production package and turns its
- * canonical paths into the same concrete description. From that point on,
+ * canonical paths into the same concrete definition. From that point on,
  * both sources cross the exact same gateway and the System performs the exact
  * same authoritative installation.
  *
@@ -30,7 +30,7 @@ export default async function install(options: InstallOptions = {}) {
 
     try {
 
-        const program = prepared ? prepared.program as ProgramDescription : await Project.open(directory)
+        const program = prepared ? prepared.program as ProgramDefinition : await Project.open(directory)
 
         if (program instanceof Project && program.config.buildCommand) line("build", program.config.buildCommand)
 

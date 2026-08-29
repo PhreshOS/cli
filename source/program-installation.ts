@@ -1,5 +1,5 @@
 import { Project } from "@phreshos/node"
-import type { ProgramDescription } from "@phreshos/core"
+import type { ProgramDefinition, SystemProgramEntity } from "@phreshos/core"
 import writeProgramCommandOutput from "./program-command-output.ts"
 
 export interface ProgramInstallationOptions {
@@ -28,7 +28,7 @@ export interface ProgramInstallationResult {
 }
 
 /** Install one prepared Program and await every explicitly requested outcome. */
-export default async function installProgram(program: Project | ProgramDescription, options: ProgramInstallationOptions = {}) {
+export default async function installProgram(program: Project | ProgramDefinition, options: ProgramInstallationOptions = {}) {
 
     const system = await (await import("@phreshos/node")).System.connect()
 
@@ -38,7 +38,7 @@ export default async function installProgram(program: Project | ProgramDescripti
 
     const replaced = await current?.installed() ?? false
 
-    let installed: Awaited<ReturnType<Project["install"]>> | null = null
+    let installed: SystemProgramEntity | null = null
 
     let startupEnabled = false
 
@@ -48,14 +48,16 @@ export default async function installProgram(program: Project | ProgramDescripti
 
     try {
 
-        if (program instanceof Project) installed = await program.install(system)
+        if (program instanceof Project) {
 
-        else {
+            await program.build()
 
-            installed = await system.forceCreateProgram(program)
-
-            for await (const chunk of installed.install()) writeProgramCommandOutput(chunk)
+            installed = await system.forceCreateProgram(program.productionDefinition())
         }
+
+        else installed = await system.forceCreateProgram(program)
+
+        for await (const chunk of installed.install()) writeProgramCommandOutput(chunk)
 
         installationFinished = true
 

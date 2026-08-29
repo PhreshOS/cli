@@ -1,9 +1,10 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { existsSync } from "node:fs"
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join, normalize, resolve } from "node:path"
+import { dirname, join, normalize, resolve } from "node:path"
 import test from "node:test"
 import { pathToFileURL } from "node:url"
 import AdmZip from "adm-zip"
@@ -496,6 +497,18 @@ test("native adapters keep startup enablement separate from current execution", 
 
         assert.equal((await mac.inspect()).enabled, false)
 
+        calls.length = 0
+
+        await mac.start()
+
+        assert.equal((await mac.inspect()).enabled, false)
+
+        assert.equal(calls.some(args => args[0] === "enable" && args.includes("gui/501/com.phreshos.system")), true)
+
+        assert.equal(calls.some(args => args[0] === "bootstrap" && args.at(-1).endsWith("/Library/Application Support/PhreshOS/System/com.phreshos.system.plist")), true)
+
+        calls.length = 0
+
         await mac.enable()
 
         assert.equal((await mac.inspect()).enabled, true)
@@ -537,6 +550,57 @@ test("native adapters keep startup enablement separate from current execution", 
 
         await rm(temporary, { recursive: true, force: true })
     }
+})
+
+test("macOS migrates a disabled legacy service into a manually startable definition", async function () {
+
+    const temporary = await mkdtemp(join(tmpdir(), "phresh-system-macos-migration-"))
+
+    const startup = join(temporary, "Library", "LaunchAgents", "com.phreshos.system.plist")
+
+    const canonical = join(temporary, "Library", "Application Support", "PhreshOS", "System", "com.phreshos.system.plist")
+
+    const calls = []
+
+    let disabled = true
+
+    await mkdir(dirname(startup), { recursive: true })
+
+    await writeFile(startup, "legacy service")
+
+    const run = async function (_command, args) {
+
+        calls.push(args)
+
+        if (args[0] === "print-disabled") return { code: 0, stdout: disabled ? '"com.phreshos.system" => disabled' : "", stderr: "" }
+
+        if (args[0] === "enable") disabled = false
+
+        return args[0] === "print"
+
+            ? { code: 1, stdout: "", stderr: "" }
+
+            : { code: 0, stdout: "", stderr: "" }
+    }
+
+    try {
+
+        const service = new MacOSSystemService(temporary, run, undefined, 501)
+
+        await service.start()
+
+        assert.equal(await readFile(canonical, "utf8"), "legacy service")
+
+        assert.equal(existsSync(startup), false)
+
+        assert.equal(disabled, false)
+
+        assert.equal((await service.inspect()).enabled, false)
+
+        assert.equal(calls.some(args => args[0] === "bootstrap" && args.at(-1) === canonical), true)
+    }
+
+    finally { await rm(temporary, { recursive: true, force: true }) }
 })
 
 test("Windows keeps scheduled startup separate from current execution", async function () {
