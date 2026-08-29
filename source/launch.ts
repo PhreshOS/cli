@@ -51,16 +51,19 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
     program = await system.forceCreateProgram(definition)
 
     ended = await consume(program.process.run({ options }, { signal: controller.signal }), client)
-
-    console.log(`\n  ${dim("ran as")} ${ended.process}`)
   } catch (error) {
     if (!interrupted) throw error
   } finally {
     controller.abort(new Error("The local Program run ended"))
-    await client?.stop()
-    if (program) await forget(program)
+    const cleanup = await Promise.allSettled([
+      client?.stop(),
+      program ? forget(program) : undefined
+    ])
     for (const signal of ["SIGINT", "SIGTERM"] as const) process.off(signal, stop)
     await system.disconnect()
+
+    const failure = cleanup.find(result => result.status === "rejected")
+    if (failure?.status === "rejected") throw failure.reason
   }
 
   if (interrupted) process.exit(130)
@@ -101,7 +104,10 @@ async function consume(lifecycle: AsyncGenerator<SystemProcessRunEvent>, client?
     if (outcome.result.done) break
 
     const event = outcome.result.value
-    if (event.event === "started") process = event.process.identity
+    if (event.event === "started") {
+      process = event.process.identity
+      line("process", process)
+    }
     else if (event.event === "output") write(event.stream, event.text)
     else ending = { code: event.exit.code, signal: event.exit.signal }
 
