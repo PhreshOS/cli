@@ -21,5 +21,4 @@ export function readCommandContract(command: Command) {
 export interface CommandContract {
 
     guidance?: readonly string[]
-    capability?: unknown
 }

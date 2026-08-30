@@ -1,8 +1,3 @@
-import {
-    systemControl,
-    systemControlOperation,
-    type SystemControlCapabilityName
-} from "@phreshos/core"
 import type { Argument, Command, Option } from "commander"
 import { commandContract, readCommandContract } from "./command-contract.ts"
 
@@ -41,11 +36,6 @@ function resolveCommand(root: Command, path: string[]) {
 function describe(command: Command, path: string[]): CommandDescription {
 
     const registered = readCommandContract(command)
-    const capability = registered?.capability ?? (path.length === 1 && Object.hasOwn(systemControl, path[0] ?? "")
-        ? systemControl[path[0] as SystemControlCapabilityName]
-        : null)
-    const operation = path.length === 2 ? systemControlOperation(path[0] ?? "", path[1] ?? "") : null
-
     return {
         path,
         name: command.name(),
@@ -53,8 +43,7 @@ function describe(command: Command, path: string[]): CommandDescription {
         arguments: command.registeredArguments.map(argumentDescription),
         options: command.options.map(optionDescription),
         commands: command.commands.map(child => ({ name: child.name(), description: child.description() })),
-        ...(registered?.guidance ? { guidance: registered.guidance } : {}),
-        ...(operation ? { capability: operation } : capability ? { capability } : {})
+        ...(registered?.guidance ? { guidance: registered.guidance } : {})
     }
 }
 
@@ -90,5 +79,4 @@ interface CommandDescription {
     options: ReturnType<typeof optionDescription>[]
     commands: { name: string, description: string }[]
     guidance?: readonly string[]
-    capability?: unknown
 }

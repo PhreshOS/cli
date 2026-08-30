@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { Command } from "commander"
 import test from "node:test"
-import controlCommands from "../dist/control-command.js"
+import controlCommands from "../dist/control/command.js"
 import describeCommands from "../dist/describe-command.js"
 import { gatewayPath } from "../dist/gateway.js"
 import { join } from "node:path"
@@ -12,18 +12,30 @@ test("the selected home has one owner-local gateway", function () {
     assert.equal(gatewayPath("/state", "linux"), join("/state", "gateway.sock"))
 })
 
-test("running-System capabilities are top-level commands", async function () {
+test("running-System commands use shared handles and explicit flags", async function () {
 
     const calls = []
-    const client = {
-        async execute(request) {
-            calls.push(request)
-            return { moved: true }
-        }
+    const window = {
+        async move(position) { calls.push(["move", position]) },
+        async title() { return "Example" },
+        async position() { return { x: 50, y: 0 } },
+        async size() { return { width: 800, height: 600 } },
+        async minimized() { return false },
+        async front() { return true },
+        async layer() { return "window" },
+        async location() { return "/" }
+    }
+    const process = {
+        identity: "one",
+        client: { window }
+    }
+    const system = {
+        process: { async find(identity) { calls.push(["find", identity]); return process } },
+        async disconnect() { calls.push(["disconnect"]) }
     }
     const program = new Command().exitOverride().name("phresh")
 
-    controlCommands(program, client)
+    controlCommands(program, async () => system)
 
     const written = []
     const original = console.log
@@ -32,19 +44,28 @@ test("running-System capabilities are top-level commands", async function () {
 
     try {
         await program.parseAsync([
-            "node", "phresh", "window", "move", "--compact", "--input",
-            JSON.stringify({ process: "one", position: { x: "50%", y: 0 } })
+            "node", "phresh", "window", "move", "--compact",
+            "--process", "one", "--x", "50%", "--y", "0"
         ])
     } finally {
         console.log = original
     }
 
-    assert.deepEqual(calls, [{
-        capability: "window",
-        operation: "move",
-        input: { process: "one", position: { x: "50%", y: 0 } }
-    }])
-    assert.deepEqual(written, [JSON.stringify({ moved: true })])
+    assert.deepEqual(calls, [
+        ["find", "one"],
+        ["move", { x: "50%", y: 0 }],
+        ["disconnect"]
+    ])
+    assert.deepEqual(JSON.parse(written[0]), {
+        process: "one",
+        title: "Example",
+        position: { x: 50, y: 0 },
+        size: { width: 800, height: 600 },
+        minimized: false,
+        front: true,
+        layer: "window",
+        location: "/"
+    })
 })
 
 test("describe covers the actual command tree without contacting the System", async function () {
@@ -69,6 +90,40 @@ test("describe covers the actual command tree without contacting the System", as
 
     assert.deepEqual(described.path, ["endpoint", "ask"])
     assert.equal(described.name, "ask")
-    assert.equal(described.capability.mode, "request")
-    assert.deepEqual(described.capability.input.required, ["process", "endpoint", "event"])
+    assert.equal(described.options.find(option => option.flags === "--process <identity>").value, "required")
+    assert.equal(described.options.find(option => option.flags === "--endpoint <endpoint>").value, "required")
+    assert.equal(described.options.find(option => option.flags === "--event <event>").value, "required")
+    assert.equal(described.options.some(option => option.flags.includes("--input")), false)
 })
+
+test("only arbitrary Endpoint payloads retain JSON syntax", function () {
+    const program = new Command().exitOverride().name("phresh")
+
+    controlCommands(program, async () => { throw new Error("must not connect") })
+
+    const options = descendants(program).flatMap(command => command.options.map(option => ({
+        path: commandPath(command),
+        flags: option.flags
+    })))
+
+    assert.equal(options.some(option => option.flags.includes("--input")), false)
+    assert.deepEqual(options.filter(option => option.flags.includes("<json>")), [
+        { path: "endpoint ask", flags: "--payload <json>" },
+        { path: "endpoint publish", flags: "--payload <json>" }
+    ])
+})
+
+function descendants(command) {
+    return command.commands.flatMap(child => [child, ...descendants(child)])
+}
+
+function commandPath(command) {
+    const names = []
+    let current = command
+    while (current.parent?.parent) {
+        names.unshift(current.name())
+        current = current.parent
+    }
+    names.unshift(current.name())
+    return names.join(" ")
+}

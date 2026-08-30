@@ -9,7 +9,7 @@ import init from "./init.ts"
 import pack from "./pack.ts"
 import uninstall from "./uninstall.ts"
 import systemCommands from "./system/command.ts"
-import controlCommands from "./control-command.ts"
+import controlCommands from "./control/command.ts"
 import describeCommands from "./describe-command.ts"
 import { commandContract } from "./command-contract.ts"
 
