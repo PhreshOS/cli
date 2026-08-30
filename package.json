@@ -53,7 +53,6 @@
         "@phreshos/node": "^0.1.4",
         "adm-zip": "^0.6.0",
         "commander": "^15.0.0",
-        "jiti": "^2.7.0",
         "picocolors": "^1.1.1"
     },
     "devDependencies": {
