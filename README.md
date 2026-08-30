@@ -113,7 +113,7 @@ phresh dev --run-option-path=/notes.md --run-option-line=42
 Read back by name, on either half:
 
 ```ts
-const path = await current.option("path")
+const path = await context.option("path")
 ```
 
 **Options are text, all of them.** An option must mean the same thing
