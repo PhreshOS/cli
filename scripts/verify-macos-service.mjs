@@ -28,7 +28,7 @@ try {
 
     const running = await service.inspect()
 
-    assert.equal(running.enabled, true)
+    assert.equal(running.enabled, false)
 
     await service.stop()
 
@@ -36,7 +36,7 @@ try {
 
     assert.equal(stopped.running, false)
 
-    assert.equal(stopped.enabled, true)
+    assert.equal(stopped.enabled, false)
 
     console.log("Verified the macOS launchd service lifecycle")
 }

@@ -505,7 +505,9 @@ test("native adapters keep startup enablement separate from current execution", 
 
         assert.equal(calls.some(args => args[0] === "enable" && args.includes("gui/501/com.phreshos.system")), true)
 
-        assert.equal(calls.some(args => args[0] === "bootstrap" && args.at(-1).endsWith("/Library/Application Support/PhreshOS/System/com.phreshos.system.plist")), true)
+        const definitionPath = join(temporary, "Library", "Application Support", "PhreshOS", "System", "com.phreshos.system.plist")
+
+        assert.equal(calls.some(args => args[0] === "bootstrap" && args.at(-1) === definitionPath), true)
 
         calls.length = 0
 
