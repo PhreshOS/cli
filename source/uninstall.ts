@@ -1,5 +1,5 @@
 import { readConfig } from "./project.ts"
-import { dim, heading } from "./style.ts"
+import { blank, dim, heading } from "./style.ts"
 import writeProgramCommandOutput from "./program-command-output.ts"
 
 /** Uninstall an installed Program by name or by the current project's identity. */
@@ -22,9 +22,11 @@ export default async function uninstall(options: UninstallOptions = {}) {
 
       console.log(options.everything
 
-          ? `  ${dim("Its processes, installed files, stored data, and runtime record were removed.")}\n`
+          ? `  ${dim("Its processes, installed files, stored data, and runtime record were removed.")}`
 
-          : `  ${dim("Its installed files were removed. Processes, stored data, and runtime state were kept.")}\n`)
+          : `  ${dim("Its installed files were removed. Processes, stored data, and runtime state were kept.")}`)
+
+      blank()
     }
 
     finally { await system.disconnect() }

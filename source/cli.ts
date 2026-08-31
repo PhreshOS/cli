@@ -12,6 +12,7 @@ import systemCommands from "./system/command.ts"
 import controlCommands from "./control/command.ts"
 import describeCommands from "./describe-command.ts"
 import { commandContract } from "./command-contract.ts"
+import { blank, failure } from "./style.ts"
 
 const metadata = createRequire(import.meta.url)("../package.json") as Readonly<{
     version: string
@@ -274,7 +275,7 @@ describeCommands(program)
 
 // Every command begins with the same breathing room. Keep this at the entry
 // point so individual commands never need to manufacture their own opening.
-console.log("")
+blank()
 
 if (process.argv.length === 2) program.help()
 
@@ -291,7 +292,7 @@ catch (error) {
 
     else {
 
-        console.error(`\n  phresh: ${error instanceof Error ? error.message : String(error)}\n`)
+        failure(error instanceof Error ? error.message : String(error))
 
         process.exitCode = 1
     }

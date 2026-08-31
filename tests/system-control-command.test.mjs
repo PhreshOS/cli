@@ -115,22 +115,29 @@ test("only arbitrary Endpoint payloads retain JSON syntax", function () {
 })
 
 test("launch flags preserve complete Endpoint service choices", function () {
+    const program = new Command().exitOverride().name("phresh")
+    controlCommands(program, async () => { throw new Error("must not connect") })
+    const flags = descendants(program).flatMap(command => command.options.map(option => option.flags))
+
+    assert(flags.includes("--no-server-service"))
+    assert(flags.includes("--no-client-service"))
+    assert.equal(flags.some(flag => flag.includes("private")), false)
     assert.deepEqual(serverLaunch({ serverService: true }), { service: true })
-    assert.deepEqual(serverLaunch({ serverPrivate: true }), { service: false })
+    assert.deepEqual(serverLaunch({ serverService: false }), { service: false })
     assert.deepEqual(clientLaunch({ clientService: true, clientTitle: "Shared" }), {
         service: true,
         title: "Shared"
     })
     assert.deepEqual(launch({
         name: "main",
-        serverPrivate: true,
+        serverService: false,
         clientService: true
     }), {
         name: "main",
         server: { service: false },
         client: { service: true }
     })
-    assert.throws(() => serverLaunch({ serverService: true, serverPrivate: true }), /both a Service and private/)
+    assert.throws(() => serverLaunch({ server: false, serverService: false }), /--no-server/)
     assert.throws(() => clientLaunch({ client: false, clientService: true }), /--no-client/)
 })
 

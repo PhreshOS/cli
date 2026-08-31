@@ -1,5 +1,5 @@
 import { Project } from "@phreshos/node"
-import { line } from "./style.ts"
+import { blank, line } from "./style.ts"
 
 /** Package the current Project and present only its command-facing progress. */
 export default async function pack(directory = process.cwd()) {
@@ -9,7 +9,11 @@ export default async function pack(directory = process.cwd()) {
 
     const packed = await project.pack()
 
-    console.log(`\nPacked ${packed.archive}`)
+    if (project.config.buildCommand) blank()
+
+    console.log(`Packed ${packed.archive}`)
+
+    blank()
 
     return packed.archive
 }

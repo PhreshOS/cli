@@ -1,6 +1,6 @@
 import { installProjectDependencies, projectPackageManager, projectScript, type PackageManagerName } from "./project-dependency.ts"
 import prompts from "./prompts.ts"
-import { accent, bold } from "./style.ts"
+import { accent, blank, bold } from "./style.ts"
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs"
 import { basename, dirname, extname, relative, resolve } from "node:path"
 
@@ -108,7 +108,7 @@ export default async function create(options: CreateOptions = {}, directory = pr
 
     console.log(bold("\nYou can now open the project and start building your Program"))
 
-    console.log("")
+    blank()
 }
 
 function template() {

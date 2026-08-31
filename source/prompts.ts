@@ -1,6 +1,6 @@
 import { cancel, confirm, intro, isCancel, log, outro, select, spinner, text } from "@clack/prompts"
 import colors from "picocolors"
-import { caution, column, ending, line, section } from "./style.ts"
+import { blank, caution, column, ending, line, section } from "./style.ts"
 
 /** Signals an ordinary interactive cancellation rather than an operation failure. */
 export class PromptCancelled extends Error {}
@@ -43,7 +43,9 @@ export default function prompts() {
 
         if (interactive) log.message(value, { spacing: 0 })
 
-        else console.log(value ? `  ${value}` : "")
+        else if (value) console.log(`  ${value}`)
+
+        else blank()
     }
 
     function warning(value: string) {

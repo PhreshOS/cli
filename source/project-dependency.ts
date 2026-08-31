@@ -1,4 +1,4 @@
-import { line } from "./style.ts"
+import { blank, line } from "./style.ts"
 import { spawn } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
@@ -68,7 +68,7 @@ export default async function ensureProjectDependency(
 
     await run(manager.name, [...manager.addArgs(section), `${name}@${range}`], directory)
 
-    console.log("")
+    blank()
 }
 
 function run(command: string, args: string[], directory: string, output: CommandOutput = "inherit") {

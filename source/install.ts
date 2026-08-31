@@ -1,6 +1,6 @@
 import { Project } from "@phreshos/node"
 import type { ProgramDefinition } from "@phreshos/core"
-import { dim, heading, line } from "./style.ts"
+import { blank, dim, heading, line } from "./style.ts"
 import installProgram, { type ProgramInstallationOptions } from "./program-installation.ts"
 import { prepareOfficialProgram } from "./program-release.ts"
 
@@ -42,9 +42,11 @@ export default async function install(options: InstallOptions = {}) {
 
             heading(`${name || identity}${version ? ` ${version}` : ""}`, result.replaced ? "reinstalled" : "installed")
 
-            if (result.replaced) console.log(`  ${dim("its storage was kept, and its previous processes were ended")}\n`)
+            if (result.replaced) console.log(`  ${dim("its storage was kept, and its previous processes were ended")}`)
 
             if (result.process) line("process", result.process)
+
+            if (result.replaced || result.process) blank()
         }
 
         return result

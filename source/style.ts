@@ -13,6 +13,12 @@ export const caution = colors.yellow
 
 export const negative = colors.red
 
+/** Writes one intentional blank line between terminal report blocks. */
+export function blank() {
+
+    console.log("")
+}
+
 // A label, what it says, and where that came from. The label is quiet
 // and the value is not, because the value is the thing being reported.
 //
@@ -33,7 +39,7 @@ export function heading(title: string, note?: string) {
 
     section(title, note)
 
-    console.log("")
+    blank()
 }
 
 export function section(title: string, note?: string) {
@@ -45,5 +51,13 @@ export function ending(message: string) {
 
     console.log(`  ${bold(message)}`)
 
-    console.log("")
+    blank()
+}
+
+/** Writes one consistently indented command failure followed by closing space. */
+export function failure(message: string) {
+
+    console.error(`  phresh: ${message}`)
+
+    console.error("")
 }

@@ -12,6 +12,7 @@ import type {
     Window
 } from "@phreshos/core"
 import { System } from "@phreshos/node"
+import { blank } from "../style.ts"
 
 export type ConnectedSystem = SystemContract & Readonly<{ disconnect(): Promise<void> }>
 export type ConnectSystem = () => Promise<ConnectedSystem>
@@ -108,6 +109,7 @@ export async function windowView(process: SystemProcessEntity) {
 
 export function output(value: unknown, compact?: boolean) {
     console.log(JSON.stringify(value ?? null, null, compact ? undefined : 2))
+    blank()
 }
 
 export function payload(value?: string) {
@@ -175,7 +177,7 @@ export function launch(options: LaunchOptions, named = false): Launch {
 }
 
 export function clientLaunch(options: ClientOptions): boolean | ClientLaunch | undefined {
-    const service = serviceSelection(options.clientService, options.clientPrivate, "Client")
+    const service = options.clientService
     const configured = options.clientTitle !== undefined
         || options.clientWidth !== undefined
         || options.clientHeight !== undefined
@@ -207,17 +209,10 @@ export function clientLaunch(options: ClientOptions): boolean | ClientLaunch | u
 }
 
 export function serverLaunch(options: ServerOptions): boolean | ServerLaunch | undefined {
-    const service = serviceSelection(options.serverService, options.serverPrivate, "Server")
+    const service = options.serverService
     if (service === undefined) return options.server
     if (options.server === false) throw new Error("Server overrides cannot be combined with --no-server")
     return { service }
-}
-
-function serviceSelection(service: boolean | undefined, privateEndpoint: boolean | undefined, endpoint: string) {
-    if (service && privateEndpoint) throw new Error(`${endpoint} cannot be both a Service and private`)
-    if (service) return true
-    if (privateEndpoint) return false
-    return undefined
 }
 
 export function collect(value: string, previous: string[] = []) {
@@ -241,7 +236,6 @@ export type ProcessCoordinates = Readonly<{ process: string, program?: string }>
 export type ClientOptions = Readonly<{
     client?: boolean
     clientService?: boolean
-    clientPrivate?: boolean
     clientTitle?: string
     clientWidth?: string
     clientHeight?: string
@@ -254,7 +248,6 @@ export type ClientOptions = Readonly<{
 export type ServerOptions = Readonly<{
     server?: boolean
     serverService?: boolean
-    serverPrivate?: boolean
 }>
 export type LaunchOptions = ClientOptions & ServerOptions & Readonly<{
     name?: string

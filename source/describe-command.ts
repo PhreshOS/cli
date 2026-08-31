@@ -1,5 +1,6 @@
 import type { Argument, Command, Option } from "commander"
 import { commandContract, readCommandContract } from "./command-contract.ts"
+import { blank } from "./style.ts"
 
 /** Add one machine-readable description entry point for the complete CLI tree. */
 export default function describeCommands(program: Command) {
@@ -14,6 +15,7 @@ export default function describeCommands(program: Command) {
             const description = describe(command, path)
 
             console.log(JSON.stringify(description, null, options.compact ? undefined : 2))
+            blank()
         }), { guidance: ["Omit the path to discover all top-level commands, then describe progressively deeper paths."] })
 }
 

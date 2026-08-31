@@ -2,7 +2,7 @@ import { Project, type ProjectMode } from "@phreshos/node"
 import type { SystemProcessRunEvent, SystemProgramEntity } from "@phreshos/core"
 import { relative } from "node:path"
 import { assertAvailable, commandFailure, DevelopmentClient, type DevelopmentEvent, waitForDevelopmentClient } from "./development-client.ts"
-import { dim, heading, line } from "./style.ts"
+import { blank, dim, heading, line } from "./style.ts"
 
 /** Run the current project through one connected System. */
 export default async function launch(mode: ProjectMode, directory = process.cwd(), options: Record<string, string> = {}) {
@@ -15,7 +15,7 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
   if (definition.client) line("client", project.config.client?.development?.startCommand ?? place(project.directory, definition.client.location))
   line("storage", place(project.directory, String(definition.storage)))
   if (Object.keys(options).length) line("options", Object.entries(options).map(([name, value]) => `${name}=${value}`).join("  "))
-  console.log("")
+  blank()
 
   const system = await (await import("@phreshos/node")).System.connect()
   const controller = new AbortController()
@@ -69,7 +69,9 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
   if (interrupted) process.exit(130)
   if (!ended) throw new Error("The System closed before the Program ended")
 
-  console.log(`\n  ${dim(ended.signal ? `ended on ${ended.signal}` : `ended with ${ended.code ?? 0}`)}\n`)
+  blank()
+  console.log(`  ${dim(ended.signal ? `ended on ${ended.signal}` : `ended with ${ended.code ?? 0}`)}`)
+  blank()
   process.exit(ended.signal ? 128 : ended.code ?? 0)
 }
 

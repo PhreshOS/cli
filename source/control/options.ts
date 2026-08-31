@@ -25,7 +25,7 @@ export function clientOptions(command: Command) {
 export function clientOverrideOptions(command: Command) {
     return command
         .option("--client-service", "address this Client incarnation through system.service()")
-        .option("--client-private", "keep this Client incarnation out of system.service()")
+        .option("--no-client-service", "do not address this Client incarnation through system.service()")
         .option("--client-title <title>", "initial Window title")
         .option("--client-width <value>", "initial Window width")
         .option("--client-height <value>", "initial Window height")
@@ -39,7 +39,7 @@ export function clientOverrideOptions(command: Command) {
 export function serverOverrideOptions(command: Command) {
     return command
         .option("--server-service", "address this Server incarnation through system.service()")
-        .option("--server-private", "keep this Server incarnation out of system.service()")
+        .option("--no-server-service", "do not address this Server incarnation through system.service()")
 }
 
 export function launchOptions(command: Command) {
