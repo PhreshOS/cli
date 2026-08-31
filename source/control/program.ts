@@ -71,17 +71,19 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             output({
                 scope: options.program ? `program:${options.program}` : "program",
                 event: options.event,
-                payload: await eventView(options.event, message)
+                payload: await eventView(options.event, message, options.program ? target as SystemProgramEntity : undefined)
             }, options.compact)
         }))
 }
 
-async function eventView(event: ProgramWaitOptions["event"], message: unknown) {
+async function eventView(event: ProgramWaitOptions["event"], message: unknown, scoped?: SystemProgramEntity) {
     if (event === "uninstall") {
+        if (scoped) return { program: await programView(scoped), everything: message === true }
         const value = message as SystemProgramUninstall
-        return { program: await programView(value.program), everythingRemoved: value.everythingRemoved }
+        return { program: await programView(value.program), everything: value.everything }
     }
 
+    if (scoped) return programView(scoped)
     return programView(message as SystemProgramEntity)
 }
 

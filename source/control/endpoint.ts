@@ -1,4 +1,4 @@
-import { type Command } from "commander"
+import { Option, type Command } from "commander"
 import { commandContract } from "../command-contract.ts"
 import { clientOverrideOptions, endpointOptions, outputOptions } from "./options.ts"
 import {
@@ -56,6 +56,21 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
             output(await endpointView(process, "server"), options.compact)
         }))
 
+    outputOptions(endpointOptions(endpoints.command("waitLifecycle")
+        .alias("wait-lifecycle")
+        .description("wait for one lifecycle transition of an exact Endpoint")
+        .addOption(new Option("--event <event>", "Endpoint lifecycle event")
+            .choices(["start", "stop"])
+            .makeOptionMandatory())
+        .option("--timeout <milliseconds>", "maximum wait in milliseconds", integer)))
+        .action(async (options: EndpointOptions & LifecycleOptions & TimeoutOptions) => withEndpoint(connect, options, async (process, name) => {
+            await wait(endpoint(process, name).lifecycle, options.event, timeout(options.timeout))
+            output({
+                scope: `endpoint:${process.identity}:${name}:lifecycle`,
+                event: options.event
+            }, options.compact)
+        }))
+
     outputOptions(endpointOptions(endpoints.command("ask")
         .description("ask a Server event and return its answer")
         .requiredOption("--event <event>", "event name")
@@ -108,4 +123,5 @@ function timeout(value?: number) {
 
 type EndpointOptions = CommonOptions & ProcessCoordinates & Readonly<{ endpoint: EndpointName }>
 type EventOptions = Readonly<{ event: string, payload?: string }>
+type LifecycleOptions = Readonly<{ event: "start" | "stop" }>
 type TimeoutOptions = Readonly<{ timeout?: number }>

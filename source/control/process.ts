@@ -1,4 +1,4 @@
-import type { SystemEndpointEntity, SystemProcessEntity, SystemProcessExit } from "@phreshos/core"
+import type { SystemProcessEntity, SystemProcessExit } from "@phreshos/core"
 import { Option, type Command } from "commander"
 import { commandContract } from "../command-contract.ts"
 import { launchOptions, outputOptions, processOptions } from "./options.ts"
@@ -78,7 +78,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
     outputOptions(process.command("wait")
         .description("wait for one Process lifecycle event")
         .addOption(new Option("--event <event>", "Process lifecycle event")
-            .choices(["endpointStart", "endpointStop", "create", "exit"])
+            .choices(["create", "exit"])
             .makeOptionMandatory())
         .option("--process <identity>", "scope the event to one Process")
         .option("--program <identity>", "scope the event to one Program")
@@ -106,15 +106,6 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
 async function eventView(event: ProcessWaitOptions["event"], message: unknown, scoped?: SystemProcessEntity) {
     if (event === "create") return processView(message as SystemProcessEntity)
 
-    if (event === "endpointStart" || event === "endpointStop") {
-        const endpoint = message as SystemEndpointEntity
-        const process = await endpoint.process()
-        return {
-            process: process.identity,
-            endpoint: endpoint === process.server ? "server" : "client"
-        }
-    }
-
     const exit = message as SystemProcessExit
     const process = exit.process ?? scoped
     return {
@@ -134,7 +125,7 @@ type ProcessListOptions = CommonOptions & Readonly<{
     offset: number
 }>
 type ProcessWaitOptions = CommonOptions & Readonly<{
-    event: "endpointStart" | "endpointStop" | "create" | "exit"
+    event: "create" | "exit"
     process?: string
     program?: string
     timeout?: number
