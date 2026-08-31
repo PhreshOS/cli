@@ -1,6 +1,6 @@
 import { Option, type Command } from "commander"
 import { commandContract } from "../command-contract.ts"
-import { clientOverrideOptions, endpointOptions, outputOptions } from "./options.ts"
+import { clientOverrideOptions, endpointOptions, outputOptions, serverOverrideOptions } from "./options.ts"
 import {
     bounded,
     clientLaunch,
@@ -11,12 +11,14 @@ import {
     output,
     payload,
     requireProcess,
+    serverLaunch,
     wait,
     type ClientOptions,
     type CommonOptions,
     type ConnectSystem,
     type EndpointName,
-    type ProcessCoordinates
+    type ProcessCoordinates,
+    type ServerOptions
 } from "./shared.ts"
 
 export default function endpointCommands(root: Command, connect: ConnectSystem) {
@@ -29,13 +31,15 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
             output(await endpointView(process, name), options.compact)
         }))
 
-    outputOptions(clientOverrideOptions(endpointOptions(endpoints.command("start")
-        .description("start a fresh Endpoint incarnation"))))
-        .action(async (options: EndpointOptions & ClientOptions) => withEndpoint(connect, options, async (process, name) => {
-            const overrides = clientLaunch(options)
-            if (name === "server" && overrides !== undefined) throw new Error("Client overrides require --endpoint client")
-            if (name === "client") await process.client.start(typeof overrides === "object" ? overrides : undefined)
-            else await process.server.start()
+    outputOptions(serverOverrideOptions(clientOverrideOptions(endpointOptions(endpoints.command("start")
+        .description("start a fresh Endpoint incarnation")))))
+        .action(async (options: EndpointOptions & ClientOptions & ServerOptions) => withEndpoint(connect, options, async (process, name) => {
+            const client = clientLaunch(options)
+            const server = serverLaunch(options)
+            if (name === "server" && client !== undefined) throw new Error("Client overrides require --endpoint client")
+            if (name === "client" && server !== undefined) throw new Error("Server overrides require --endpoint server")
+            if (name === "client") await process.client.start(typeof client === "object" ? client : undefined)
+            else await process.server.start(typeof server === "object" ? server : undefined)
             output(await endpointView(process, name), options.compact)
         }))
 

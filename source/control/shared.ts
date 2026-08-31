@@ -1,7 +1,8 @@
 import type {
+    ClientLaunch,
     Launch,
-    LaunchClient,
     Position,
+    ServerLaunch,
     Size,
     System as SystemContract,
     SystemClientEntity,
@@ -60,15 +61,20 @@ export async function programView(program: SystemProgramEntity) {
 }
 
 export async function processView(process: SystemProcessEntity) {
-    const [server, client] = await Promise.all([process.server.exists(), process.client.exists()])
+    const [server, client, serverService, clientService] = await Promise.all([
+        process.server.exists(),
+        process.client.exists(),
+        process.server.isService(),
+        process.client.isService()
+    ])
 
     return {
         identity: process.identity,
         name: process.name,
         program: process.program().identity,
         startedAt: process.startedAt.toISOString(),
-        server: { declared: process.program().server !== null, running: server },
-        client: { declared: process.program().client !== null, running: client }
+        server: { declared: process.program().server !== null, running: server, service: serverService },
+        client: { declared: process.program().client !== null, running: client, service: clientService }
     }
 }
 
@@ -80,7 +86,8 @@ export async function endpointView(process: SystemProcessEntity, name: EndpointN
         program: program.identity,
         endpoint: name,
         declared: name === "server" ? program.server !== null : program.client !== null,
-        running: await endpoint(process, name).exists()
+        running: await endpoint(process, name).exists(),
+        service: await endpoint(process, name).isService()
     }
 }
 
@@ -149,16 +156,17 @@ export function page<Value>(values: readonly Value[], search: string | undefined
 
 export function launch(options: LaunchOptions, named = false): Launch {
     const client = clientLaunch(options)
+    const server = serverLaunch(options)
     const values = entries(options.option)
     const result: {
         name?: string
-        server?: boolean
-        client?: boolean | LaunchClient
+        server?: boolean | ServerLaunch
+        client?: boolean | ClientLaunch
         options?: Readonly<Record<string, string>>
     } = {}
 
     if (options.name !== undefined) result.name = options.name
-    if (options.server !== undefined) result.server = options.server
+    if (server !== undefined) result.server = server
     if (client !== undefined) result.client = client
     if (Object.keys(values).length) result.options = values
     if (named && !result.name) throw new Error("--name is required")
@@ -166,7 +174,8 @@ export function launch(options: LaunchOptions, named = false): Launch {
     return result
 }
 
-export function clientLaunch(options: ClientOptions): boolean | LaunchClient | undefined {
+export function clientLaunch(options: ClientOptions): boolean | ClientLaunch | undefined {
+    const service = serviceSelection(options.clientService, options.clientPrivate, "Client")
     const configured = options.clientTitle !== undefined
         || options.clientWidth !== undefined
         || options.clientHeight !== undefined
@@ -175,6 +184,7 @@ export function clientLaunch(options: ClientOptions): boolean | LaunchClient | u
         || options.clientLayer !== undefined
         || options.clientLocation !== undefined
         || options.clientMinimized === true
+        || service !== undefined
 
     if (!configured) return options.client
     if (options.client === false) throw new Error("Client overrides cannot be combined with --no-client")
@@ -186,6 +196,7 @@ export function clientLaunch(options: ClientOptions): boolean | LaunchClient | u
     }
 
     return {
+        ...(service === undefined ? {} : { service }),
         ...(options.clientTitle === undefined ? {} : { title: options.clientTitle }),
         ...(options.clientWidth === undefined ? {} : { size: size(options.clientWidth, options.clientHeight!) }),
         ...(options.clientX === undefined ? {} : { position: position(options.clientX, options.clientY!) }),
@@ -193,6 +204,20 @@ export function clientLaunch(options: ClientOptions): boolean | LaunchClient | u
         ...(options.clientLocation === undefined ? {} : { location: options.clientLocation }),
         ...(options.clientMinimized === true ? { minimize: true } : {})
     }
+}
+
+export function serverLaunch(options: ServerOptions): boolean | ServerLaunch | undefined {
+    const service = serviceSelection(options.serverService, options.serverPrivate, "Server")
+    if (service === undefined) return options.server
+    if (options.server === false) throw new Error("Server overrides cannot be combined with --no-server")
+    return { service }
+}
+
+function serviceSelection(service: boolean | undefined, privateEndpoint: boolean | undefined, endpoint: string) {
+    if (service && privateEndpoint) throw new Error(`${endpoint} cannot be both a Service and private`)
+    if (service) return true
+    if (privateEndpoint) return false
+    return undefined
 }
 
 export function collect(value: string, previous: string[] = []) {
@@ -215,6 +240,8 @@ export type CommonOptions = Readonly<{ compact?: boolean }>
 export type ProcessCoordinates = Readonly<{ process: string, program?: string }>
 export type ClientOptions = Readonly<{
     client?: boolean
+    clientService?: boolean
+    clientPrivate?: boolean
     clientTitle?: string
     clientWidth?: string
     clientHeight?: string
@@ -224,9 +251,13 @@ export type ClientOptions = Readonly<{
     clientLocation?: string
     clientMinimized?: boolean
 }>
-export type LaunchOptions = ClientOptions & Readonly<{
-    name?: string
+export type ServerOptions = Readonly<{
     server?: boolean
+    serverService?: boolean
+    serverPrivate?: boolean
+}>
+export type LaunchOptions = ClientOptions & ServerOptions & Readonly<{
+    name?: string
     option?: readonly string[]
 }>
 

@@ -4,6 +4,7 @@ import test from "node:test"
 import controlCommands from "../dist/control/command.js"
 import describeCommands from "../dist/describe-command.js"
 import { gatewayPath } from "../dist/gateway.js"
+import { clientLaunch, launch, serverLaunch } from "../dist/control/shared.js"
 import { join } from "node:path"
 
 test("the selected home has one owner-local gateway", function () {
@@ -111,6 +112,26 @@ test("only arbitrary Endpoint payloads retain JSON syntax", function () {
         { path: "endpoint ask", flags: "--payload <json>" },
         { path: "endpoint publish", flags: "--payload <json>" }
     ])
+})
+
+test("launch flags preserve complete Endpoint service choices", function () {
+    assert.deepEqual(serverLaunch({ serverService: true }), { service: true })
+    assert.deepEqual(serverLaunch({ serverPrivate: true }), { service: false })
+    assert.deepEqual(clientLaunch({ clientService: true, clientTitle: "Shared" }), {
+        service: true,
+        title: "Shared"
+    })
+    assert.deepEqual(launch({
+        name: "main",
+        serverPrivate: true,
+        clientService: true
+    }), {
+        name: "main",
+        server: { service: false },
+        client: { service: true }
+    })
+    assert.throws(() => serverLaunch({ serverService: true, serverPrivate: true }), /both a Service and private/)
+    assert.throws(() => clientLaunch({ client: false, clientService: true }), /--no-client/)
 })
 
 function descendants(command) {
