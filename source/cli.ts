@@ -192,11 +192,9 @@ describe(
 
         .option("--run", "run the installed Program now")
 
-        .option("--startup", "run the Program when the System starts")
-
         .action(async function (name: string | undefined, options: InstallCommandOptions) {
 
-            await install({ name, run: options.run === true, startup: options.startup === true })
+            await install({ name, run: options.run === true })
         }),
 
     [
@@ -205,7 +203,7 @@ describe(
 
         "A name installs its verified official production release. --run launches",
 
-        "it now; --startup persists the same default launch for future starts."
+        "the installed Program now."
     ]
 )
 
@@ -406,6 +404,4 @@ interface UninstallCommandOptions {
 interface InstallCommandOptions {
 
     run?: boolean
-
-    startup?: boolean
 }

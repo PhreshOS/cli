@@ -17,10 +17,10 @@ import { prepareOfficialProgram } from "./program-release.ts"
  * production Program is derived and sent. The command remains authoring
  * metadata and never becomes part of the installed Program.
  *
- * Installation remains distinct from execution unless `run` or `startup`
- * is explicitly requested. A run created here belongs to the installed
- * Program and therefore outlives this command; `phresh start` and `phresh
- * dev` remain attached authoring runs whose lifetime is the terminal's.
+ * Installation remains distinct from execution unless `run` is explicitly
+ * requested. A run created here belongs to the installed Program and
+ * therefore outlives this command; `phresh start` and `phresh dev` remain
+ * attached authoring runs whose lifetime is the terminal's.
  */
 export default async function install(options: InstallOptions = {}) {
 
@@ -43,8 +43,6 @@ export default async function install(options: InstallOptions = {}) {
             heading(`${name || identity}${version ? ` ${version}` : ""}`, result.replaced ? "reinstalled" : "installed")
 
             if (result.replaced) console.log(`  ${dim("its storage was kept, and its previous processes were ended")}\n`)
-
-            if (result.startupEnabled) line("startup", "enabled")
 
             if (result.process) line("process", result.process)
         }

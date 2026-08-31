@@ -365,7 +365,7 @@ export default class SystemLifecycle {
 
 async function provisionSetup() {
 
-    await installProgram({ name: "setup", run: true, startup: true, announce: false })
+    await installProgram({ name: "setup", run: true, announce: false })
 }
 
 function definition(installation: SystemInstallation, executable: string): SystemServiceDefinition {

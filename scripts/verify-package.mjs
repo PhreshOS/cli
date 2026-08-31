@@ -69,7 +69,7 @@ try {
 
     assert.match(installHelp, /--run/)
 
-    assert.match(installHelp, /--startup/)
+    assert.doesNotMatch(installHelp, /--startup/)
 
     const created = join(temporary, "created")
 

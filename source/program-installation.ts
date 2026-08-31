@@ -5,8 +5,6 @@ import writeProgramCommandOutput from "./program-command-output.ts"
 export interface ProgramInstallationOptions {
 
     run?: boolean
-
-    startup?: boolean
 }
 
 export interface ProgramInstallationResult {
@@ -21,8 +19,6 @@ export interface ProgramInstallationResult {
     }
 
     replaced: boolean
-
-    startupEnabled: boolean
 
     process: string | null
 }
@@ -39,8 +35,6 @@ export default async function installProgram(program: Project | ProgramDefinitio
     const replaced = await current?.installed() ?? false
 
     let installed: SystemProgramEntity | null = null
-
-    let startupEnabled = false
 
     let process: string | null = null
 
@@ -60,13 +54,6 @@ export default async function installProgram(program: Project | ProgramDefinitio
         for await (const chunk of installed.install()) writeProgramCommandOutput(chunk)
 
         installationFinished = true
-
-        if (options.startup) {
-
-            await installed.startup.enable()
-
-            startupEnabled = true
-        }
 
         if (options.run) process = (await installed.process.create()).identity
     }
@@ -88,8 +75,6 @@ export default async function installProgram(program: Project | ProgramDefinitio
 
     if (!installed) throw new Error("The System ended Program installation without confirming it")
 
-    if (options.startup && !startupEnabled) throw new Error("The System installed the Program without confirming startup")
-
     if (options.run && !process) throw new Error("The System installed the Program without confirming that it is running")
 
     return {
@@ -97,8 +82,6 @@ export default async function installProgram(program: Project | ProgramDefinitio
         program: { identity: installed.identity, name: installed.name, version: installed.version },
 
         replaced,
-
-        startupEnabled,
 
         process
     } satisfies ProgramInstallationResult
