@@ -1,5 +1,5 @@
 import { Project } from "@phreshos/node"
-import type { ProgramDefinition, SystemProgramEntity } from "@phreshos/core"
+import type { Program, ProgramDefinition } from "@phreshos/core"
 import writeProgramCommandOutput from "./program-command-output.ts"
 
 export interface ProgramInstallationOptions {
@@ -34,7 +34,7 @@ export default async function installProgram(program: Project | ProgramDefinitio
 
     const replaced = await current?.installed() ?? false
 
-    let installed: SystemProgramEntity | null = null
+    let installed: Program | null = null
 
     let process: string | null = null
 

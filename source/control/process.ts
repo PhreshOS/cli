@@ -1,4 +1,4 @@
-import type { SystemProcessEntity, SystemProcessExit } from "@phreshos/core"
+import type { Process, SystemProcessExit } from "@phreshos/core"
 import { Option, type Command } from "commander"
 import { commandContract } from "../command-contract.ts"
 import { launchOptions, outputOptions, processOptions } from "./options.ts"
@@ -98,13 +98,13 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
             output({
                 scope: options.process ? `process:${options.process}` : options.program ? `program:${options.program}` : "process",
                 event: options.event,
-                payload: await eventView(options.event, message, options.process ? target as SystemProcessEntity : undefined)
+                payload: await eventView(options.event, message, options.process ? target as Process : undefined)
             }, options.compact)
         }))
 }
 
-async function eventView(event: ProcessWaitOptions["event"], message: unknown, scoped?: SystemProcessEntity) {
-    if (event === "create") return processView(message as SystemProcessEntity)
+async function eventView(event: ProcessWaitOptions["event"], message: unknown, scoped?: Process) {
+    if (event === "create") return processView(message as Process)
 
     const exit = message as SystemProcessExit
     const process = exit.process ?? scoped

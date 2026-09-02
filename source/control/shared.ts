@@ -5,10 +5,10 @@ import type {
     ServerLaunch,
     Size,
     System as SystemContract,
-    SystemClientEntity,
-    SystemProcessEntity,
-    SystemProgramEntity,
-    SystemServerEntity,
+    ClientEndpoint,
+    Process,
+    Program,
+    ServerEndpoint,
     Window
 } from "@phreshos/core"
 import { System } from "@phreshos/node"
@@ -16,7 +16,7 @@ import { blank } from "../style.ts"
 
 export type ConnectedSystem = SystemContract & Readonly<{ disconnect(): Promise<void> }>
 export type ConnectSystem = () => Promise<ConnectedSystem>
-export type Endpoint = SystemServerEntity | SystemClientEntity
+export type Endpoint = ServerEndpoint | ClientEndpoint
 export type EndpointName = "server" | "client"
 export type Metric = number | string
 
@@ -44,13 +44,14 @@ export async function requireProcess(system: SystemContract, identity: string, p
     return process
 }
 
-export function endpoint(process: SystemProcessEntity, name: EndpointName): Endpoint {
+export function endpoint(process: Process, name: EndpointName): Endpoint {
     return name === "server" ? process.server : process.client
 }
 
-export async function programView(program: SystemProgramEntity) {
+export async function programView(program: Program) {
     return {
         identity: program.identity,
+        assetId: program.assetId,
         name: program.name,
         version: program.version,
         description: program.description,
@@ -61,7 +62,7 @@ export async function programView(program: SystemProgramEntity) {
     }
 }
 
-export async function processView(process: SystemProcessEntity) {
+export async function processView(process: Process) {
     const [server, client, serverService, clientService] = await Promise.all([
         process.server.exists(),
         process.client.exists(),
@@ -79,7 +80,7 @@ export async function processView(process: SystemProcessEntity) {
     }
 }
 
-export async function endpointView(process: SystemProcessEntity, name: EndpointName) {
+export async function endpointView(process: Process, name: EndpointName) {
     const program = process.program()
 
     return {
@@ -92,7 +93,7 @@ export async function endpointView(process: SystemProcessEntity, name: EndpointN
     }
 }
 
-export async function windowView(process: SystemProcessEntity) {
+export async function windowView(process: Process) {
     const window = process.client.window
     const [title, position, size, minimized, front, layer, location] = await Promise.all([
         window.title(),
@@ -258,6 +259,6 @@ export async function wait(target: { waitFor(event: never, timeout?: number): Pr
     return target.waitFor(event as never, timeout)
 }
 
-export function windowOf(process: SystemProcessEntity): Window {
+export function windowOf(process: Process): Window {
     return process.client.window
 }

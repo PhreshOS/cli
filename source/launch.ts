@@ -1,5 +1,5 @@
 import { Project, type ProjectMode } from "@phreshos/node"
-import type { SystemProcessRunEvent, SystemProgramEntity } from "@phreshos/core"
+import type { Program, ProgramProcessRunEvent } from "@phreshos/core"
 import { relative } from "node:path"
 import { blank, dim, heading, line } from "./style.ts"
 
@@ -64,7 +64,7 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
   process.exit(ended.signal ? 128 : ended.code ?? 0)
 }
 
-async function consume(lifecycle: AsyncGenerator<SystemProcessRunEvent>): Promise<Ended> {
+async function consume(lifecycle: AsyncGenerator<ProgramProcessRunEvent>): Promise<Ended> {
   let process: string | null = null
   let ending: Omit<Ended, "process"> | null = null
 
@@ -86,7 +86,7 @@ function write(stream: "stdout" | "stderr", text: string) {
   (stream === "stderr" ? process.stderr : process.stdout).write(text)
 }
 
-async function forget(program: SystemProgramEntity) {
+async function forget(program: Program) {
   try { await program.forget() }
   catch (error) {
     if (error instanceof Error && error.message === "The Program represented by this handle does not exist") return

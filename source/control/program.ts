@@ -1,4 +1,4 @@
-import type { SystemProgramEntity, SystemProgramUninstall } from "@phreshos/core"
+import type { Program, SystemProgramUninstall } from "@phreshos/core"
 import { Option, type Command } from "commander"
 import { commandContract } from "../command-contract.ts"
 import { outputOptions } from "./options.ts"
@@ -71,12 +71,12 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             output({
                 scope: options.program ? `program:${options.program}` : "program",
                 event: options.event,
-                payload: await eventView(options.event, message, options.program ? target as SystemProgramEntity : undefined)
+                payload: await eventView(options.event, message, options.program ? target as Program : undefined)
             }, options.compact)
         }))
 }
 
-async function eventView(event: ProgramWaitOptions["event"], message: unknown, scoped?: SystemProgramEntity) {
+async function eventView(event: ProgramWaitOptions["event"], message: unknown, scoped?: Program) {
     if (event === "uninstall") {
         if (scoped) return { program: await programView(scoped), everything: message === true }
         const value = message as SystemProgramUninstall
@@ -84,7 +84,7 @@ async function eventView(event: ProgramWaitOptions["event"], message: unknown, s
     }
 
     if (scoped) return programView(scoped)
-    return programView(message as SystemProgramEntity)
+    return programView(message as Program)
 }
 
 function timeout(value?: number) {
