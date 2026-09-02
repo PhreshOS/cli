@@ -1,4 +1,3 @@
-import type { ClientDevelopment } from "@phreshos/core"
 import { spawn, type ChildProcess } from "node:child_process"
 import { connect } from "node:net"
 import { delimiter, join } from "node:path"
@@ -6,8 +5,6 @@ import { delimiter, join } from "node:path"
 const readinessTimeout = 15_000
 const pollingInterval = 200
 const reportingInterval = 2_000
-const sandboxedClientOrigin = "null"
-
 export type DevelopmentEvent =
   | Readonly<{ event: "output", stream: "out" | "err", text: string }>
   | Readonly<{ event: "waiting", subject: "client", url: string }>
@@ -21,10 +18,10 @@ export class DevelopmentClient {
   private outputWaiter: (() => void) | null = null
   private readonly completion: Promise<CommandExit>
 
-  public constructor(command: string, directory: string) {
+  public constructor(command: string, directory: string, environment: Readonly<Record<string, string>> = {}) {
     this.child = spawn(command, {
       cwd: directory,
-      env: commandEnvironment(directory),
+      env: commandEnvironment(directory, environment),
       shell: true,
       stdio: ["ignore", "pipe", "pipe"],
       detached: true
@@ -81,8 +78,8 @@ export async function assertAvailable(url: string) {
   throw new Error(`Client development URL is already in use: ${url}`)
 }
 
-/** Wait until a sandboxed Program iframe can load the development Client. */
-export async function* waitForDevelopmentClient(config: ClientDevelopment, client?: DevelopmentClient, signal?: AbortSignal): AsyncGenerator<DevelopmentEvent> {
+/** Wait until the declared development asset source is available. */
+export async function* waitForDevelopmentClient(url: string, client?: DevelopmentClient, signal?: AbortSignal): AsyncGenerator<DevelopmentEvent> {
   const began = Date.now()
   let nextReport = began + reportingInterval
 
@@ -94,25 +91,18 @@ export async function* waitForDevelopmentClient(config: ClientDevelopment, clien
     const exit = client?.exitResult()
     if (exit && !client?.endingWasRequested()) throw commandFailure(exit)
 
-    const availability = await inspect(config.url, readinessTimeout - (Date.now() - began))
-    if (availability === "ready") return
-    if (availability === "cors-blocked") {
-      throw new Error([
-        `Client development URL responded, but does not allow the sandboxed Client origin: ${config.url}`,
-        "Enable CORS so the response includes Access-Control-Allow-Origin: *."
-      ].join("\n"))
-    }
+    if (await inspect(url, readinessTimeout - (Date.now() - began))) return
 
     const now = Date.now()
     if (now >= nextReport) {
-      yield { event: "waiting", subject: "client", url: config.url }
+      yield { event: "waiting", subject: "client", url }
       while (nextReport <= now) nextReport += reportingInterval
     }
 
     await pause(Math.min(pollingInterval, readinessTimeout - (now - began)), signal)
   }
 
-  throw new Error(`Client development URL did not respond within 15 seconds: ${config.url}`)
+  throw new Error(`Client development URL did not respond within 15 seconds: ${url}`)
 }
 
 export function commandFailure(exit: CommandExit) {
@@ -131,10 +121,10 @@ function outputEvent(stream: "out" | "err", chunk: unknown): DevelopmentEvent {
   return { event: "output", stream, text: String(chunk) }
 }
 
-function commandEnvironment(directory: string) {
+function commandEnvironment(directory: string, additions: Readonly<Record<string, string>>) {
   const key = Object.keys(process.env).find(name => name.toLowerCase() === "path") ?? "PATH"
   const inherited = process.env[key]
-  return { ...process.env, [key]: [join(directory, "node_modules", ".bin"), inherited].filter(Boolean).join(delimiter) }
+  return { ...process.env, ...additions, [key]: [join(directory, "node_modules", ".bin"), inherited].filter(Boolean).join(delimiter) }
 }
 
 async function occupied(url: string) {
@@ -157,16 +147,14 @@ async function occupied(url: string) {
   })
 }
 
-async function inspect(url: string, remaining: number): Promise<"unavailable" | "cors-blocked" | "ready"> {
+async function inspect(url: string, remaining: number) {
   try {
     const response = await fetch(url, {
-      headers: { origin: sandboxedClientOrigin },
       signal: AbortSignal.timeout(Math.max(1, Math.min(500, remaining)))
     })
-    const allowedOrigin = response.headers.get("access-control-allow-origin")?.trim()
     await response.body?.cancel()
-    return allowedOrigin === "*" || allowedOrigin === sandboxedClientOrigin ? "ready" : "cors-blocked"
-  } catch { return "unavailable" }
+    return response.ok
+  } catch { return false }
 }
 
 function terminate(child: ChildProcess, signal: NodeJS.Signals) {

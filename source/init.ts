@@ -127,7 +127,7 @@ export default async function init(options: InitOptions = {}, directory = proces
 
             if (await yes("A development server can provide live updates instead of built Client files.", "Use a Client development server?", Boolean(suggested))) {
 
-                developmentUrl = await ask("The desktop opens this exact HTTP or HTTPS address during phresh dev.", "What URL serves the development Client?", "http://localhost:5173/")
+                developmentUrl = await ask("The System routes the Program asset path to this HTTP or HTTPS address during phresh dev.", "What URL serves the development Client?", "http://localhost:5173/")
 
                 if (await yes("The CLI can own the development server and stop it when the session ends.", "Should phresh dev start the Client server?", Boolean(suggested))) {
 
@@ -191,7 +191,6 @@ export default async function init(options: InitOptions = {}, directory = proces
 
         interaction.detail("base URL", "./", "required for production assets")
 
-        if (config.client.development) interaction.detail("CORS", "enabled", "required on the development server")
     }
 
     interaction.finish(`${configFile} created`)

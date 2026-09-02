@@ -23,6 +23,8 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
     ? project.config.client?.development
     : undefined
   const command = development?.startCommand
+  const clientBase = `/program/${definition.identity}/assets/`
+  const developmentUrl = development ? new URL(clientBase, development.url).href : null
   let client: DevelopmentClient | undefined
   let interrupted = false
   let ended: Ended | null = null
@@ -39,11 +41,11 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
   try {
     if (command && development) {
       await assertAvailable(development.url)
-      client = new DevelopmentClient(command, project.directory)
+      client = new DevelopmentClient(command, project.directory, { PHRESHOS_CLIENT_BASE: clientBase })
     }
 
-    if (development) {
-      for await (const event of waitForDevelopmentClient(development, client, controller.signal)) presentDevelopment(event)
+    if (developmentUrl) {
+      for await (const event of waitForDevelopmentClient(developmentUrl, client, controller.signal)) presentDevelopment(event)
     }
 
     if (mode === "production") await project.build()
