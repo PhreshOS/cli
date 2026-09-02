@@ -1,7 +1,6 @@
 import { Project, type ProjectMode } from "@phreshos/node"
 import type { SystemProcessRunEvent, SystemProgramEntity } from "@phreshos/core"
 import { relative } from "node:path"
-import { assertAvailable, commandFailure, DevelopmentClient, type DevelopmentEvent, waitForDevelopmentClient } from "./development-client.ts"
 import { blank, dim, heading, line } from "./style.ts"
 
 /** Run the current project through one connected System. */
@@ -19,16 +18,9 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
 
   const system = await (await import("@phreshos/node")).System.connect()
   const controller = new AbortController()
-  const development = mode === "development" && definition.client && (definition.client.start ?? true)
-    ? project.config.client?.development
-    : undefined
-  const command = development?.startCommand
-  const clientBase = `/program/${definition.identity}/assets/`
-  const developmentUrl = development ? new URL(clientBase, development.url).href : null
-  let client: DevelopmentClient | undefined
   let interrupted = false
   let ended: Ended | null = null
-  let program: Awaited<ReturnType<typeof system.forceCreateProgram>> | null = null
+  let attached = false
 
   const stop = () => {
     if (interrupted) return
@@ -39,33 +31,28 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
   for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, stop)
 
   try {
-    if (command && development) {
-      await assertAvailable(development.url)
-      client = new DevelopmentClient(command, project.directory, { PHRESHOS_CLIENT_BASE: clientBase })
-    }
+    const lifecycle = mode === "development"
+      ? await project.dev(system, { options, signal: controller.signal })
+      : await project.start(system, { options, signal: controller.signal })
 
-    if (developmentUrl) {
-      for await (const event of waitForDevelopmentClient(developmentUrl, client, controller.signal)) presentDevelopment(event)
-    }
-
-    if (mode === "production") await project.build()
-
-    program = await system.forceCreateProgram(definition)
-
-    ended = await consume(program.process.run({ options }, { signal: controller.signal }), client)
+    attached = true
+    ended = await consume(lifecycle)
   } catch (error) {
     if (!interrupted) throw error
   } finally {
     controller.abort(new Error("The local Program run ended"))
-    const cleanup = await Promise.allSettled([
-      client?.stop(),
-      program ? forget(program) : undefined
-    ])
-    for (const signal of ["SIGINT", "SIGTERM"] as const) process.off(signal, stop)
-    await system.disconnect()
+    let cleanupFailure: unknown
 
-    const failure = cleanup.find(result => result.status === "rejected")
-    if (failure?.status === "rejected") throw failure.reason
+    try {
+      const program = attached ? await system.program.find(definition.identity) : null
+      if (program) await forget(program)
+    } catch (error) { cleanupFailure = error }
+
+    try { await system.disconnect() }
+    catch (error) { cleanupFailure ??= error }
+
+    for (const signal of ["SIGINT", "SIGTERM"] as const) process.off(signal, stop)
+    if (cleanupFailure) throw cleanupFailure
   }
 
   if (interrupted) process.exit(130)
@@ -77,54 +64,22 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
   process.exit(ended.signal ? 128 : ended.code ?? 0)
 }
 
-async function consume(lifecycle: AsyncGenerator<SystemProcessRunEvent>, client?: DevelopmentClient): Promise<Ended> {
-  const iterator = lifecycle[Symbol.asyncIterator]()
-  let next = iterator.next()
-  let developmentExit = client?.exited()
-  let developmentOutput = client?.outputAvailable()
+async function consume(lifecycle: AsyncGenerator<SystemProcessRunEvent>): Promise<Ended> {
   let process: string | null = null
   let ending: Omit<Ended, "process"> | null = null
 
-  while (true) {
-    for (const event of client?.drain() ?? []) presentDevelopment(event)
-
-    const outcome = await Promise.race([
-      next.then(result => ({ source: "system" as const, result })),
-      ...(developmentExit ? [developmentExit.then(result => ({ source: "client" as const, result }))] : []),
-      ...(developmentOutput ? [developmentOutput.then(() => ({ source: "output" as const }))] : [])
-    ])
-
-    if (outcome.source === "output") {
-      developmentOutput = client?.outputAvailable()
-      continue
-    }
-
-    if (outcome.source === "client") {
-      developmentExit = undefined
-      if (!client?.endingWasRequested()) throw commandFailure(outcome.result)
-      continue
-    }
-
-    if (outcome.result.done) break
-
-    const event = outcome.result.value
+  for await (const event of lifecycle) {
     if (event.event === "started") {
       process = event.process.identity
       line("process", process)
     }
     else if (event.event === "output") write(event.stream, event.text)
     else ending = { code: event.exit.code, signal: event.exit.signal }
-
-    next = iterator.next()
   }
 
   if (!process || !ending) throw new Error("The System ended the Program run without a complete Process lifecycle")
 
   return { process, ...ending }
-}
-
-function presentDevelopment(event: DevelopmentEvent) {
-  if (event.event === "output") write(event.stream === "err" ? "stderr" : "stdout", event.text)
 }
 
 function write(stream: "stdout" | "stderr", text: string) {

@@ -116,7 +116,7 @@ describe(
 
         .option("--client-location <path>", "production Client directory")
 
-        .option("--client-development-url <url>", "development Client URL")
+        .option("--client-development-url <url>", "fixed or external development Client URL")
 
         .option("--client-development-start-command <command>", "development Client command")
 
@@ -142,7 +142,10 @@ describe(
 
                 serverDevelopmentEntryFile: options.serverDevelopmentEntryFile,
 
-                client: options.client === true || options.clientLocation !== undefined,
+                client: options.client === true
+                    || options.clientLocation !== undefined
+                    || options.clientDevelopmentUrl !== undefined
+                    || options.clientDevelopmentStartCommand !== undefined,
 
                 clientLocation: options.clientLocation,
 

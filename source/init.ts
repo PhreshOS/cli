@@ -1,4 +1,4 @@
-import { type ClientConfig, type Config, type ServerConfig } from "@phreshos/core"
+import { type ClientConfig, type ClientDevelopment, type Config, type ServerConfig } from "@phreshos/core"
 import { configFile, containedServerEntry, readManifest } from "./project.ts"
 import { dim } from "./style.ts"
 import ensureProjectDependency, { projectScript } from "./project-dependency.ts"
@@ -127,16 +127,14 @@ export default async function init(options: InitOptions = {}, directory = proces
 
             if (await yes("A development server can provide live updates instead of built Client files.", "Use a Client development server?", Boolean(suggested))) {
 
-                developmentUrl = await ask("The System routes the Program asset path to this HTTP or HTTPS address during phresh dev.", "What URL serves the development Client?", "http://localhost:5173/")
-
-                if (await yes("The CLI can own the development server and stop it when the session ends.", "Should phresh dev start the Client server?", Boolean(suggested))) {
+                if (await yes("The Project can own the development server and stop it when the session ends.", "Should phresh dev start the Client server?", Boolean(suggested))) {
 
                     developmentStartCommand = await ask("This command remains attached to the phresh dev session.", "What command starts the Client development server?", suggested || undefined)
                 }
+
+                else developmentUrl = await ask("The System routes the Program asset path to this HTTP or HTTPS address during phresh dev.", "What URL serves the external development Client?", "http://localhost:5173/")
             }
         }
-
-        if (developmentStartCommand !== undefined && developmentUrl === undefined) throw new Error("--client-development-url is required with --client-development-start-command")
 
         if (developmentUrl !== undefined && developmentUrl.trim().length === 0) throw new Error("A client development URL must not be empty")
 
@@ -144,12 +142,16 @@ export default async function init(options: InitOptions = {}, directory = proces
 
         if (developmentStartCommand !== undefined && developmentStartCommand.trim().length === 0) throw new Error("A client development command must not be empty")
 
-        client = {
+        let development: ClientDevelopment | undefined
 
-            location,
-
-            ...developmentUrl && { development: { url: developmentUrl, ...developmentStartCommand && { startCommand: developmentStartCommand } } }
+        if (developmentStartCommand !== undefined) development = {
+            startCommand: developmentStartCommand,
+            ...developmentUrl !== undefined && { url: developmentUrl }
         }
+
+        else if (developmentUrl !== undefined) development = { url: developmentUrl }
+
+        client = { location, ...development && { development } }
     }
 
     const described = {

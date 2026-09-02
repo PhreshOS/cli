@@ -31,8 +31,8 @@ phresh pack
 ```
 
 `create` produces the official starter Program. The remaining commands operate
-on the current Program project, derive its concrete definition, and delegate
-runtime operations to the connected System.
+on the current Program project through the Node Project contract and present
+its build, development, installation, and runtime lifecycles.
 
 ## System
 
@@ -89,9 +89,10 @@ for the command model.
 
 ## Repository boundary
 
-This repository owns terminal interaction, project commands, packaging, System
-acquisition, and host service integration. Node owns the external JavaScript
-interface, Core owns shared contracts, and the System owns authoritative state.
+This repository owns terminal interaction, command routing, System acquisition,
+and host service integration. Node owns the external JavaScript interface and
+Project workflows, Core owns shared contracts, and the System owns authoritative
+state.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository workflow and
 [SECURITY.md](SECURITY.md) for private vulnerability reporting.
