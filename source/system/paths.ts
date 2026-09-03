@@ -37,7 +37,11 @@ export default function systemPaths(platform = process.platform, userHome = home
 
         homeRequest: join(root, "next-home"),
 
+        portRequest: join(root, "next-port"),
+
         ...(variables.PHRESHOS_HOME === undefined ? {} : { transientHome: storage }),
+
+        ...(variables.PHRESHOS_PORT === undefined ? {} : { transientPorts: variables.PHRESHOS_PORT }),
 
         log: join(storage, "service.log")
     }

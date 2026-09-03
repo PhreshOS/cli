@@ -9,7 +9,7 @@ import nodeExecutable from "./node.ts"
 import installProgram from "../install.ts"
 import phreshosHome from "../home.ts"
 import { existsSync } from "node:fs"
-import { mkdir, rm, writeFile } from "node:fs/promises"
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 
@@ -231,11 +231,13 @@ export default class SystemLifecycle {
 
         const ready = state.running && await this.dependencies.ready(installation.paths.gateway)
 
+        const desktop = await desktopOrigin(installation.paths.storage)
+
         return {
 
             ...(installed ? { installed } : {}),
 
-            desktop: "http://localhost:4300",
+            desktop,
 
             ...state,
 
@@ -344,20 +346,26 @@ export default class SystemLifecycle {
     private async launchService() {
 
         const { installation, service } = this.dependencies
-        const { homeRequest, transientHome } = installation.paths
+        const { homeRequest, portRequest, transientHome, transientPorts } = installation.paths
 
-        await rm(homeRequest, { force: true })
+        await Promise.all([rm(homeRequest, { force: true }), rm(portRequest, { force: true })])
 
-        if (transientHome) {
+        if (transientHome || transientPorts !== undefined) {
 
             await mkdir(dirname(homeRequest), { recursive: true })
-            await writeFile(homeRequest, transientHome, { mode: 0o600 })
+
+            await Promise.all([
+
+                ...transientHome ? [writeFile(homeRequest, transientHome, { mode: 0o600 })] : [],
+
+                ...transientPorts === undefined ? [] : [writeFile(portRequest, transientPorts, { mode: 0o600 })]
+            ])
         }
 
         try { await service.start() }
         catch (error) {
 
-            await rm(homeRequest, { force: true })
+            await Promise.all([rm(homeRequest, { force: true }), rm(portRequest, { force: true })])
             throw error
         }
     }
@@ -380,11 +388,30 @@ function definition(installation: SystemInstallation, executable: string): Syste
             "--default-home",
             phreshosHome({}, homedir()),
             "--home-request",
-            installation.paths.homeRequest
+            installation.paths.homeRequest,
+            "--port-request",
+            installation.paths.portRequest
         ],
 
         directory: installation.paths.current,
 
         output: installation.paths.log
+    }
+}
+
+async function desktopOrigin(storage: string) {
+
+    try {
+
+        const value = (await readFile(join(storage, "desktop"), "utf8")).trim()
+
+        return /^http:\/\/localhost:\d+$/.test(value) ? value : "http://localhost:4300"
+    }
+
+    catch (error) {
+
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return "http://localhost:4300"
+
+        throw error
     }
 }

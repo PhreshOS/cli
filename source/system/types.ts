@@ -12,7 +12,11 @@ export interface SystemPaths {
 
     homeRequest: string
 
+    portRequest: string
+
     transientHome?: string
+
+    transientPorts?: string
 
     log: string
 }

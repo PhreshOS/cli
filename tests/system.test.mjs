@@ -73,7 +73,7 @@ test("refuses release bytes that do not match the declared filename and digest",
 
 test("keeps installation files separate from persistent System state", function () {
 
-    const paths = systemPaths("darwin", "/Users/person", { PHRESHOS_HOME: "/temporary" })
+    const paths = systemPaths("darwin", "/Users/person", { PHRESHOS_HOME: "/temporary", PHRESHOS_PORT: "4400-4499" })
 
     const storage = normalize("/temporary")
 
@@ -86,6 +86,104 @@ test("keeps installation files separate from persistent System state", function 
     assert.equal(paths.transientHome, storage)
 
     assert.equal(paths.homeRequest, join(paths.root, "next-home"))
+
+    assert.equal(paths.portRequest, join(paths.root, "next-port"))
+
+    assert.equal(paths.transientPorts, "4400-4499")
+})
+
+test("passes an explicit production port selection through the native service boundary", async function () {
+
+    const temporary = await mkdtemp(join(tmpdir(), "phresh-system-port-request-"))
+
+    const paths = {
+
+        root: join(temporary, "system"),
+
+        releases: join(temporary, "system", "releases"),
+
+        current: join(temporary, "system", "current"),
+
+        storage: join(temporary, "storage"),
+
+        gateway: join(temporary, "storage", "gateway.sock"),
+
+        homeRequest: join(temporary, "system", "next-home"),
+
+        portRequest: join(temporary, "system", "next-port"),
+
+        transientPorts: "4400-4499",
+
+        log: join(temporary, "storage", "service.log")
+    }
+
+    let running = false
+
+    let requested
+
+    const lifecycle = new SystemLifecycle({
+
+        installation: {
+
+            paths,
+
+            async exclusive(work) { return await work() },
+
+            async current() { return { version: "0.1.0" } }
+        },
+
+        service: {
+
+            async inspect() { return { registered: true, automaticStartup: true, enabled: true, running } },
+
+            async start() { requested = await readFile(paths.portRequest, "utf8"); running = true }
+        },
+
+        async ready() { return true },
+
+        async wait() {}
+    })
+
+    try {
+
+        await lifecycle.start()
+
+        assert.equal(requested, "4400-4499")
+    }
+
+    finally { await rm(temporary, { recursive: true, force: true }) }
+})
+
+test("reports the Desktop address selected by the running System", async function () {
+
+    const temporary = await mkdtemp(join(tmpdir(), "phresh-system-desktop-address-"))
+
+    const storage = join(temporary, "storage")
+
+    await mkdir(storage, { recursive: true })
+
+    await writeFile(join(storage, "desktop"), "http://localhost:4307\n")
+
+    const lifecycle = new SystemLifecycle({
+
+        installation: {
+
+            paths: { root: "/system", storage, gateway: "/gateway", log: "/log" },
+
+            async current() { return { version: "0.1.0" } }
+        },
+
+        service: {
+
+            async inspect() { return { registered: true, automaticStartup: true, enabled: true, running: true } }
+        },
+
+        async ready() { return true }
+    })
+
+    try { assert.equal((await lifecycle.status()).desktop, "http://localhost:4307") }
+
+    finally { await rm(temporary, { recursive: true, force: true }) }
 })
 
 test("gives each Windows user or isolated instance one stable named pipe", function () {
@@ -155,6 +253,8 @@ test("stages, validates, activates, and reads one production distribution", asyn
 
         homeRequest: join(temporary, "system", "next-home"),
 
+        portRequest: join(temporary, "system", "next-port"),
+
         log: join(temporary, "storage", "service.log")
     }
 
@@ -216,6 +316,8 @@ test("serializes operations that can change installation or service state", asyn
 
         homeRequest: join(temporary, "system", "next-home"),
 
+        portRequest: join(temporary, "system", "next-port"),
+
         log: join(temporary, "storage", "service.log")
     }
 
@@ -265,6 +367,8 @@ test("rolls installation back when the native service cannot start", async funct
         gateway: "/state/gateway.sock",
 
         homeRequest: "/installation/next-home",
+
+        portRequest: "/installation/next-port",
 
         log: "/state/service.log"
     }
@@ -336,7 +440,13 @@ test("rolls installation back when the native service cannot start", async funct
 
     assert.equal(registered.entry, join("/installation/current", "server", "main.js"))
 
-    assert.deepEqual(registered.arguments.slice(-2), ["--home-request", "/installation/next-home"])
+    assert.deepEqual(registered.arguments.slice(-4), [
+
+        "--home-request",
+        "/installation/next-home",
+        "--port-request",
+        "/installation/next-port"
+    ])
 
     assert.deepEqual(events.slice(-3), ["stop", "rollback", "unregister"])
 })
@@ -366,6 +476,8 @@ test("provisions Setup after the System commits and before installation returns"
             gateway: "/state/gateway.sock",
 
             homeRequest: "/installation/next-home",
+
+            portRequest: "/installation/next-port",
 
             log: "/state/service.log"
         },
