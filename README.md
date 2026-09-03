@@ -1,11 +1,20 @@
 # `@phreshos/cli`
 
-The `phresh` command for creating and operating Programs and managing the
-PhreshOS System on the current machine.
+The `phresh` command for Program projects, runtime operations, and PhreshOS
+System management.
 
-The CLI uses the same public System interface as the Node and Server SDKs. It
-adds command parsing, terminal presentation, project workflows, packaging, and
-native service management.
+[Documentation](https://docs.phreshos.com/sdks/cli) ·
+[Installation](https://docs.phreshos.com/installation) ·
+[Source](https://github.com/PhreshOS/cli)
+
+## Role
+
+The CLI presents public Project and System operations as human-facing commands.
+It owns command parsing, terminal output, packaging presentation, System release
+acquisition, and native service management.
+
+The CLI does not define another runtime interface. Its runtime commands map to
+the same serialized operations and shared contracts used by the SDKs.
 
 ## Installation
 
@@ -18,61 +27,17 @@ native service management.
 
 Node.js 20.10 or newer is required.
 
-## Program projects
-
 ```sh
 phresh create
-phresh init
 phresh dev
-phresh start
 phresh install
-phresh uninstall
-phresh pack
-```
-
-`create` produces the official starter Program. The remaining commands operate
-on the current Program project through the Node Project contract and present
-its build, development, installation, and runtime lifecycles.
-
-## System
-
-```sh
-phresh system install
 phresh system status
-phresh system start
-phresh system stop
-phresh system enable
-phresh system disable
-phresh system uninstall
-```
-
-System installation acquires and verifies the official release archive and
-configures the native per-user service. Starting and stopping control current
-execution; enabling and disabling control automatic startup.
-
-## Runtime
-
-```sh
 phresh program list
-phresh process list --program my-program
-phresh endpoint inspect \
-  --program my-program \
-  --process main \
-  --endpoint server
-phresh window inspect --program my-program --process main
 ```
 
-The command hierarchy follows the runtime ownership hierarchy. Unknown
-commands, flags, and malformed values reject rather than being guessed.
-
-```sh
-phresh describe
-phresh describe program
-phresh describe process list
-```
-
-`describe` exposes the command tree and exact options as machine-readable
-contracts.
+Use `phresh describe` to inspect the command tree and exact options. See the
+[CLI documentation](https://docs.phreshos.com/sdks/cli) for Program project,
+System, and runtime commands.
 
 ## Development
 
@@ -84,15 +49,20 @@ bun run verify
 `verify` checks the scripts, builds the CLI and bundled starter, runs the
 command tests, and validates the package artifact.
 
-See the [CLI documentation](https://github.com/PhreshOS/docs/blob/main/content/docs/sdks/cli.mdx)
-for the command model.
+## Related repositories
 
-## Repository boundary
+- [`@phreshos/node`](https://github.com/PhreshOS/node) owns the Project and
+  external System APIs composed by the CLI.
+- [`@phreshos/core`](https://github.com/PhreshOS/core) owns the shared command
+  and runtime contracts.
+- [PhreshOS System](https://github.com/PhreshOS/system) provides the managed
+  runtime and official release artifact.
+- [Phresh Program](https://github.com/PhreshOS/phresh-program) is the starter
+  bundled by `phresh create`.
+- [PhreshOS Install](https://github.com/PhreshOS/install) bootstraps this CLI on
+  clean machines.
 
-This repository owns terminal interaction, command routing, System acquisition,
-and host service integration. Node owns the external JavaScript interface and
-Project workflows, Core owns shared contracts, and the System owns authoritative
-state.
+## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository workflow and
 [SECURITY.md](SECURITY.md) for private vulnerability reporting.
