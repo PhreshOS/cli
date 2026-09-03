@@ -1,10 +1,11 @@
 import assert from "node:assert/strict"
 import { Command } from "commander"
 import test from "node:test"
-import controlCommands from "../dist/control/command.js"
-import describeCommands from "../dist/describe-command.js"
+import accessCommands from "../dist/commands/access.js"
+import describeCommands from "../dist/commands/describe.js"
 import { gatewayPath } from "../dist/gateway.js"
-import { clientLaunch, launch, serverLaunch } from "../dist/control/shared.js"
+import { clientLaunch, launch, serverLaunch } from "../dist/commands/input.js"
+import { assertCommandContracts, attachCommandContract, defineCommand } from "../dist/contract/command.js"
 import { join } from "node:path"
 
 test("the selected home has one owner-local gateway", function () {
@@ -36,7 +37,7 @@ test("running-System commands use shared handles and explicit flags", async func
     }
     const program = new Command().exitOverride().name("phresh")
 
-    controlCommands(program, async () => system)
+    accessCommands(program, async () => system)
 
     const written = []
     const original = console.log
@@ -45,7 +46,7 @@ test("running-System commands use shared handles and explicit flags", async func
 
     try {
         await program.parseAsync([
-            "node", "phresh", "window", "move", "--compact",
+            "node", "phresh", "window", "move", "--json",
             "--process", "one", "--x", "50%", "--y", "0"
         ])
     } finally {
@@ -57,6 +58,7 @@ test("running-System commands use shared handles and explicit flags", async func
         ["move", { x: "50%", y: 0 }],
         ["disconnect"]
     ])
+    assert.equal(written.length, 1)
     assert.deepEqual(JSON.parse(written[0]), {
         process: "one",
         title: "Example",
@@ -69,11 +71,30 @@ test("running-System commands use shared handles and explicit flags", async func
     })
 })
 
+test("the command contract validates emitted JSON before writing it", async function () {
+    const program = new Command().exitOverride().name("phresh")
+
+    defineCommand(program, {
+        name: "example",
+        description: "example",
+        output: {
+            format: "json",
+            description: "example result",
+            value: { type: "object", properties: { value: { type: "string" } }, required: ["value"], additionalProperties: false }
+        }
+    }, async () => ({ value: 1 }))
+
+    await assert.rejects(
+        program.parseAsync(["node", "phresh", "example"]),
+        /result\.value must be string/
+    )
+})
+
 test("describe covers the actual command tree without contacting the System", async function () {
 
     const program = new Command().exitOverride().name("phresh")
 
-    controlCommands(program)
+    accessCommands(program)
     describeCommands(program)
 
     const written = []
@@ -82,7 +103,7 @@ test("describe covers the actual command tree without contacting the System", as
     console.log = value => written.push(value)
 
     try {
-        await program.parseAsync(["node", "phresh", "describe", "endpoint", "ask", "--compact"])
+        await program.parseAsync(["node", "phresh", "describe", "endpoint", "ask", "--json"])
     } finally {
         console.log = original
     }
@@ -91,16 +112,30 @@ test("describe covers the actual command tree without contacting the System", as
 
     assert.deepEqual(described.path, ["endpoint", "ask"])
     assert.equal(described.name, "ask")
+    assert.equal(described.options.find(option => option.flags === "--process <identity>").mandatory, true)
     assert.equal(described.options.find(option => option.flags === "--process <identity>").value, "required")
-    assert.equal(described.options.find(option => option.flags === "--endpoint <endpoint>").value, "required")
-    assert.equal(described.options.find(option => option.flags === "--event <event>").value, "required")
+    assert.equal(described.options.find(option => option.flags === "--endpoint <endpoint>").mandatory, true)
+    assert.equal(described.options.find(option => option.flags === "--event <event>").mandatory, true)
     assert.equal(described.options.some(option => option.flags.includes("--input")), false)
+    assert.equal(described.requiresSystem, true)
+    assert.equal(described.output.format, "json")
+    assert.ok(described.examples.length > 0)
+})
+
+test("every System-access command is registered through the CLI contract", function () {
+    const program = new Command().exitOverride().name("phresh")
+
+    attachCommandContract(program, { name: "phresh", description: "test root" })
+    accessCommands(program, async () => { throw new Error("must not connect") })
+    describeCommands(program)
+
+    assert.doesNotThrow(() => assertCommandContracts(program))
 })
 
 test("only arbitrary Endpoint payloads retain JSON syntax", function () {
     const program = new Command().exitOverride().name("phresh")
 
-    controlCommands(program, async () => { throw new Error("must not connect") })
+    accessCommands(program, async () => { throw new Error("must not connect") })
 
     const options = descendants(program).flatMap(command => command.options.map(option => ({
         path: commandPath(command),
@@ -116,7 +151,7 @@ test("only arbitrary Endpoint payloads retain JSON syntax", function () {
 
 test("launch flags preserve complete Endpoint service choices", function () {
     const program = new Command().exitOverride().name("phresh")
-    controlCommands(program, async () => { throw new Error("must not connect") })
+    accessCommands(program, async () => { throw new Error("must not connect") })
     const flags = descendants(program).flatMap(command => command.options.map(option => option.flags))
 
     assert(flags.includes("--no-server-service"))

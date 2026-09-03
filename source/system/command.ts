@@ -3,7 +3,8 @@ import type { SystemStatus } from "./lifecycle.ts"
 import SystemLifecycle from "./lifecycle.ts"
 import prompts, { ReportedFailure } from "../prompts.ts"
 import { accent, caution, dim, negative, positive } from "../style.ts"
-import { commandContract } from "../command-contract.ts"
+import { defineCommand } from "../contract/command.ts"
+import { textOutput } from "../commands/schemas.ts"
 
 /** Attach the System lifecycle without mixing it with Program commands. */
 export default function systemCommands(program: Command, provided?: SystemLifecycle) {
@@ -12,19 +13,16 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
 
     const current = (): SystemLifecycle => lifecycle ?? (lifecycle = new SystemLifecycle())
 
-    const system = commandContract(program.command("system")
-        .description("install and manage the PhreshOS System"), {
-            guidance: [
-                "Choose one native System lifecycle operation.",
-                "Running-System Programs, Processes, Endpoints, and Windows are top-level capabilities, not System subcommands."
-            ]
-        })
+    const system = defineCommand(program, {
+        name: "system",
+        description: "install and manage the PhreshOS System",
+        guidance: [
+            "Choose one native System lifecycle operation.",
+            "Running-System Programs, Processes, Endpoints, and Windows are top-level capabilities, not System subcommands."
+        ]
+    })
 
-    system.command("install")
-
-        .description("install or update the System and start its service")
-
-        .action(async function () {
+    defineCommand(system, lifecycleContract("install", "install or update the System and start its service"), async function () {
 
             const interaction = prompts()
 
@@ -37,11 +35,7 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
             interaction.finish(`PhreshOS ${accent(status.installed?.version ?? "")} installed`)
         })
 
-    system.command("uninstall")
-
-        .description("remove the System installation and service")
-
-        .action(async function () {
+    defineCommand(system, lifecycleContract("uninstall", "remove the System installation and service"), async function () {
 
             const interaction = prompts()
 
@@ -54,11 +48,7 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
             interaction.finish("System uninstalled")
         })
 
-    system.command("status")
-
-        .description("show the System version and operating state")
-
-        .action(async function () {
+    defineCommand(system, lifecycleContract("status", "show the System version and operating state"), async function () {
 
             const status = await installed(current())
 
@@ -71,11 +61,7 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
             interaction.finish(status.ready ? positive("System ready") : caution("System not ready"))
         })
 
-    system.command("version")
-
-        .description("show the installed System version")
-
-        .action(async function () {
+    defineCommand(system, lifecycleContract("version", "show the installed System version"), async function () {
 
             const status = await installed(current())
 
@@ -99,11 +85,7 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
 
 function action(system: Command, name: string, description: string, current: () => SystemLifecycle, work: (lifecycle: SystemLifecycle) => Promise<SystemStatus>) {
 
-    system.command(name)
-
-        .description(description)
-
-        .action(async function () {
+    defineCommand(system, lifecycleContract(name, description), async function () {
 
             const lifecycle = current()
 
@@ -119,6 +101,14 @@ function action(system: Command, name: string, description: string, current: () 
 
             interaction.finish(`System ${past(name)}`)
         })
+}
+
+function lifecycleContract(name: string, description: string) {
+    return {
+        name,
+        description,
+        output: textOutput(description)
+    }
 }
 
 function report(interaction: ReturnType<typeof prompts>, status: SystemStatus) {

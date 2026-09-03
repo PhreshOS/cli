@@ -1,117 +1,6 @@
-import type {
-    ClientLaunch,
-    Launch,
-    Position,
-    ServerLaunch,
-    Size,
-    System as SystemContract,
-    ClientEndpoint,
-    Process,
-    Program,
-    ServerEndpoint,
-    Window
-} from "@phreshos/core"
-import { System } from "@phreshos/node"
-import { blank } from "../style.ts"
+import type { ClientLaunch, Launch, Position, ServerLaunch, Size } from "@phreshos/core"
 
-export type ConnectedSystem = SystemContract & Readonly<{ disconnect(): Promise<void> }>
-export type ConnectSystem = () => Promise<ConnectedSystem>
-export type Endpoint = ServerEndpoint | ClientEndpoint
-export type EndpointName = "server" | "client"
 export type Metric = number | string
-
-export const connectSystem: ConnectSystem = () => System.connect()
-
-export async function connected<Result>(connect: ConnectSystem, action: (system: ConnectedSystem) => Promise<Result>) {
-    const system = await connect()
-
-    try { return await action(system) }
-    finally { await system.disconnect() }
-}
-
-export async function requireProgram(system: SystemContract, identity: string) {
-    const program = await system.program.find(identity)
-    if (!program) throw new Error(`Unknown Program "${identity}"`)
-    return program
-}
-
-export async function requireProcess(system: SystemContract, identity: string, programIdentity?: string) {
-    const process = programIdentity
-        ? await (await requireProgram(system, programIdentity)).process.find(identity)
-        : await system.process.find(identity)
-
-    if (!process) throw new Error(`Unknown Process "${identity}"`)
-    return process
-}
-
-export function endpoint(process: Process, name: EndpointName): Endpoint {
-    return name === "server" ? process.server : process.client
-}
-
-export async function programView(program: Program) {
-    return {
-        identity: program.identity,
-        assetId: program.assetId,
-        name: program.name,
-        version: program.version,
-        description: program.description,
-        installed: await program.installed(),
-        hasAgent: program.hasAgent,
-        server: program.server,
-        client: program.client
-    }
-}
-
-export async function processView(process: Process) {
-    const [server, client, serverService, clientService] = await Promise.all([
-        process.server.exists(),
-        process.client.exists(),
-        process.server.isService(),
-        process.client.isService()
-    ])
-
-    return {
-        identity: process.identity,
-        name: process.name,
-        program: process.program().identity,
-        startedAt: process.startedAt.toISOString(),
-        server: { declared: process.program().server !== null, running: server, service: serverService },
-        client: { declared: process.program().client !== null, running: client, service: clientService }
-    }
-}
-
-export async function endpointView(process: Process, name: EndpointName) {
-    const program = process.program()
-
-    return {
-        process: process.identity,
-        program: program.identity,
-        endpoint: name,
-        declared: name === "server" ? program.server !== null : program.client !== null,
-        running: await endpoint(process, name).exists(),
-        service: await endpoint(process, name).isService()
-    }
-}
-
-export async function windowView(process: Process) {
-    const window = process.client.window
-    const [title, position, size, minimized, front, layer, location] = await Promise.all([
-        window.title(),
-        window.position(),
-        window.size(),
-        window.minimized(),
-        window.front(),
-        window.layer(),
-        window.location()
-    ])
-
-    return { process: process.identity, title, position, size, minimized, front, layer, location }
-}
-
-export function output(value: unknown, compact?: boolean) {
-    console.log(JSON.stringify(value ?? null, null, compact ? undefined : 2))
-    blank()
-}
 
 export function payload(value?: string) {
     if (value === undefined) return undefined
@@ -232,7 +121,7 @@ function entries(values: readonly string[] = []) {
     return result
 }
 
-export type CommonOptions = Readonly<{ compact?: boolean }>
+export type CommonOptions = Readonly<{ json?: boolean }>
 export type ProcessCoordinates = Readonly<{ process: string, program?: string }>
 export type ClientOptions = Readonly<{
     client?: boolean
@@ -254,11 +143,3 @@ export type LaunchOptions = ClientOptions & ServerOptions & Readonly<{
     name?: string
     option?: readonly string[]
 }>
-
-export async function wait(target: { waitFor(event: never, timeout?: number): Promise<unknown> }, event: string, timeout?: number) {
-    return target.waitFor(event as never, timeout)
-}
-
-export function windowOf(process: Process): Window {
-    return process.client.window
-}

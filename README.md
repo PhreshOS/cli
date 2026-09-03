@@ -13,8 +13,9 @@ The CLI presents public Project and System operations as human-facing commands.
 It owns command parsing, terminal output, packaging presentation, System release
 acquisition, and native service management.
 
-The CLI does not define another runtime interface. Its runtime commands map to
-the same serialized operations and shared contracts used by the SDKs.
+The CLI owns its command contract. Runtime command executors use
+`@phreshos/node` and its shared System domain handles; the CLI does not define a
+second System interface or transport request language.
 
 ## Installation
 
@@ -35,7 +36,8 @@ phresh system status
 phresh program list
 ```
 
-Use `phresh describe` to inspect the command tree and exact options. See the
+Use `phresh describe` to inspect a command, or `phresh describe --all --json`
+to read the complete machine-discoverable contract. See the
 [CLI documentation](https://docs.phreshos.com/sdks/cli) for Program project,
 System, and runtime commands.
 
@@ -53,8 +55,8 @@ command tests, and validates the package artifact.
 
 - [`@phreshos/node`](https://github.com/PhreshOS/node) owns the Project and
   external System APIs composed by the CLI.
-- [`@phreshos/core`](https://github.com/PhreshOS/core) owns the shared command
-  and runtime contracts.
+- [`@phreshos/core`](https://github.com/PhreshOS/core) owns the shared System
+  domain contracts used by the Node SDK.
 - [PhreshOS System](https://github.com/PhreshOS/system) provides the managed
   runtime and official release artifact.
 - [Phresh Program](https://github.com/PhreshOS/phresh-program) is the starter
