@@ -440,7 +440,7 @@ test("rolls installation back when the native service cannot start", async funct
 
     assert.equal(registered.entry, join("/installation/current", "server", "main.js"))
 
-    assert.deepEqual(registered.arguments.slice(-4), [
+    assert.deepEqual(registered.arguments, [
 
         "--home-request",
         "/installation/next-home",

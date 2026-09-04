@@ -7,10 +7,8 @@ import systemPaths from "./paths.ts"
 import systemService from "./service/index.ts"
 import nodeExecutable from "./node.ts"
 import installProgram from "../install.ts"
-import phreshosHome from "../home.ts"
 import { existsSync } from "node:fs"
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
-import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 
 export interface SystemStatus {
@@ -385,8 +383,6 @@ function definition(installation: SystemInstallation, executable: string): Syste
         entry: join(installation.paths.current, "server", "main.js"),
 
         arguments: [
-            "--default-home",
-            phreshosHome({}, homedir()),
             "--home-request",
             installation.paths.homeRequest,
             "--port-request",
