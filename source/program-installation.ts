@@ -46,10 +46,10 @@ export default async function installProgram(program: Project | ProgramDefinitio
 
             await program.build()
 
-            installed = await system.forceCreateProgram(program.productionDefinition())
+            installed = await system.program.forceCreate(program.productionDefinition())
         }
 
-        else installed = await system.forceCreateProgram(program)
+        else installed = await system.program.forceCreate(program)
 
         for await (const chunk of installed.install()) writeProgramCommandOutput(chunk)
 
