@@ -1,5 +1,6 @@
 import { Argument, Command, Option } from "commander"
-import { assertValue, type ValueContract } from "./schema.ts"
+import type { OutputContract } from "./output.ts"
+import { writeData } from "../output/write.ts"
 
 const contracts = new WeakMap<Command, CommandContract>()
 
@@ -31,7 +32,7 @@ export function defineCommand<Options extends object = Record<string, never>, Ar
         const options = received.pop() as Options
         const result = await execute({ arguments: received as unknown as Arguments, options, command: owner })
 
-        if (contract.output?.format === "json") writeJson(result, contract.output, (options as { json?: unknown }).json === true)
+        if (contract.output?.format === "data") writeData(result, contract.output, (options as { json?: unknown }).json === true)
     })
 
     return command
@@ -95,12 +96,6 @@ export interface OptionContract {
     readonly parse?: (value: string, previous: unknown) => unknown
 }
 
-export interface OutputContract {
-    readonly format: "json" | "text"
-    readonly description: string
-    readonly value?: ValueContract
-}
-
 function configureOption(contract: OptionContract) {
     const option = new Option(contract.flags, contract.description)
 
@@ -137,13 +132,4 @@ function pathOf(command: Command) {
     }
 
     return path
-}
-
-function writeJson(result: unknown, contract: OutputContract, compact: boolean) {
-    const normalized = result ?? null
-
-    if (contract.value) assertValue(normalized, contract.value)
-
-    console.log(JSON.stringify(normalized, null, compact ? undefined : 2))
-    if (!compact) console.log()
 }

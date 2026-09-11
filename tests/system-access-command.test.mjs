@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { clientPermissionCatalog } from "@phreshos/core"
 import { Command } from "commander"
 import test from "node:test"
 import accessCommands from "../dist/commands/access.js"
@@ -71,16 +72,17 @@ test("running-System commands use shared handles and explicit flags", async func
     })
 })
 
-test("the command contract validates emitted JSON before writing it", async function () {
+test("the command contract validates emitted data before selecting a representation", async function () {
     const program = new Command().exitOverride().name("phresh")
 
     defineCommand(program, {
         name: "example",
         description: "example",
         output: {
-            format: "json",
+            format: "data",
             description: "example result",
-            value: { type: "object", properties: { value: { type: "string" } }, required: ["value"], additionalProperties: false }
+            value: { type: "object", properties: { value: { type: "string" } }, required: ["value"], additionalProperties: false },
+            presentation: { format: "fields", fields: [{ label: "Value", path: "value" }] }
         }
     }, async () => ({ value: 1 }))
 
@@ -118,8 +120,110 @@ test("describe covers the actual command tree without contacting the System", as
     assert.equal(described.options.find(option => option.flags === "--event <event>").mandatory, true)
     assert.equal(described.options.some(option => option.flags.includes("--input")), false)
     assert.equal(described.requiresSystem, true)
-    assert.equal(described.output.format, "json")
+    assert.equal(described.output.format, "data")
+    assert.equal(described.output.presentation.format, "value")
     assert.ok(described.examples.length > 0)
+})
+
+test("the Program output contract follows Core's complete permission catalog", async function () {
+    const program = new Command().exitOverride().name("phresh")
+    accessCommands(program, async () => { throw new Error("must not connect") })
+    describeCommands(program)
+
+    const written = []
+    const original = console.log
+    console.log = value => written.push(value)
+
+    try {
+        await program.parseAsync(["node", "phresh", "describe", "program", "inspect", "--json"])
+    }
+    finally {
+        console.log = original
+    }
+
+    const described = JSON.parse(written[0])
+    const client = described.output.value.properties.client.anyOf.find(candidate => candidate.type === "object")
+    const declared = Object.keys(client.properties.permissions.properties).sort()
+
+    assert.deepEqual(declared, Object.keys(clientPermissionCatalog).sort())
+})
+
+test("human collection output fits the terminal while JSON preserves complete data", async function () {
+    const program = new Command().exitOverride().name("phresh")
+    const output = {
+        format: "data",
+        description: "Programs",
+        value: {
+            type: "object",
+            properties: {
+                data: { type: "array", items: { type: "object", additionalProperties: true } },
+                total: { type: "integer" },
+                truncated: { type: "boolean" }
+            },
+            required: ["data", "total", "truncated"],
+            additionalProperties: false
+        },
+        presentation: {
+            format: "table",
+            rows: "data",
+            columns: [
+                { label: "Name", path: "name" },
+                { label: "Identity", path: "identity" },
+                { label: "Version", path: "version" },
+                { label: "Installed", path: "installed" },
+                { label: "Description", path: "description", width: 3 }
+            ],
+            item: "Program",
+            items: "Programs",
+            empty: "No matching Programs",
+            total: "total",
+            truncated: "truncated"
+        }
+    }
+    const result = {
+        data: [{
+            name: "Terminal",
+            identity: "terminal",
+            version: "1.0.0",
+            installed: true,
+            description: "A deliberately long description that must wrap inside the available terminal width"
+        }],
+        total: 3,
+        truncated: true
+    }
+
+    defineCommand(program, {
+        name: "list",
+        description: "list",
+        options: [{ flags: "--json", description: "machine output" }],
+        output
+    }, async () => result)
+
+    const written = []
+    const originalLog = console.log
+    const originalColumns = process.env.COLUMNS
+    console.log = value => written.push(String(value ?? ""))
+    process.env.COLUMNS = "48"
+
+    try {
+        await program.parseAsync(["node", "phresh", "list"])
+        const human = written.join("\n")
+        assert.match(human, /Terminal/)
+        assert.match(human, /1 of 3 Programs · more available/)
+        assert.doesNotMatch(human, /…/)
+        assert.equal(human.trimStart().startsWith("{"), false)
+        assert.equal(human.split("\n").every(line => [...line].length <= 48), true)
+
+        written.length = 0
+        await program.parseAsync(["node", "phresh", "list", "--json"])
+        assert.equal(written.length, 1)
+        assert.deepEqual(JSON.parse(written[0]), result)
+    }
+    finally {
+        console.log = originalLog
+        if (originalColumns === undefined) delete process.env.COLUMNS
+        else process.env.COLUMNS = originalColumns
+    }
 })
 
 test("every System-access command is registered through the CLI contract", function () {

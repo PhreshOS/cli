@@ -41,6 +41,10 @@ to read the complete machine-discoverable contract. See the
 [CLI documentation](https://docs.phreshos.com/sdks/cli) for Program project,
 System, and runtime commands.
 
+Runtime commands render responsive tables or labeled fields for people by
+default. Add `--json` to receive the complete result as one JSON value for
+automation.
+
 ## Development
 
 ```sh

@@ -3,7 +3,15 @@ import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
 import { option, timeoutOption, withJson } from "./options.ts"
-import { eventOutput, jsonOutput, pageOutput, programOutput } from "./schemas.ts"
+import {
+    dataOutput,
+    eventOutput,
+    eventPresentation,
+    pageOutput,
+    programListPresentation,
+    programOutput,
+    programPresentation
+} from "./schemas.ts"
 import { connected, requireProgram, type ConnectSystem } from "./connection.ts"
 import { bounded, integer, page, type CommonOptions } from "./input.ts"
 import { wait } from "./observation.ts"
@@ -26,7 +34,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--limit <count>", "maximum returned Programs", { parse: value => integer(value), default: 30 }),
             option("--offset <count>", "number of matching Programs to skip", { parse: value => integer(value), default: 0 })
         ),
-        output: jsonOutput(pageOutput(programOutput, "matching Programs"), "A bounded page of Programs"),
+        output: dataOutput(pageOutput(programOutput, "matching Programs"), "A bounded page of Programs", programListPresentation),
         examples: ["phresh program list", "phresh program list --installed-only --json"]
     }, async ({ options }) => connected(connect, async system => {
         const programs = await system.program.list(options.installedOnly === true)
@@ -45,7 +53,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         description: "read one Program declaration and installed state",
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
-        output: jsonOutput(programOutput, "The selected Program"),
+        output: dataOutput(programOutput, "The selected Program", programPresentation),
         examples: ["phresh program inspect --program terminal"]
     }, async ({ options }) => connected(connect, async system => {
         return await programView(await requireProgram(system, options.program))
@@ -56,10 +64,13 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         description: "read a Program's own agent operating policy",
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
-        output: jsonOutput(value.object({
+        output: dataOutput(value.object({
             program: value.string("Program identity"),
             content: value.string("Program-owned agent documentation")
-        }, ["program", "content"], "Program agent documentation"), "The Program's agent documentation"),
+        }, ["program", "content"], "Program agent documentation"), "The Program's agent documentation", {
+            format: "document",
+            content: "content"
+        }),
         examples: ["phresh program agent --program terminal --json"]
     }, async ({ options }) => connected(connect, async system => {
         const program = await requireProgram(system, options.program)
@@ -80,7 +91,11 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--program <identity>", "scope forget or uninstall to one Program"),
             timeoutOption
         ),
-        output: jsonOutput(eventOutput("The observed Program event", value.any("Program state or uninstall result")), "One Program event"),
+        output: dataOutput(
+            eventOutput("The observed Program event", value.any("Program state or uninstall result")),
+            "One Program event",
+            eventPresentation
+        ),
         examples: ["phresh program wait --event create", "phresh program wait --event uninstall --program terminal --json"]
     }, async ({ options }) => connected(connect, async system => {
         if (options.program && options.event !== "forget" && options.event !== "uninstall") {

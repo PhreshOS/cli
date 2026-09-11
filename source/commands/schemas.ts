@@ -1,4 +1,5 @@
-import type { OutputContract } from "../contract/command.ts"
+import { clientPermissionCatalog } from "@phreshos/core"
+import type { OutputContract, OutputPresentation } from "../contract/output.ts"
 import type { ValueContract } from "../contract/schema.ts"
 import { value } from "../contract/schema.ts"
 
@@ -11,13 +12,12 @@ const endpointDeclaration = value.nullable(value.object({
     service: value.boolean("default Service role for new incarnations")
 }, ["start", "service"], "resolved Server Endpoint declaration"))
 
-const permissions = value.object({
-    all: value.array(value.string("permission value"), "all permission values"),
-    services: value.array(value.string("Program identity"), "permitted Service Programs"),
-    programs: value.array(value.string("Program identity"), "permitted Programs"),
-    appearance: value.array(value.string("permission value"), "appearance permission values"),
-    desktopPreferences: value.array(value.string("permission value"), "Desktop preferences permission values")
-}, [], "immutable Client permissions")
+const permissions = value.object(Object.fromEntries(
+    Object.entries(clientPermissionCatalog).map(([name, domain]) => [name, domain === "none"
+        ? { type: "array" as const, maxItems: 0, description: `${name} presence-only grant` }
+        : value.array(value.string(permissionValueDescription(domain)), `${name} permission values`)
+    ])
+), [], "immutable Client permissions")
 
 const clientDeclaration = value.nullable(value.object({
     start: value.boolean("whether a default Process starts this Endpoint"),
@@ -71,6 +71,144 @@ export const windowOutput = value.object({
     location: value.string("current Client location")
 }, ["process", "title", "position", "size", "minimized", "front", "layer", "location"], "Window state")
 
+export const programPresentation: OutputPresentation = fields(
+    ["Identity", "identity"],
+    ["Asset", "assetId"],
+    ["Name", "name"],
+    ["Version", "version"],
+    ["Description", "description"],
+    ["Installed", "installed"],
+    ["Agent", "hasAgent"],
+    ["Server", "server"],
+    ["Client", "client"]
+)
+
+export const programListPresentation: OutputPresentation = table("data", "Program", "Programs", "No matching Programs", [
+    { label: "Name", path: "name", width: 2 },
+    { label: "Identity", path: "identity", width: 2 },
+    { label: "Version", path: "version" },
+    { label: "Installed", path: "installed" }
+])
+
+export const processPresentation: OutputPresentation = fields(
+    ["Identity", "identity"],
+    ["Name", "name"],
+    ["Program", "program"],
+    ["Started", "startedAt"],
+    ["Server declared", "server.declared"],
+    ["Server running", "server.running"],
+    ["Server service", "server.service"],
+    ["Client declared", "client.declared"],
+    ["Client running", "client.running"],
+    ["Client service", "client.service"]
+)
+
+export const processActionPresentation: OutputPresentation = fields(
+    ["Process", "identity"],
+    ["Name", "name"],
+    ["Program", "program"],
+    ["Server", "server.running"],
+    ["Client", "client.running"]
+)
+
+export const processIdentityPresentation: OutputPresentation = fields(
+    ["Process", "identity"],
+    ["Program", "program"]
+)
+
+export const processListPresentation: OutputPresentation = table("data", "Process", "Processes", "No matching Processes", [
+    { label: "Name", path: "name", width: 2 },
+    { label: "Identity", path: "identity", width: 2 },
+    { label: "Program", path: "program", width: 2 },
+    { label: "Server", path: "server.running" },
+    { label: "Client", path: "client.running" }
+])
+
+export const endpointPresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Program", "program"],
+    ["Endpoint", "endpoint"],
+    ["Declared", "declared"],
+    ["Running", "running"],
+    ["Service", "service"]
+)
+
+export const endpointActionPresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Endpoint", "endpoint"],
+    ["Running", "running"],
+    ["Service", "service"]
+)
+
+export const windowPresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Title", "title"],
+    ["Position", "position"],
+    ["Size", "size"],
+    ["Minimized", "minimized"],
+    ["Front", "front"],
+    ["Layer", "layer"],
+    ["Location", "location"]
+)
+
+export const windowPositionPresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Position", "position"]
+)
+
+export const windowSizePresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Size", "size"]
+)
+
+export const windowGeometryPresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Position", "position"],
+    ["Size", "size"]
+)
+
+export const windowMinimizePresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Minimized", "minimized"]
+)
+
+export const windowTitlePresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Title", "title"]
+)
+
+export const windowRaisePresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Front", "front"]
+)
+
+export const eventPresentation: OutputPresentation = fields(
+    ["Scope", "scope"],
+    ["Event", "event"],
+    ["Payload", "payload"]
+)
+
+export const lifecyclePresentation: OutputPresentation = fields(
+    ["Scope", "scope"],
+    ["Event", "event"]
+)
+
+export const commandPresentation: OutputPresentation = fields(
+    ["Path", "path"],
+    ["Name", "name"],
+    ["Aliases", "aliases"],
+    ["Description", "description"],
+    ["Arguments", "arguments"],
+    ["Options", "options"],
+    ["Guidance", "guidance"],
+    ["Examples", "examples"],
+    ["Requires System", "requiresSystem"],
+    ["Output", "output"],
+    ["Commands", "commands"]
+)
+
+export const valuePresentation: OutputPresentation = { format: "value" }
+
 export function pageOutput(items: ValueContract, description: string) {
     return value.object({
         data: value.array(items, description),
@@ -87,8 +225,8 @@ export function eventOutput(description: string, payload: ValueContract = value.
     }, ["scope", "event", "payload"], description)
 }
 
-export function jsonOutput(schema: ValueContract, description: string): OutputContract {
-    return { format: "json", description, value: schema }
+export function dataOutput(schema: ValueContract, description: string, presentation: OutputPresentation): OutputContract {
+    return { format: "data", description, value: schema, presentation }
 }
 
 export function textOutput(description: string): OutputContract {
@@ -101,4 +239,29 @@ function endpointState(description: string) {
         running: value.boolean("whether the Endpoint currently exists"),
         service: value.boolean("whether this Endpoint incarnation is a Service")
     }, ["declared", "running", "service"], description)
+}
+
+function fields(...values: readonly (readonly [label: string, path: string])[]): OutputPresentation {
+    return {
+        format: "fields",
+        fields: values.map(([label, path]) => ({ label, path }))
+    }
+}
+
+function table(
+    rows: string,
+    item: string,
+    items: string,
+    empty: string,
+    columns: Extract<OutputPresentation, { format: "table" }>["columns"]
+): OutputPresentation {
+    return { format: "table", rows, columns, item, items, empty, total: "total", truncated: "truncated" }
+}
+
+function permissionValueDescription(domain: Exclude<(typeof clientPermissionCatalog)[keyof typeof clientPermissionCatalog], "none">) {
+    switch (domain) {
+        case "program": return "Program identity"
+        case "network": return "network destination scope"
+        case "storage": return "storage path scope"
+    }
 }

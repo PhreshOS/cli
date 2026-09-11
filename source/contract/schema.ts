@@ -6,6 +6,7 @@ export type ValueContract = Readonly<{
     properties?: Readonly<Record<string, ValueContract>>
     required?: readonly string[]
     items?: ValueContract
+    maxItems?: number
     additionalProperties?: boolean | ValueContract
     anyOf?: readonly ValueContract[]
 }>
@@ -66,6 +67,9 @@ export function assertValue(value: unknown, contract: ValueContract, path = "res
 
     if (contract.type === "array") {
         if (!Array.isArray(value)) throw new Error(`${path} must be an array`)
+        if (contract.maxItems !== undefined && value.length > contract.maxItems) {
+            throw new Error(`${path} must contain no more than ${contract.maxItems} values`)
+        }
         if (contract.items) value.forEach((item, index) => assertValue(item, contract.items!, `${path}[${index}]`))
         return
     }

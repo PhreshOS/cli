@@ -2,7 +2,7 @@ import type { Command } from "commander"
 import { defineCommand, readCommandContract, type CommandContract, type OptionContract } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
 import { jsonOption, option } from "./options.ts"
-import { jsonOutput } from "./schemas.ts"
+import { commandPresentation, dataOutput } from "./schemas.ts"
 
 /** Expose the authoritative CLI contract without contacting the System. */
 export default function describeCommands(root: Command) {
@@ -16,7 +16,11 @@ export default function describeCommands(root: Command) {
         ],
         guidance: ["Omit the path to start at the CLI root. Add --all to retrieve the complete selected contract tree."],
         examples: ["phresh describe", "phresh describe process create", "phresh describe --all --json"],
-        output: jsonOutput(value.any("one command contract or a complete contract tree"), "CLI command contract")
+        output: dataOutput(
+            value.any("one command contract or a complete contract tree"),
+            "CLI command contract",
+            commandPresentation
+        )
     }, ({ arguments: [path], options }) => {
         const command = resolveCommand(root, path)
         return options.all ? describeTree(command, path) : describe(command, path)

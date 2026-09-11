@@ -1,7 +1,20 @@
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { option, processOptions, timeoutOption, withJson } from "./options.ts"
-import { eventOutput, jsonOutput, windowOutput } from "./schemas.ts"
+import type { OutputPresentation } from "../contract/output.ts"
+import {
+    dataOutput,
+    eventOutput,
+    eventPresentation,
+    windowGeometryPresentation,
+    windowMinimizePresentation,
+    windowOutput,
+    windowPositionPresentation,
+    windowPresentation,
+    windowRaisePresentation,
+    windowSizePresentation,
+    windowTitlePresentation
+} from "./schemas.ts"
 import { connected, requireProcess, type ConnectSystem } from "./connection.ts"
 import { bounded, position, size, type CommonOptions, type ProcessCoordinates } from "./input.ts"
 import { wait } from "./observation.ts"
@@ -14,12 +27,12 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
         guidance: ["A Window belongs to the Client Endpoint of one exact Process."]
     })
 
-    defineCommand<WindowOptions>(windows, state("inspect", "read the complete current Window state"), async ({ options }) => {
+    defineCommand<WindowOptions>(windows, state("inspect", "read the complete current Window state", windowPresentation), async ({ options }) => {
         return await withWindow(connect, options, windowView)
     })
 
     defineCommand<WindowOptions & PositionOptions>(windows, {
-        ...state("move", "change Window position"),
+        ...state("move", "change Window position", windowPositionPresentation),
         options: withJson(
             ...processOptions,
             option("--x <value>", "horizontal pixels or workspace-relative expression", { mandatory: true }),
@@ -32,7 +45,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
     }))
 
     defineCommand<WindowOptions & SizeOptions>(windows, {
-        ...state("resize", "change Window size"),
+        ...state("resize", "change Window size", windowSizePresentation),
         options: withJson(
             ...processOptions,
             option("--width <value>", "width in pixels or a workspace-relative expression", { mandatory: true }),
@@ -45,7 +58,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
     }))
 
     defineCommand<WindowOptions & PositionOptions & SizeOptions>(windows, {
-        ...state("setGeometry", "change Window position and size atomically"),
+        ...state("setGeometry", "change Window position and size atomically", windowGeometryPresentation),
         aliases: ["set-geometry"],
         options: withJson(
             ...processOptions,
@@ -64,7 +77,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
     }))
 
     defineCommand<WindowOptions & Readonly<{ restore?: boolean }>>(windows, {
-        ...state("minimize", "set Window visibility without changing its order"),
+        ...state("minimize", "set Window visibility without changing its order", windowMinimizePresentation),
         options: withJson(...processOptions, option("--restore", "restore rather than minimize the Window")),
         examples: ["phresh window minimize --process main --program terminal", "phresh window minimize --process main --program terminal --restore"]
     }, async ({ options }) => withWindow(connect, options, async process => {
@@ -73,7 +86,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
     }))
 
     defineCommand<WindowOptions & Readonly<{ title: string }>>(windows, {
-        ...state("changeTitle", "change the human-readable Window title"),
+        ...state("changeTitle", "change the human-readable Window title", windowTitlePresentation),
         aliases: ["change-title"],
         options: withJson(...processOptions, option("--title <title>", "new Window title", { mandatory: true })),
         examples: ["phresh window change-title --process main --program terminal --title Shell"]
@@ -83,7 +96,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
     }))
 
     defineCommand<WindowOptions>(windows, {
-        ...state("raise", "raise the Window within its own layer"),
+        ...state("raise", "raise the Window within its own layer", windowRaisePresentation),
         examples: ["phresh window raise --process main --program terminal"]
     }, async ({ options }) => withWindow(connect, options, async process => {
         await windowOf(process).raise()
@@ -102,7 +115,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
             }),
             timeoutOption
         ),
-        output: jsonOutput(eventOutput("The observed Window event"), "One Window event"),
+        output: dataOutput(eventOutput("The observed Window event"), "One Window event", eventPresentation),
         examples: ["phresh window wait --process main --program terminal --event geometry --json"]
     }, async ({ options }) => withWindow(connect, options, async process => {
         return {
@@ -115,13 +128,13 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
     }))
 }
 
-function state(name: string, description: string) {
+function state(name: string, description: string, presentation: OutputPresentation) {
     return {
         name,
         description,
         requiresSystem: true,
         options: withJson(...processOptions),
-        output: jsonOutput(windowOutput, "The current Window state")
+        output: dataOutput(windowOutput, "The current Window state", presentation)
     }
 }
 
