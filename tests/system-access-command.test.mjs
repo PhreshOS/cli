@@ -25,8 +25,7 @@ test("running-System commands use shared handles and explicit flags", async func
         async size() { return { width: 800, height: 600 } },
         async minimized() { return false },
         async front() { return true },
-        async layer() { return "window" },
-        async location() { return "/" }
+        async layer() { return "window" }
     }
     const process = {
         identity: "one",
@@ -67,8 +66,7 @@ test("running-System commands use shared handles and explicit flags", async func
         size: { width: 800, height: 600 },
         minimized: false,
         front: true,
-        layer: "window",
-        location: "/"
+        layer: "window"
     })
 })
 

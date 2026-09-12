@@ -67,9 +67,8 @@ export const windowOutput = value.object({
     size: value.object({ width: metric, height: metric }, ["width", "height"], "Window size"),
     minimized: value.boolean("whether the Window is minimized"),
     front: value.boolean("whether the Window is at the front of its layer"),
-    layer: value.enumeration(["window", "under", "over"], "Window layer"),
-    location: value.string("current Client location")
-}, ["process", "title", "position", "size", "minimized", "front", "layer", "location"], "Window state")
+    layer: value.enumeration(["window", "under", "over"], "Window layer")
+}, ["process", "title", "position", "size", "minimized", "front", "layer"], "Window state")
 
 export const programPresentation: OutputPresentation = fields(
     ["Identity", "identity"],

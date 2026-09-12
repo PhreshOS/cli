@@ -58,15 +58,14 @@ export async function endpointView(process: Process, name: EndpointName) {
 
 export async function windowView(process: Process) {
     const window = process.client.window
-    const [title, position, size, minimized, front, layer, location] = await Promise.all([
+    const [title, position, size, minimized, front, layer] = await Promise.all([
         window.title(),
         window.position(),
         window.size(),
         window.minimized(),
         window.front(),
-        window.layer(),
-        window.location()
+        window.layer()
     ])
 
-    return { process: process.identity, title, position, size, minimized, front, layer, location }
+    return { process: process.identity, title, position, size, minimized, front, layer }
 }
