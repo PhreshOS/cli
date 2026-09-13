@@ -1,3 +1,4 @@
+import { githubApiHeaders } from "./github.ts"
 import { createHash } from "node:crypto"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { mkdtemp, readFile, rm } from "node:fs/promises"
@@ -65,12 +66,7 @@ export async function resolveOfficialProgramRelease(name: string, fetcher: typeo
 
     const response = await fetcher(`https://api.github.com/repos/PhreshOS/${requested}-program/releases?per_page=100`, {
 
-        headers: {
-
-            Accept: "application/vnd.github+json",
-
-            "User-Agent": "@phreshos/cli"
-        },
+        headers: githubApiHeaders(),
 
         signal: AbortSignal.timeout(30_000)
     })

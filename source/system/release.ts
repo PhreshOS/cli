@@ -1,3 +1,4 @@
+import { githubApiHeaders } from "../github.ts"
 import type { DownloadedSystem, SystemRelease } from "./types.ts"
 import { createHash } from "node:crypto"
 
@@ -10,12 +11,7 @@ export async function resolveSystemRelease(fetcher: typeof fetch = fetch) {
 
     const response = await fetcher(releases, {
 
-        headers: {
-
-            Accept: "application/vnd.github+json",
-
-            "User-Agent": "@phreshos/cli"
-        },
+        headers: githubApiHeaders(),
 
         signal: AbortSignal.timeout(30_000)
     })
