@@ -92,7 +92,8 @@ export function clientLaunch(options: ClientOptions): boolean | ClientLaunch | u
         ...(options.clientWidth === undefined ? {} : { size: size(options.clientWidth, options.clientHeight!) }),
         ...(options.clientX === undefined ? {} : { position: position(options.clientX, options.clientY!) }),
         ...(options.clientLayer === undefined ? {} : { layer: options.clientLayer }),
-        ...(options.clientMinimized === true ? { minimize: true } : {})
+        ...(options.clientMinimized === true ? { minimize: true } : {}),
+        ...(options.clientMaximized === true ? { maximize: true } : {})
     }
 }
 
@@ -131,6 +132,7 @@ export type ClientOptions = Readonly<{
     clientY?: string
     clientLayer?: "window" | "under" | "over"
     clientMinimized?: boolean
+    clientMaximized?: boolean
 }>
 export type ServerOptions = Readonly<{
     server?: boolean

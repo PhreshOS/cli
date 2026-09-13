@@ -1,5 +1,4 @@
 import { Project } from "@phreshos/node"
-import type { ProgramDefinition } from "@phreshos/core"
 import { blank, dim, heading, line } from "./style.ts"
 import installProgram, { type ProgramInstallationOptions } from "./program-installation.ts"
 import { prepareOfficialProgram } from "./program-release.ts"
@@ -30,7 +29,7 @@ export default async function install(options: InstallOptions = {}) {
 
     try {
 
-        const program = prepared ? prepared.program as ProgramDefinition : await Project.open(directory)
+        const program = prepared ? prepared.program : await Project.open(directory)
 
         if (program instanceof Project && program.config.buildCommand) line("build", program.config.buildCommand)
 

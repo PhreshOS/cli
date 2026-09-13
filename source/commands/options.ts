@@ -22,7 +22,8 @@ export const clientOverrideOptions = Object.freeze([
     option("--client-x <value>", "initial Window horizontal position"),
     option("--client-y <value>", "initial Window vertical position"),
     option("--client-layer <layer>", "initial Window layer", { choices: ["window", "under", "over"] }),
-    option("--client-minimized", "open the Window minimized")
+    option("--client-minimized", "open the Window minimized"),
+    option("--client-maximized", "open the Window maximized")
 ])
 
 export const serverOverrideOptions = Object.freeze([

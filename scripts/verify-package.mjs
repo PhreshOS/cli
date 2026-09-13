@@ -8,6 +8,8 @@ import metadata from "../package.json" with { type: "json" }
 const repository = resolve(import.meta.dirname, "..")
 
 const temporary = await mkdtemp(join(tmpdir(), "phresh-cli-package-"))
+const corePackage = process.env.PHRESHOS_CORE_PACKAGE ?? `@phreshos/core@${metadata.dependencies["@phreshos/core"]}`
+const nodePackage = process.env.PHRESHOS_NODE_PACKAGE ?? `@phreshos/node@${metadata.dependencies["@phreshos/node"]}`
 
 const npm = process.platform === "win32"
 
@@ -47,7 +49,7 @@ try {
 
     assert.equal(files.some(file => file.startsWith("source/") || file.startsWith("tests/") || file.startsWith("scripts/")), false)
 
-    execFileSync(npm.command, [...npm.prefix, "install", archive, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })
+    execFileSync(npm.command, [...npm.prefix, "install", archive, corePackage, nodePackage, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })
 
     const cli = join(temporary, "node_modules", "@phreshos", "cli", "dist", "cli.js")
 

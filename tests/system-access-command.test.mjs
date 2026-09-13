@@ -1,5 +1,4 @@
 import assert from "node:assert/strict"
-import { clientPermissionCatalog } from "@phreshos/core"
 import { Command } from "commander"
 import test from "node:test"
 import accessCommands from "../dist/commands/access.js"
@@ -24,6 +23,7 @@ test("running-System commands use shared handles and explicit flags", async func
         async position() { return { x: 50, y: 0 } },
         async size() { return { width: 800, height: 600 } },
         async minimized() { return false },
+        async maximized() { return false },
         async front() { return true },
         async layer() { return "window" }
     }
@@ -64,7 +64,7 @@ test("running-System commands use shared handles and explicit flags", async func
         title: "Example",
         position: { x: 50, y: 0 },
         size: { width: 800, height: 600 },
-        minimized: false,
+        minimized: false, maximized: false,
         front: true,
         layer: "window"
     })
@@ -123,7 +123,7 @@ test("describe covers the actual command tree without contacting the System", as
     assert.ok(described.examples.length > 0)
 })
 
-test("the Program output contract follows Core's complete permission catalog", async function () {
+test("the Program output contract excludes install-only permission declarations", async function () {
     const program = new Command().exitOverride().name("phresh")
     accessCommands(program, async () => { throw new Error("must not connect") })
     describeCommands(program)
@@ -141,9 +141,8 @@ test("the Program output contract follows Core's complete permission catalog", a
 
     const described = JSON.parse(written[0])
     const client = described.output.value.properties.client.anyOf.find(candidate => candidate.type === "object")
-    const declared = Object.keys(client.properties.permissions.properties).sort()
-
-    assert.deepEqual(declared, Object.keys(clientPermissionCatalog).sort())
+    assert.equal(Object.hasOwn(client.properties, "permissions"), false)
+    assert.equal(client.required.includes("permissions"), false)
 })
 
 test("human collection output fits the terminal while JSON preserves complete data", async function () {

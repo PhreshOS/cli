@@ -4,10 +4,11 @@ import { mkdtemp, readFile, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, isAbsolute, join, relative, resolve } from "node:path"
 import AdmZip from "adm-zip"
+import { parseProgramDefinition, type ProgramDefinition } from "@phreshos/core"
 
 export interface PreparedProgramRelease {
 
-    program: unknown
+    program: ProgramDefinition
 
     release: ProgramRelease
 
@@ -146,7 +147,7 @@ async function readProgram(directory: string, release: ProgramRelease) {
 
     if (value.storage !== undefined) throw new Error("A published Program package cannot choose its installed storage")
 
-    return {
+    return parseProgramDefinition({
 
         ...value,
 
@@ -159,7 +160,7 @@ async function readProgram(directory: string, release: ProgramRelease) {
         ...half(value, directory, "server"),
 
         ...half(value, directory, "client")
-    }
+    })
 }
 
 function half(value: Record<string, unknown>, directory: string, name: "server" | "client") {

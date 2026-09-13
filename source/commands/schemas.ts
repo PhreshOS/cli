@@ -1,4 +1,3 @@
-import { clientPermissionCatalog } from "@phreshos/core"
 import type { OutputContract, OutputPresentation } from "../contract/output.ts"
 import type { ValueContract } from "../contract/schema.ts"
 import { value } from "../contract/schema.ts"
@@ -12,13 +11,6 @@ const endpointDeclaration = value.nullable(value.object({
     service: value.boolean("default Service role for new incarnations")
 }, ["start", "service"], "resolved Server Endpoint declaration"))
 
-const permissions = value.object(Object.fromEntries(
-    Object.entries(clientPermissionCatalog).map(([name, domain]) => [name, domain === "none"
-        ? { type: "array" as const, maxItems: 0, description: `${name} presence-only grant` }
-        : value.array(value.string(permissionValueDescription(domain)), `${name} permission values`)
-    ])
-), [], "immutable Client permissions")
-
 const clientDeclaration = value.nullable(value.object({
     start: value.boolean("whether a default Process starts this Endpoint"),
     service: value.boolean("default Service role for new incarnations"),
@@ -27,8 +19,8 @@ const clientDeclaration = value.nullable(value.object({
     position: value.nullable(value.object({ x: metric, y: metric }, ["x", "y"], "default Window position")),
     layer: value.nullable(value.enumeration(["window", "under", "over"], "default Window layer")),
     minimize: value.nullable(value.boolean("default minimized state")),
-    permissions
-}, ["start", "service", "title", "size", "position", "layer", "minimize", "permissions"], "resolved Client Endpoint declaration"))
+    maximize: value.nullable(value.boolean("default maximized state"))
+}, ["start", "service", "title", "size", "position", "layer", "minimize", "maximize"], "resolved Client Endpoint declaration"))
 
 export const programOutput = value.object({
     identity: value.string("stable Program identity"),
@@ -66,9 +58,10 @@ export const windowOutput = value.object({
     position: value.object({ x: metric, y: metric }, ["x", "y"], "Window position"),
     size: value.object({ width: metric, height: metric }, ["width", "height"], "Window size"),
     minimized: value.boolean("whether the Window is minimized"),
+    maximized: value.boolean("whether the Window is maximized"),
     front: value.boolean("whether the Window is at the front of its layer"),
     layer: value.enumeration(["window", "under", "over"], "Window layer")
-}, ["process", "title", "position", "size", "minimized", "front", "layer"], "Window state")
+}, ["process", "title", "position", "size", "minimized", "maximized", "front", "layer"], "Window state")
 
 export const programPresentation: OutputPresentation = fields(
     ["Identity", "identity"],
@@ -145,6 +138,7 @@ export const windowPresentation: OutputPresentation = fields(
     ["Position", "position"],
     ["Size", "size"],
     ["Minimized", "minimized"],
+    ["Maximized", "maximized"],
     ["Front", "front"],
     ["Layer", "layer"],
     ["Location", "location"]
@@ -169,6 +163,11 @@ export const windowGeometryPresentation: OutputPresentation = fields(
 export const windowMinimizePresentation: OutputPresentation = fields(
     ["Process", "process"],
     ["Minimized", "minimized"]
+)
+
+export const windowMaximizePresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Maximized", "maximized"]
 )
 
 export const windowTitlePresentation: OutputPresentation = fields(
@@ -255,12 +254,4 @@ function table(
     columns: Extract<OutputPresentation, { format: "table" }>["columns"]
 ): OutputPresentation {
     return { format: "table", rows, columns, item, items, empty, total: "total", truncated: "truncated" }
-}
-
-function permissionValueDescription(domain: Exclude<(typeof clientPermissionCatalog)[keyof typeof clientPermissionCatalog], "none">) {
-    switch (domain) {
-        case "program": return "Program identity"
-        case "network": return "network destination scope"
-        case "storage": return "storage path scope"
-    }
 }
