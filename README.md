@@ -55,6 +55,12 @@ bun run verify
 `verify` checks the scripts, builds the CLI and bundled starter, runs the
 command tests, and validates the package artifact.
 
+`check` performs static checks, `build` creates distributable output, and `test`
+runs Vitest assertions from `tests/`. Run `build` before testing built artifacts.
+`verify` runs `check`, `build`, and `test` in order. Operational tooling belongs
+in `scripts/`; tests and their fixtures belong in `tests/`. Verification uses
+the committed dependency graph without local package substitutions.
+
 ## Related repositories
 
 - [`@phreshos/node`](https://github.com/PhreshOS/node) owns the Project and
@@ -76,3 +82,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository workflow and
 ## License
 
 Licensed under the [MIT License](LICENSE). Copyright © 2026 Zohayr SLILEH.
+
+`test:platform` explicitly selects native service/installation tests for the
+current OS. These may change temporary host services; CI runs them on disposable
+runners after building.
+
+`test:live` explicitly selects external-service tests. They require network
+access and, for providers, credentials; provider calls may incur costs.

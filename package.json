@@ -1,66 +1,65 @@
 {
-    "name": "@phreshos/cli",
-    "type": "module",
-    "version": "0.1.53",
-    "description": "The Phresh command-line interface for Program projects and system management.",
-    "engines": {
-        "node": ">=20.10"
-    },
-    "scripts": {
-        "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-        "check:scripts": "tsc --project tsconfig.scripts.json",
-        "compile": "tsc --noEmit false --outDir dist --rootDir source --rewriteRelativeImportExtensions true --allowImportingTsExtensions true",
-        "build": "node --run clean && node --run compile && vite-node scripts/build-template.ts",
-        "test": "node --run compile && node --test tests/*.test.mjs",
-        "verify": "node --run check:scripts && node --run build && node --run test && node scripts/verify-package.mjs",
-        "verify:system-release": "node --run compile && node scripts/verify-system-release.mjs",
-        "verify:linux-service": "node --run compile && node scripts/verify-linux-service.mjs",
-        "verify:macos-service": "node --run compile && node scripts/verify-macos-service.mjs",
-        "verify:windows-service": "node --run compile && node scripts/verify-windows-service.mjs",
-        "prepack": "node --run build"
-    },
-    "bin": {
-        "phresh": "dist/cli.js"
-    },
-    "files": [
-        "dist",
-        "LICENSE",
-        "README.md"
-    ],
-    "author": "Zohayr SLILEH",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/PhreshOS/cli.git"
-    },
-    "bugs": {
-        "url": "https://github.com/PhreshOS/cli/issues"
-    },
-    "homepage": "https://github.com/PhreshOS/cli#readme",
-    "keywords": [
-        "phreshos",
-        "cli",
-        "program"
-    ],
-    "publishConfig": {
-        "access": "public",
-        "provenance": true
-    },
-    "packageManager": "bun@1.3.14",
-    "dependencies": {
-        "@clack/prompts": "^1.7.0",
-    "@phreshos/core": "^0.1.42",
-    "@phreshos/node": "^0.1.17",
-        "adm-zip": "^0.6.0",
-        "cli-table3": "^0.6.5",
-        "commander": "^15.0.0",
+  "name": "@phreshos/cli",
+  "type": "module",
+  "version": "0.1.54",
+  "description": "The Phresh command-line interface for Program projects and system management.",
+  "engines": {
+    "node": ">=20.10"
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "compile": "tsc --noEmit false --outDir dist --rootDir source --rewriteRelativeImportExtensions true --allowImportingTsExtensions true",
+    "build": "node --run clean && node --run compile && vite-node scripts/build-template.ts",
+    "test": "vitest run --project default",
+    "verify": "node --run check && node --run build && node --run test",
+    "prepack": "node --run build",
+    "check": "tsc --noEmit && tsc -p tsconfig.scripts.json",
+    "test:platform": "vitest run --project platform",
+    "test:live": "vitest run --project live"
+  },
+  "bin": {
+    "phresh": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "author": "Zohayr SLILEH",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PhreshOS/cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PhreshOS/cli/issues"
+  },
+  "homepage": "https://github.com/PhreshOS/cli#readme",
+  "keywords": [
+    "phreshos",
+    "cli",
+    "program"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "packageManager": "bun@1.3.14",
+  "dependencies": {
+    "@clack/prompts": "^1.7.0",
+    "@phreshos/core": "^0.1.43",
+    "@phreshos/node": "^0.1.18",
+    "adm-zip": "^0.6.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^15.0.0",
     "picocolors": "^1.1.1",
-        "string-width": "^4.2.3"
-    },
-    "devDependencies": {
-        "@types/adm-zip": "^0.5.8",
-        "@types/node": "^25.9.5",
-        "typescript": "^6.0.3",
-        "vite-node": "^6.0.0"
-    }
+    "string-width": "^4.2.3"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
+    "@types/node": "^25.9.5",
+    "typescript": "^6.0.3",
+    "vite-node": "^6.0.0",
+    "vitest": "^4.1.10"
+  }
 }

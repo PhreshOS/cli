@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { Command } from "commander"
-import test from "node:test"
+import { test } from "vitest"
 import accessCommands from "../dist/commands/access.js"
 import describeCommands from "../dist/commands/describe.js"
 import { gatewayPath } from "../dist/gateway.js"

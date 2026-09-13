@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import test from "node:test"
+import { test } from "vitest"
 import { blank, failure, heading, line } from "../dist/style.js"
 
 test("heading does not add a second command-opening line", function () {

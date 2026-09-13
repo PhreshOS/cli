@@ -18,9 +18,9 @@ bun run verify
 `verify` type-checks the source, runs focused lifecycle tests, rebuilds the
 pinned Phresh Program template, packs the exact npm artifact, installs it in a
 temporary consumer, and exercises its public executable. The separate
-`verify:system-release` command downloads, verifies, and stages the official
+`test:live` command downloads, verifies, and stages the official
 System release with production dependencies. On macOS,
-`verify:macos-service` exercises a uniquely named temporary `launchd` service.
+`test:platform` exercises a uniquely named temporary `launchd` service.
 
 Keep top-level Program commands scoped to the current project. System lifecycle
 belongs only under `phresh system`, and native adapters must preserve the

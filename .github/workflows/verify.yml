@@ -23,8 +23,8 @@ jobs:
           package-manager-cache: false
       - run: bun install --frozen-lockfile
       - run: bun run verify
-      - run: bun run verify:system-release
-      - run: bun run verify:linux-service
+      - run: bun run test:live
+      - run: bun run test:platform
 
   macos-service:
     runs-on: macos-latest
@@ -38,7 +38,8 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - run: bun install --frozen-lockfile
-      - run: bun run verify:macos-service
+      - run: bun run verify
+      - run: bun run test:platform
 
   windows-service:
     runs-on: windows-latest
@@ -53,4 +54,4 @@ jobs:
           package-manager-cache: false
       - run: bun install --frozen-lockfile
       - run: bun run verify
-      - run: bun run verify:windows-service
+      - run: bun run test:platform

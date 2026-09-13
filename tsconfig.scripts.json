@@ -3,5 +3,5 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true
   },
-  "include": ["scripts/build-template.ts"]
+  "include": ["scripts/build-template.ts", "vitest.config.ts"]
 }
