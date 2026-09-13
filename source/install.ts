@@ -16,7 +16,7 @@ import { prepareOfficialProgram } from "./program-release.ts"
  * production Program is derived and sent. The command remains authoring
  * metadata and never becomes part of the installed Program.
  *
- * The System applies the Program's startup declaration during installation.
+ * The System executes the Program's stored startup after installation.
  * `run` explicitly requests an additional Process. A run created here belongs
  * to the installed Program and
  * therefore outlives this command; `phresh start` and `phresh dev` remain
