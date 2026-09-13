@@ -123,7 +123,7 @@ test("describe covers the actual command tree without contacting the System", as
     assert.ok(described.examples.length > 0)
 })
 
-test("the Program output contract excludes install-only permission declarations", async function () {
+test("the Program output contract excludes permission declarations", async function () {
     const program = new Command().exitOverride().name("phresh")
     accessCommands(program, async () => { throw new Error("must not connect") })
     describeCommands(program)
