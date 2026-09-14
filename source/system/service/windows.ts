@@ -60,8 +60,6 @@ export default class WindowsSystemService implements SystemService {
 
     public async register(definition: SystemServiceDefinition) {
 
-        await this.stop()
-
         await mkdir(dirname(definition.output), { recursive: true })
 
         await mkdir(dirname(this.state), { recursive: true })

@@ -78,6 +78,7 @@ export interface SystemService {
 
     inspect(): Promise<SystemServiceState>
 
+    /** Records the service definition without changing its current execution state. */
     register(definition: SystemServiceDefinition): Promise<void>
 
     unregister(): Promise<void>

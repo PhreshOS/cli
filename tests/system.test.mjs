@@ -558,6 +558,8 @@ test("native adapters keep startup enablement separate from current execution", 
 
     let macDisabled = false
 
+    let macLoaded = true
+
     const run = async function (_command, args) {
 
         calls.push(args)
@@ -577,7 +579,11 @@ test("native adapters keep startup enablement separate from current execution", 
 
         if (args.includes("show-environment")) return { code: 0, stdout: `HOME=${temporary}\n`, stderr: "" }
 
-        return args.includes("print") || args.includes("is-active")
+        return args.includes("print")
+
+            ? { code: macLoaded ? 0 : 1, stdout: macLoaded ? "state = running" : "", stderr: "" }
+
+            : args.includes("is-active")
 
             ? { code: 1, stdout: "", stderr: "" }
 
@@ -602,6 +608,10 @@ test("native adapters keep startup enablement separate from current execution", 
         const mac = new MacOSSystemService(temporary, run, undefined, 501, { PATH: "/custom/bin:/usr/bin" })
 
         await mac.register(definition)
+
+        assert.equal(calls.some(args => args[0] === "bootout"), false)
+
+        macLoaded = false
 
         await mac.enable()
 

@@ -48,8 +48,6 @@ export default class BackgroundSystemService implements SystemService {
 
     public async register(definition: SystemServiceDefinition) {
 
-        await this.stop()
-
         await atomic(this.definition, JSON.stringify(definition), 0o600)
     }
 

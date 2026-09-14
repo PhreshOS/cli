@@ -47,8 +47,6 @@ export default class SystemdSystemService implements SystemService {
 
     public async register(definition: SystemServiceDefinition) {
 
-        await this.stop()
-
         await mkdir(dirname(this.file), { recursive: true })
 
         await mkdir(dirname(definition.output), { recursive: true })

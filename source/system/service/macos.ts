@@ -71,8 +71,6 @@ export default class MacOSSystemService implements SystemService {
 
         await this.migrate()
 
-        await this.stop()
-
         await mkdir(dirname(definition.output), { recursive: true })
 
         const content = plist(this.label, definition, this.environment)
