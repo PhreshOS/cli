@@ -130,7 +130,7 @@ export type ClientOptions = Readonly<{
     clientHeight?: string
     clientX?: string
     clientY?: string
-    clientLayer?: "window" | "under" | "over"
+    clientLayer?: ClientLaunch["layer"]
     clientMinimized?: boolean
     clientMaximized?: boolean
 }>

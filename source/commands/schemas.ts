@@ -1,4 +1,5 @@
 import type { OutputContract, OutputPresentation } from "../contract/output.ts"
+import { layers } from "@phreshos/core"
 import type { ValueContract } from "../contract/schema.ts"
 import { value } from "../contract/schema.ts"
 
@@ -17,7 +18,7 @@ const clientDeclaration = value.nullable(value.object({
     title: value.nullable(value.string("default Window title")),
     size: value.nullable(value.object({ width: metric, height: metric }, ["width", "height"], "default Window size")),
     position: value.nullable(value.object({ x: metric, y: metric }, ["x", "y"], "default Window position")),
-    layer: value.nullable(value.enumeration(["window", "under", "over"], "default Window layer")),
+    layer: value.nullable(value.enumeration(layers, "default Window layer")),
     minimize: value.nullable(value.boolean("default minimized state")),
     maximize: value.nullable(value.boolean("default maximized state"))
 }, ["start", "service", "title", "size", "position", "layer", "minimize", "maximize"], "resolved Client Endpoint declaration"))
@@ -60,7 +61,7 @@ export const windowOutput = value.object({
     minimized: value.boolean("whether the Window is minimized"),
     maximized: value.boolean("whether the Window is maximized"),
     front: value.boolean("whether the Window is at the front of its layer"),
-    layer: value.enumeration(["window", "under", "over"], "Window layer")
+    layer: value.enumeration(layers, "Window layer")
 }, ["process", "title", "position", "size", "minimized", "maximized", "front", "layer"], "Window state")
 
 export const programPresentation: OutputPresentation = fields(

@@ -1,4 +1,5 @@
 import type { OptionContract } from "../contract/command.ts"
+import { layers } from "@phreshos/core"
 import { collect, integer } from "./input.ts"
 
 export const jsonOption = option("--json", "write the result as machine-readable JSON on one line")
@@ -21,7 +22,7 @@ export const clientOverrideOptions = Object.freeze([
     option("--client-height <value>", "initial Window height"),
     option("--client-x <value>", "initial Window horizontal position"),
     option("--client-y <value>", "initial Window vertical position"),
-    option("--client-layer <layer>", "initial Window layer", { choices: ["window", "under", "over"] }),
+    option("--client-layer <layer>", "initial Window layer", { choices: layers }),
     option("--client-minimized", "open the Window minimized"),
     option("--client-maximized", "open the Window maximized")
 ])

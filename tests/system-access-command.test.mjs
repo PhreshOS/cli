@@ -7,6 +7,24 @@ import { gatewayPath } from "../dist/gateway.js"
 import { clientLaunch, launch, serverLaunch } from "../dist/commands/input.js"
 import { assertCommandContracts, attachCommandContract, defineCommand } from "../dist/contract/command.js"
 import { join } from "node:path"
+import { layers } from "@phreshos/core"
+import { assertValue } from "../dist/contract/schema.js"
+import { programOutput, windowOutput } from "../dist/commands/schemas.js"
+
+test("CLI accepts every shared layer in launch flags and emitted Window and Program data", () => {
+    const program = new Command().exitOverride().name("phresh")
+    accessCommands(program, async () => { throw new Error("must not connect") })
+    const options = descendants(program).flatMap(command => command.options).filter(option => option.flags === "--client-layer <layer>")
+    assert(options.length > 0)
+    for (const option of options) assert.deepEqual(option.argChoices, [...layers])
+    const declaration = programOutput.properties.client.anyOf.find(candidate => candidate.type === "object")
+    for (const layer of layers) {
+        assert.deepEqual(clientLaunch({ clientLayer: layer }), { layer })
+        assertValue(layer, windowOutput.properties.layer)
+        assertValue(layer, declaration.properties.layer)
+    }
+    assert.throws(() => assertValue("unknown", windowOutput.properties.layer))
+})
 
 test("the selected home has one owner-local gateway", function () {
 
