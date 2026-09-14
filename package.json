@@ -1,7 +1,7 @@
 {
   "name": "@phreshos/cli",
   "type": "module",
-  "version": "0.1.59",
+  "version": "0.1.60",
   "description": "The Phresh command-line interface for Program projects and system management.",
   "engines": {
     "node": ">=20.10"
@@ -47,8 +47,8 @@
   "packageManager": "bun@1.3.14",
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@phreshos/core": "^0.1.48",
-    "@phreshos/node": "^0.1.22",
+    "@phreshos/core": "^0.1.49",
+    "@phreshos/node": "^0.1.23",
     "adm-zip": "^0.6.0",
     "cli-table3": "^0.6.5",
     "commander": "^15.0.0",

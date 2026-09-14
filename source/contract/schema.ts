@@ -41,7 +41,7 @@ export const value = Object.freeze({
         properties: Readonly<Record<string, ValueContract>>,
         required: readonly string[],
         description: string,
-        additionalProperties: boolean | ValueContract = false
+        additionalProperties: boolean | ValueContract = true
     ): ValueContract => ({ type: "object", properties, required, additionalProperties, description }),
 
     nullable: (schema: ValueContract): ValueContract => ({ anyOf: [schema, { type: "null" }] })
@@ -84,7 +84,6 @@ export function assertValue(value: unknown, contract: ValueContract, path = "res
         for (const [name, item] of Object.entries(record)) {
             const property = contract.properties?.[name]
             if (property) assertValue(item, property, `${path}.${name}`)
-            else if (contract.additionalProperties === false) throw new Error(`${path}.${name} is not declared by its CLI contract`)
             else if (typeof contract.additionalProperties === "object") assertValue(item, contract.additionalProperties, `${path}.${name}`)
         }
         return
