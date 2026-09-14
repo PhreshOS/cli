@@ -82,12 +82,12 @@ export default class SystemLifecycle {
         }
     }
 
-    public async install() {
+    public async install(options: { purge?: boolean } = {}) {
 
-        return await this.dependencies.installation.exclusive(() => this.installExclusive())
+        return await this.dependencies.installation.exclusive(() => this.installExclusive(options.purge === true))
     }
 
-    private async installExclusive() {
+    private async installExclusive(purge: boolean) {
 
         const { installation, service } = this.dependencies
 
@@ -103,7 +103,7 @@ export default class SystemLifecycle {
 
         const prepared: PreparedSystem = await installation.prepare(downloaded)
 
-        const activation = await this.activate(prepared, previous, previousService)
+        const activation = await this.activate(prepared, previous, previousService, purge)
 
         try {
 
@@ -143,12 +143,12 @@ export default class SystemLifecycle {
         return await this.status()
     }
 
-    public async uninstall() {
+    public async uninstall(options: { purge?: boolean } = {}) {
 
-        return await this.dependencies.installation.exclusive(() => this.uninstallExclusive())
+        return await this.dependencies.installation.exclusive(() => this.uninstallExclusive(options.purge === true))
     }
 
-    private async uninstallExclusive() {
+    private async uninstallExclusive(purge: boolean) {
 
         const { installation, service } = this.dependencies
 
@@ -160,6 +160,7 @@ export default class SystemLifecycle {
 
         if (state.registered) await service.unregister()
 
+        if (purge) await installation.purgeStorage()
         await installation.remove()
     }
 
@@ -282,13 +283,15 @@ export default class SystemLifecycle {
         }
     }
 
-    private async activate(prepared: PreparedSystem, previous: InstalledSystem | undefined, state: Awaited<ReturnType<SystemService["inspect"]>>): Promise<SystemActivation> {
+    private async activate(prepared: PreparedSystem, previous: InstalledSystem | undefined, state: Awaited<ReturnType<SystemService["inspect"]>>, purge: boolean): Promise<SystemActivation> {
 
         const { installation, service } = this.dependencies
 
         try {
 
             if (state.running) await service.stop()
+
+            if (purge) await installation.purgeStorage()
 
             return await installation.activate(prepared, previous)
         }

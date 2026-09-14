@@ -114,9 +114,9 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
 
 async function eventView(event: ProgramWaitOptions["event"], message: unknown, scoped?: Program) {
     if (event === "uninstall") {
-        if (scoped) return { program: await programView(scoped), everything: message === true }
+        if (scoped) return { program: await programView(scoped), purge: message === true }
         const current = message as SystemProgramUninstall
-        return { program: await programView(current.program), everything: current.everything }
+        return { program: await programView(current.program), purge: current.purge }
     }
 
     if (scoped) return programView(scoped)

@@ -38,6 +38,7 @@ export const launchOptions = Object.freeze([
     option("--no-client", "do not start the Client Endpoint"),
     ...clientOverrideOptions,
     option("--name <name>", "stable Program-local Process name"),
+    option("--replace", "terminate and replace the Process with --name"),
     option("--server", "start the Server Endpoint"),
     option("--no-server", "do not start the Server Endpoint"),
     option("--option <name=value>", "immutable Process option; repeat for more values", {

@@ -2,7 +2,8 @@ import type { DownloadedSystem, InstalledSystem, SystemPaths } from "./types.ts"
 import { randomUUID } from "node:crypto"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { mkdir, mkdtemp, open, readFile, readdir, readlink, rename, rm, symlink, writeFile } from "node:fs/promises"
-import { dirname, isAbsolute, join, relative, resolve } from "node:path"
+import { dirname, isAbsolute, join, parse, relative, resolve } from "node:path"
+import { homedir } from "node:os"
 import { requireSuccess } from "./process.ts"
 import npmInvocation from "./npm.ts"
 import { minimumSystemNodeVersion } from "./node.ts"
@@ -238,6 +239,17 @@ export default class SystemInstallation {
     public async remove() {
 
         await rm(this.paths.root, { recursive: true, force: true })
+    }
+
+    /** Removes the selected System's persistent home, never a broad host directory. */
+    public async purgeStorage() {
+        const storage = resolve(this.paths.storage)
+        const installation = relative(storage, resolve(this.paths.root))
+        if (storage === parse(storage).root || storage === resolve(homedir())
+            || installation === "" || (!installation.startsWith(`..`) && !isAbsolute(installation))) {
+            throw new Error("PHRESHOS_HOME cannot be purged because it contains host or System installation files")
+        }
+        await rm(storage, { recursive: true, force: true })
     }
 
     private async removeOtherReleases(current: string) {

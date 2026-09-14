@@ -5,6 +5,7 @@ import prompts, { ReportedFailure } from "../prompts.ts"
 import { accent, caution, dim, negative, positive } from "../style.ts"
 import { defineCommand } from "../contract/command.ts"
 import { textOutput } from "../commands/schemas.ts"
+import { option } from "../commands/options.ts"
 
 /** Attach the System lifecycle without mixing it with Program commands. */
 export default function systemCommands(program: Command, provided?: SystemLifecycle) {
@@ -22,28 +23,36 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
         ]
     })
 
-    defineCommand(system, lifecycleContract("install", "install or update the System and start its service"), async function () {
+    defineCommand<{ purge?: boolean }>(system, {
+        ...lifecycleContract("install", "install or update the System and start its service"),
+        options: [option("--purge", "delete PHRESHOS_HOME before starting the installed System")]
+    }, async function ({ options }) {
 
             const interaction = prompts()
 
             interaction.begin("Install System", "official stable release")
 
-            const status = await interaction.progress("Installing PhreshOS", "PhreshOS installed", () => current().install())
+            const status = await interaction.progress("Installing PhreshOS", "PhreshOS installed", () => current().install(options))
+
+            if (options.purge) interaction.message("Previous System data was deleted.")
 
             interaction.detail("desktop", accent(status.desktop))
 
             interaction.finish(`PhreshOS ${accent(status.installed?.version ?? "")} installed`)
         })
 
-    defineCommand(system, lifecycleContract("uninstall", "remove the System installation and service"), async function () {
+    defineCommand<{ purge?: boolean }>(system, {
+        ...lifecycleContract("uninstall", "remove the System installation and service"),
+        options: [option("--purge", "also delete PHRESHOS_HOME")]
+    }, async function ({ options }) {
 
             const interaction = prompts()
 
             interaction.begin("Uninstall System")
 
-            await interaction.progress("Removing PhreshOS", "PhreshOS removed", () => current().uninstall())
+            await interaction.progress("Removing PhreshOS", "PhreshOS removed", () => current().uninstall(options))
 
-            interaction.message("Persistent System data was kept.")
+            interaction.message(options.purge ? "Persistent System data was deleted." : "Persistent System data was kept.")
 
             interaction.finish("System uninstalled")
         })

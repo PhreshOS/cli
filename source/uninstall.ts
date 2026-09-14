@@ -16,11 +16,11 @@ export default async function uninstall(options: UninstallOptions = {}) {
 
       if (!program) throw new Error("The System does not know this Program")
 
-      for await (const chunk of program.uninstall(options.everything === true)) writeProgramCommandOutput(chunk)
+      for await (const chunk of program.uninstall({ purge: options.purge })) writeProgramCommandOutput(chunk)
 
       heading(identity, "uninstalled")
 
-      console.log(options.everything
+      console.log(options.purge
 
           ? `  ${dim("Its processes, installed files, stored data, and runtime record were removed.")}`
 
@@ -35,6 +35,6 @@ export default async function uninstall(options: UninstallOptions = {}) {
 export interface UninstallOptions {
 
     name?: string
-    everything?: boolean
+    purge?: boolean
     directory?: string
 }

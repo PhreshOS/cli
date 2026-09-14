@@ -91,7 +91,7 @@ export default function projectCommands(program: Command, coreRange: string) {
         name: "install",
         description: "install a local or official Program",
         arguments: [{ syntax: "[name]", description: "name of an official Program" }],
-        options: [option("--run", "run the installed Program now")],
+        options: [option("--run", "launch the installed Program before startup"), option("--purge", "delete existing installed Program storage")],
         guidance: [
             "Without a name, builds and installs the Program declared by this project.",
             "A name installs its verified official production release. --run launches the installed Program now."
@@ -100,23 +100,23 @@ export default function projectCommands(program: Command, coreRange: string) {
         examples: ["phresh install", "phresh install terminal --run"],
         output: textOutput("Installed Program and optional Process identity")
     }, async ({ arguments: [name], options }) => {
-        await install({ name, run: options.run === true })
+        await install({ name, run: options.run === true, purge: options.purge === true })
     })
 
     defineCommand<UninstallCommandOptions, [string | undefined]>(program, {
         name: "uninstall",
         description: "uninstall a local or installed Program",
         arguments: [{ syntax: "[name]", description: "name of an installed Program" }],
-        options: [option("--everything", "also remove Processes, data, and runtime state")],
+        options: [option("--purge", "also remove Processes, data, and runtime state")],
         guidance: [
             "Without a name, uses the Program declared by this project.",
-            "Removes installed files while preserving Processes, data, and runtime Program state unless --everything is supplied."
+            "Removes installed files while preserving Processes, data, and runtime Program state unless --purge is supplied."
         ],
         requiresSystem: true,
-        examples: ["phresh uninstall", "phresh uninstall terminal --everything"],
+        examples: ["phresh uninstall", "phresh uninstall terminal --purge"],
         output: textOutput("Uninstalled Program state")
     }, async ({ arguments: [name], options }) => {
-        await uninstall({ name, everything: options.everything === true })
+        await uninstall({ name, purge: options.purge === true })
     })
 
     attached(program, "start", "run the production Program without installing", [
@@ -188,5 +188,5 @@ interface InitCommandOptions {
     readonly force?: boolean
 }
 
-interface UninstallCommandOptions { readonly everything?: boolean }
-interface InstallCommandOptions { readonly run?: boolean }
+interface UninstallCommandOptions { readonly purge?: boolean }
+interface InstallCommandOptions { readonly run?: boolean; readonly purge?: boolean }

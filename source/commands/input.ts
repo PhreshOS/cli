@@ -1,4 +1,4 @@
-import type { ClientLaunch, Launch, Position, ServerLaunch, Size } from "@phreshos/core"
+import { parseLaunch, type ClientLaunch, type Launch, type Position, type ServerLaunch, type Size } from "@phreshos/core"
 
 export type Metric = number | string
 
@@ -50,20 +50,16 @@ export function launch(options: LaunchOptions, named = false): Launch {
     const client = clientLaunch(options)
     const server = serverLaunch(options)
     const values = entries(options.option)
-    const result: {
-        name?: string
-        server?: boolean | ServerLaunch
-        client?: boolean | ClientLaunch
-        options?: Readonly<Record<string, string>>
-    } = {}
+    const result: { -readonly [Key in keyof Launch]: Launch[Key] } = {}
 
     if (options.name !== undefined) result.name = options.name
+    if (options.replace !== undefined) result.replace = options.replace
     if (server !== undefined) result.server = server
     if (client !== undefined) result.client = client
     if (Object.keys(values).length) result.options = values
     if (named && !result.name) throw new Error("--name is required")
 
-    return result
+    return parseLaunch(result)
 }
 
 export function clientLaunch(options: ClientOptions): boolean | ClientLaunch | undefined {
@@ -140,5 +136,6 @@ export type ServerOptions = Readonly<{
 }>
 export type LaunchOptions = ClientOptions & ServerOptions & Readonly<{
     name?: string
+    replace?: boolean
     option?: readonly string[]
 }>

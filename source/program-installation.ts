@@ -5,6 +5,7 @@ import writeProgramCommandOutput from "./program-command-output.ts"
 export interface ProgramInstallationOptions {
 
     run?: boolean
+    purge?: boolean
 }
 
 export interface ProgramInstallationResult {
@@ -39,6 +40,7 @@ export default async function installProgram(program: Project | ProgramDefinitio
     let process: string | null = null
 
     let installationFinished = false
+    let stopObserving: (() => void) | undefined
 
     try {
 
@@ -51,18 +53,19 @@ export default async function installProgram(program: Project | ProgramDefinitio
 
         else installed = await system.program.forceCreate(program)
 
-        for await (const chunk of installed.install()) writeProgramCommandOutput(chunk)
+        if (options.run) stopObserving = installed.process.subscribe("create", created => { process ??= created.identity })
+
+        for await (const chunk of installed.install({ launch: options.run ? true : undefined, purge: options.purge })) writeProgramCommandOutput(chunk)
 
         installationFinished = true
 
-        if (options.run) process = (await installed.process.create()).identity
     }
 
     catch (error) {
 
         if (installed && !installationFinished) {
 
-            try { await installed.forget() }
+            try { if (!await installed.installed()) await installed.forget() }
 
             catch { /* Preserve the installation failure. */ }
         }
@@ -70,7 +73,7 @@ export default async function installProgram(program: Project | ProgramDefinitio
         throw error
     }
 
-    finally { await system.disconnect() }
+    finally { stopObserving?.(); await system.disconnect() }
 
 
     if (!installed) throw new Error("The System ended Program installation without confirming it")

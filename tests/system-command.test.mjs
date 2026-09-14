@@ -128,7 +128,20 @@ test("System version returns the installed System release", async function () {
     assert.match(stripVTControlCharacters(output), /PhreshOS 0\.1\.0/)
 })
 
-async function run(name, lifecycle) {
+test("System commands forward --purge and report data removal", async () => {
+    for (const name of ["install", "uninstall"]) {
+        let received
+        const lifecycle = {
+            async [name](options) { received = options; return state() }
+        }
+        const { error, output } = await run(name, lifecycle, ["--purge"])
+        assert.equal(error, undefined)
+        assert.deepEqual(received, { purge: true })
+        assert.match(output, /data was deleted/)
+    }
+})
+
+async function run(name, lifecycle, flags = []) {
 
     const program = new Command().exitOverride()
 
@@ -146,7 +159,7 @@ async function run(name, lifecycle) {
 
     try {
 
-        await program.parseAsync(["node", "phresh", "system", name])
+        await program.parseAsync(["node", "phresh", "system", name, ...flags])
     }
 
     catch (caught) {

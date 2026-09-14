@@ -17,7 +17,7 @@ import { prepareOfficialProgram } from "./program-release.ts"
  * metadata and never becomes part of the installed Program.
  *
  * The System executes the Program's stored startup after installation.
- * `run` explicitly requests an additional Process. A run created here belongs
+ * `run` requests an additional Process before startup, created by System. It belongs
  * to the installed Program and
  * therefore outlives this command; `phresh start` and `phresh dev` remain
  * attached authoring runs whose lifetime is the terminal's.
@@ -42,7 +42,7 @@ export default async function install(options: InstallOptions = {}) {
 
             heading(`${name || identity}${version ? ` ${version}` : ""}`, result.replaced ? "reinstalled" : "installed")
 
-            if (result.replaced) console.log(`  ${dim("its storage was kept, and its previous processes were ended")}`)
+            if (result.replaced) console.log(`  ${dim(options.purge ? "its storage was deleted, and its previous processes were ended" : "its storage was kept, and its previous processes were ended")}`)
 
             if (result.process) line("process", result.process)
 
