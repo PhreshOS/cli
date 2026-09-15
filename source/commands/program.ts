@@ -1,4 +1,4 @@
-import type { Program, SystemProgramUninstall } from "@phreshos/core"
+import type { Process, Program, ProgramProcessExit, SystemProgramUninstall } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
@@ -15,7 +15,7 @@ import {
 import { connected, requireProgram, type ConnectSystem } from "./connection.ts"
 import { bounded, integer, page, type CommonOptions } from "./input.ts"
 import { wait } from "./observation.ts"
-import { programView } from "./projection.ts"
+import { processView, programView } from "./projection.ts"
 
 export default function programCommands(root: Command, connect: ConnectSystem) {
     const programs = defineCommand(root, {
@@ -86,9 +86,9 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         options: withJson(
             option("--event <event>", "Program lifecycle event", {
                 mandatory: true,
-                choices: ["create", "forget", "install", "uninstall"]
+                choices: ["create", "forget", "install", "uninstall", "processCreate", "processExit"]
             }),
-            option("--program <identity>", "scope forget or uninstall to one Program"),
+            option("--program <identity>", "observe events belonging to one Program"),
             timeoutOption
         ),
         output: dataOutput(
@@ -98,8 +98,12 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         ),
         examples: ["phresh program wait --event create", "phresh program wait --event uninstall --program terminal --json"]
     }, async ({ options }) => connected(connect, async system => {
-        if (options.program && options.event !== "forget" && options.event !== "uninstall") {
-            throw new Error("An individual Program emits only forget and uninstall")
+        if (options.program && (options.event === "create" || options.event === "install")) {
+            throw new Error(`An individual Program does not emit ${options.event}`)
+        }
+
+        if (!options.program && (options.event === "processCreate" || options.event === "processExit")) {
+            throw new Error(`${options.event} belongs to an individual Program`)
         }
 
         const target = options.program ? await requireProgram(system, options.program) : system.program
@@ -114,9 +118,16 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
 
 async function eventView(event: ProgramWaitOptions["event"], message: unknown, scoped?: Program) {
     if (event === "uninstall") {
-        if (scoped) return { program: await programView(scoped), purge: message === true }
+        if (scoped) return { program: await programView(scoped), purge: (message as { purge: boolean }).purge }
         const current = message as SystemProgramUninstall
         return { program: await programView(current.program), purge: current.purge }
+    }
+
+    if (event === "processCreate") return processView(message as Process)
+
+    if (event === "processExit") {
+        const current = message as ProgramProcessExit
+        return { process: await processView(current.process), status: current.status, code: current.code, signal: current.signal }
     }
 
     if (scoped) return programView(scoped)
@@ -135,7 +146,7 @@ type ProgramListOptions = CommonOptions & Readonly<{
     offset: number
 }>
 type ProgramWaitOptions = CommonOptions & Readonly<{
-    event: "create" | "forget" | "install" | "uninstall"
+    event: "create" | "forget" | "install" | "uninstall" | "processCreate" | "processExit"
     program?: string
     timeout?: number
 }>

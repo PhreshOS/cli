@@ -1,4 +1,4 @@
-import type { Process, SystemProcessExit } from "@phreshos/core"
+import type { Process, Program, SystemProcessExit } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
@@ -40,7 +40,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
         examples: ["phresh process list", "phresh process list --program terminal --json"]
     }, async ({ options }) => connected(connect, async system => {
         const processes = options.program
-            ? await (await requireProgram(system, options.program)).process.list()
+            ? await (await requireProgram(system, options.program)).processes()
             : await system.process.list()
         const selected = page(
             processes,
@@ -75,7 +75,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
         examples: ["phresh process create --program terminal --server --client", "phresh process create --program terminal --name main --json"]
     }, async ({ options }) => connected(connect, async system => {
         const program = await requireProgram(system, options.program)
-        return await processView(await program.process.create(launch(options)))
+        return await processView(await program.createProcess(launch(options)))
     }))
 
     defineCommand<ProcessCreateOptions>(processes, {
@@ -91,7 +91,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
         examples: ["phresh process find-or-create --program terminal --name main --json"]
     }, async ({ options }) => connected(connect, async system => {
         const program = await requireProgram(system, options.program)
-        return await processView(await program.process.findOrCreate(
+        return await processView(await program.findOrCreateProcess(
             launch(options, true) as ReturnType<typeof launch> & { name: string }
         ))
     }))
@@ -129,14 +129,15 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
     }, async ({ options }) => connected(connect, async system => {
         if (options.process && options.event === "create") throw new Error("An individual Process does not emit create")
 
+        const timeout = options.timeout === undefined ? undefined : bounded(options.timeout, "--timeout", 1)
         const target = options.process
             ? await requireProcess(system, options.process, options.program)
             : options.program
-                ? (await requireProgram(system, options.program)).process
+                ? await requireProgram(system, options.program)
                 : system.process
-        const message = await wait(target, options.event, options.timeout === undefined
-            ? undefined
-            : bounded(options.timeout, "--timeout", 1))
+        const message = options.program && !options.process
+            ? await wait(target as Program, options.event === "create" ? "processCreate" : "processExit", timeout)
+            : await wait(target as Process | typeof system.process, options.event, timeout)
 
         return {
             scope: options.process ? `process:${options.process}` : options.program ? `program:${options.program}` : "process",

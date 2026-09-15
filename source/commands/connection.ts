@@ -22,7 +22,7 @@ export async function requireProgram(system: SystemContract, identity: string) {
 
 export async function requireProcess(system: SystemContract, identity: string, programIdentity?: string) {
     const process = programIdentity
-        ? await (await requireProgram(system, programIdentity)).process.find(identity)
+        ? await (await requireProgram(system, programIdentity)).findProcess(identity)
         : await system.process.find(identity)
 
     if (!process) throw new Error(`Unknown Process "${identity}"`)

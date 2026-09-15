@@ -53,7 +53,7 @@ export default async function installProgram(program: Project | ProgramDefinitio
 
         else installed = await system.program.forceCreate(program)
 
-        if (options.run) stopObserving = installed.process.subscribe("create", created => { process ??= created.identity })
+        if (options.run) stopObserving = installed.subscribe("processCreate", created => { process ??= created.identity })
 
         for await (const chunk of installed.install({ launch: options.run ? true : undefined, purge: options.purge })) writeProgramCommandOutput(chunk)
 
