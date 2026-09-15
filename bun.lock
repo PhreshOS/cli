@@ -7,7 +7,7 @@
       "dependencies": {
         "@clack/prompts": "^1.7.0",
         "@phreshos/core": "^0.1.52",
-        "@phreshos/node": "^0.1.24",
+        "@phreshos/node": "^0.1.25",
         "adm-zip": "^0.6.0",
         "cli-table3": "^0.6.5",
         "commander": "^15.0.0",
@@ -38,7 +38,7 @@
 
     "@phreshos/core": ["@phreshos/core@0.1.52", "", {}, "sha512-FXndIP8YMYdRqSD2itQ766XjXf/9XmMt2sjegftS/tOmzGx66Dt9AfW4DdGYtSaDDRrmFm02ljH6TN7dqCBOaA=="],
 
-    "@phreshos/node": ["@phreshos/node@0.1.24", "", { "dependencies": { "@the-link/ipc": "^0.2.1", "@the-link/messagepack": "^0.1.0", "adm-zip": "^0.6.0", "jiti": "^2.7.0" }, "peerDependencies": { "@phreshos/core": "^0.1.51" } }, "sha512-SZkEgsVjoLRRHU+zGu25uybldhIJKQvg+BmjThTwfivXKAvs2P19BFcnuVnOC+Z+EudWCrJuz+iLGzv9j1NipA=="],
+    "@phreshos/node": ["@phreshos/node@0.1.25", "", { "dependencies": { "@the-link/ipc": "^0.2.1", "@the-link/messagepack": "^0.1.0", "adm-zip": "^0.6.0", "jiti": "^2.7.0" }, "peerDependencies": { "@phreshos/core": "^0.1.52" } }, "sha512-BwzkyvipZCcWggLf9wbQic82rvZBpTPqIPisCUVHv2BX3SOZ+xMDW8H1BhoJLgMgVN0cM5aEBFLNyCRIFPSDOQ=="],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.5", "", { "os": "android", "cpu": "arm" }, "sha512-DLe/i+l8ynIBY7XEQ191TeZvCoowIGa18R+dIV30GW7DiOtp74i/xX8hs8GUjW5ARV7VZuie3d6AumSmCwbeRA=="],
 
