@@ -10,7 +10,14 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
 
   heading(`${definition.name ?? definition.identity}${definition.version ? ` ${definition.version}` : ""}`, mode)
   if (mode === "production" && project.config.buildCommand) line("build", project.config.buildCommand)
-  if (definition.server) line(definition.server.startCommand ? "server" : "server worker", String(definition.server.startCommand ?? definition.server.entryFile), place(project.directory, definition.server.location))
+  if (definition.server) {
+    const [execution, value] = definition.server.command !== undefined
+      ? ["command", definition.server.command]
+      : definition.server.worker !== undefined
+        ? ["worker", definition.server.worker]
+        : ["sandbox", definition.server.sandbox]
+    line(`server ${execution}`, value, place(project.directory, definition.server.location))
+  }
   if (definition.client) line("client", project.config.client?.development?.startCommand ?? place(project.directory, definition.client.location))
   line("storage", place(project.directory, String(definition.storage)))
   if (Object.keys(options).length) line("options", Object.entries(options).map(([name, value]) => `${name}=${value}`).join("  "))

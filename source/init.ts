@@ -1,4 +1,4 @@
-import { type ClientConfig, type ClientDevelopment, type Config, type ServerConfig } from "@phreshos/core"
+import { type ClientConfig, type ClientDevelopment, type Config, type ServerConfig, type ServerExecution } from "@phreshos/core"
 import { configFile, containedServerEntry, readManifest } from "./project.ts"
 import { dim } from "./style.ts"
 import ensureProjectDependency, { projectScript } from "./project-dependency.ts"
@@ -88,13 +88,13 @@ export default async function init(options: InitOptions = {}, directory = proces
 
         if (!location) throw new Error("--server-location is required without a terminal")
 
-        const production = options.serverStartCommand === undefined && options.serverEntryFile === undefined && interactive
+        const production = options.serverCommand === undefined && options.serverWorker === undefined && options.serverSandbox === undefined && interactive
 
             ? await askExecution(interaction, "production", "node main.js")
 
-            : execution(options.serverStartCommand, options.serverEntryFile, "production Server")
+            : execution(options.serverCommand, options.serverWorker, options.serverSandbox, "production Server")
 
-        let development = explicitExecution(options.serverDevelopmentStartCommand, options.serverDevelopmentEntryFile, "development Server")
+        let development = developmentExecution(options.serverDevelopmentCommand, "development Server")
 
         if (interactive && development === undefined) {
 
@@ -102,7 +102,9 @@ export default async function init(options: InitOptions = {}, directory = proces
 
             if (await yes("Development mode can run the Server directly from the project source.", "Run the Server from source during development?", Boolean(suggested && !clientSelected))) {
 
-                development = await askExecution(interaction, "development", suggested || undefined)
+                development = {
+                    command: await ask("This command runs from the project directory with access to development tooling.", "What command starts the development Server?", suggested || undefined)
+                }
             }
         }
 
@@ -177,7 +179,7 @@ export default async function init(options: InitOptions = {}, directory = proces
 
     writeFileSync(path, compose(config))
 
-    if (config.server) interaction.detail(config.server.startCommand ? "server" : "server worker", config.server.startCommand ?? config.server.entryFile, `./${config.server.location}`)
+    if (config.server) interaction.detail(`server ${serverExecution(config.server)[0]}`, serverExecution(config.server)[1], `./${config.server.location}`)
 
     if (config.client) interaction.detail("client", `./${config.client.location}`)
 
@@ -216,11 +218,7 @@ function compose(config: Config) {
 
             location: config.server.location,
 
-            ...(config.server.startCommand !== undefined
-
-                ? { startCommand: config.server.startCommand }
-
-                : { entryFile: config.server.entryFile }),
+            [serverExecution(config.server)[0]]: serverExecution(config.server)[1],
 
             ...config.server.development && { development: config.server.development }
         }),
@@ -292,13 +290,13 @@ export interface InitOptions {
 
     serverLocation?: string
 
-    serverStartCommand?: string
+    serverCommand?: string
 
-    serverEntryFile?: string
+    serverWorker?: string
 
-    serverDevelopmentStartCommand?: string
+    serverSandbox?: string
 
-    serverDevelopmentEntryFile?: string
+    serverDevelopmentCommand?: string
 
     client?: boolean
 
@@ -315,61 +313,76 @@ interface ComposedHalf {
 
     location: string
 
-    startCommand?: string
+    command?: string
 
-    entryFile?: string
+    worker?: string
+
+    sandbox?: string
 
     development?: {
+
+        command?: string
 
         url?: string
 
         startCommand?: string
-
-        entryFile?: string
     }
 }
 
-function execution(startCommand: string | undefined, entryFile: string | undefined, owner: string) {
+function execution(command: string | undefined, worker: string | undefined, sandbox: string | undefined, owner: string) {
 
-    const selected = explicitExecution(startCommand, entryFile, owner)
+    const selected = [command, worker, sandbox].filter(value => value !== undefined)
 
-    if (!selected) throw new Error(`Choose exactly one --server-start-command or --server-entry-file for the ${owner}`)
+    if (selected.length !== 1) throw new Error(`Choose exactly one --server-command, --server-worker, or --server-sandbox for the ${owner}`)
 
-    return selected
+    if (command !== undefined) {
+        if (!command.trim()) throw new Error(`The ${owner} command must not be empty`)
+        return { command } satisfies ServerExecution
+    }
+    if (worker !== undefined) {
+        if (!worker.trim()) throw new Error(`The ${owner} worker must not be empty`)
+        if (!containedServerEntry(worker)) throw new Error(`The ${owner} worker entry must remain inside its Server directory`)
+        return { worker } satisfies ServerExecution
+    }
+    if (!sandbox?.trim()) throw new Error(`The ${owner} sandbox must not be empty`)
+    if (!containedServerEntry(sandbox)) throw new Error(`The ${owner} sandbox entry must remain inside its Server directory`)
+    return { sandbox } satisfies ServerExecution
 }
 
-function explicitExecution(startCommand: string | undefined, entryFile: string | undefined, owner: string) {
+function developmentExecution(command: string | undefined, owner: string) {
 
-    if (startCommand !== undefined && entryFile !== undefined) throw new Error(`The ${owner} cannot declare both a start command and an entry file`)
+    if (command === undefined) return undefined
 
-    if (startCommand !== undefined) {
+    if (!command.trim()) throw new Error(`The ${owner} command must not be empty`)
 
-        if (startCommand.trim().length === 0) throw new Error(`The ${owner} command must not be empty`)
-
-        return { startCommand }
-    }
-
-    if (entryFile !== undefined) {
-
-        if (entryFile.trim().length === 0) throw new Error(`The ${owner} entry file must not be empty`)
-
-        if (!containedServerEntry(entryFile)) throw new Error(`The ${owner} entry file must remain inside its Server directory`)
-
-        return { entryFile }
-    }
+    return { command }
 }
 
-async function askExecution(interaction: ReturnType<typeof prompts>, mode: "production" | "development", suggestedCommand?: string) {
+async function askExecution(interaction: ReturnType<typeof prompts>, mode: "production", suggestedCommand?: string) {
 
-    const worker = await interaction.yes("A Worker uses fewer resources but shares the System's Node.js process.", `Run the ${mode} Server as a System-owned Worker?`, false)
+    const sandbox = await interaction.yes("A Sandbox provides only JavaScript and the permission-constrained System API.", `Run the ${mode} Server in a Sandbox?`, false)
+
+    if (sandbox) return {
+
+        sandbox: await interaction.ask("This bundled JavaScript module remains inside the Server files.", `What is the ${mode} Server Sandbox entry?`, "main.js")
+    }
+
+    const worker = await interaction.yes("A Worker uses Node.js host capabilities in an isolated thread.", `Run the ${mode} Server as a Worker?`, false)
 
     if (worker) return {
 
-        entryFile: await interaction.ask("This JavaScript module remains inside the Server files.", `What is the ${mode} Server entry file?`, mode === "production" ? "main.js" : "source/server/main.js")
+        worker: await interaction.ask("This JavaScript module remains inside the Server files.", `What is the ${mode} Server Worker entry?`, "main.js")
     }
 
     return {
 
-        startCommand: await interaction.ask(`This command runs from the ${mode === "production" ? "production Server directory" : "project directory"}.`, `What command starts the ${mode} Server?`, suggestedCommand)
+        command: await interaction.ask("This command runs from the production Server directory.", `What command starts the ${mode} Server?`, suggestedCommand)
     }
+}
+
+function serverExecution(server: ServerExecution): ["command" | "worker" | "sandbox", string] {
+
+    if (server.command !== undefined) return ["command", server.command]
+    if (server.worker !== undefined) return ["worker", server.worker]
+    return ["sandbox", server.sandbox]
 }

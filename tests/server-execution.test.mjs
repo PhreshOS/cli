@@ -6,7 +6,7 @@ import { join } from "node:path"
 import pack from "../dist/pack.js"
 import { readConfig } from "../dist/project.js"
 
-test("packages entryFile as the installable worker declaration", async function () {
+test("packages worker as the installable worker declaration", async function () {
   const directory = await mkdtemp(join(tmpdir(), "phresh-worker-package-"))
 
   try {
@@ -14,20 +14,20 @@ test("packages entryFile as the installable worker declaration", async function 
     await writeFile(join(directory, "server", "main.js"), "export {}\n")
     await writeFile(join(directory, "package.json"), JSON.stringify({ name: "worker-package", version: "1.0.0", type: "module" }))
     await writeFile(join(directory, "phresh.config.ts"), `
-type Execution = { location: string, entryFile: string }
-const server: Execution = { location: "server", entryFile: "main.js" }
+type Execution = { location: string, worker: string }
+const server: Execution = { location: "server", worker: "main.js" }
 export default { identity: "worker-package", server } as const
 `)
 
     const config = await readConfig(directory)
 
-    assert.equal(config.server?.entryFile, "main.js")
+    assert.equal(config.server?.worker, "main.js")
 
     await pack(directory)
 
     const installed = JSON.parse(await readFile(join(directory, "program.json"), "utf8"))
 
-    assert.deepEqual(installed.server, { location: "server", entryFile: "main.js" })
+    assert.deepEqual(installed.server, { location: "server", worker: "main.js" })
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
@@ -36,8 +36,9 @@ export default { identity: "worker-package", server } as const
 test("rejects absent, conflicting, and escaping Server execution declarations", async function () {
   for (const [name, server] of [
     ["absent", { location: "server" }],
-    ["conflicting", { location: "server", startCommand: "node main.js", entryFile: "main.js" }],
-    ["escaping", { location: "server", entryFile: "../main.js" }]
+    ["conflicting", { location: "server", command: "node main.js", worker: "main.js" }],
+    ["escaping-worker", { location: "server", worker: "../main.js" }],
+    ["escaping-sandbox", { location: "server", sandbox: "../main.js" }]
   ]) {
     const directory = await mkdtemp(join(tmpdir(), `phresh-worker-${name}-`))
 

@@ -40,10 +40,10 @@ export default function projectCommands(program: Command, coreRange: string) {
             option("--build-command <command>", "prepare production files before use"),
             option("--server", "include a Server endpoint"),
             option("--server-location <path>", "production Server directory"),
-            option("--server-start-command <command>", "production Server command"),
-            option("--server-entry-file <path>", "production Server worker entry"),
-            option("--server-development-start-command <command>", "development Server command"),
-            option("--server-development-entry-file <path>", "development Server worker entry"),
+            option("--server-command <command>", "production Server host command"),
+            option("--server-worker <path>", "production Server Node Worker entry"),
+            option("--server-sandbox <path>", "production Server Sandbox entry"),
+            option("--server-development-command <command>", "development Server command"),
             option("--client", "include a Client endpoint"),
             option("--client-location <path>", "production Client directory"),
             option("--client-development-url <url>", "fixed or external development Client URL"),
@@ -60,12 +60,12 @@ export default function projectCommands(program: Command, coreRange: string) {
         await init({
             name: options.name,
             buildCommand: options.buildCommand,
-            server: options.server === true || options.serverLocation !== undefined || options.serverStartCommand !== undefined || options.serverEntryFile !== undefined,
+            server: options.server === true || options.serverLocation !== undefined || options.serverCommand !== undefined || options.serverWorker !== undefined || options.serverSandbox !== undefined,
             serverLocation: options.serverLocation,
-            serverStartCommand: options.serverStartCommand,
-            serverEntryFile: options.serverEntryFile,
-            serverDevelopmentStartCommand: options.serverDevelopmentStartCommand,
-            serverDevelopmentEntryFile: options.serverDevelopmentEntryFile,
+            serverCommand: options.serverCommand,
+            serverWorker: options.serverWorker,
+            serverSandbox: options.serverSandbox,
+            serverDevelopmentCommand: options.serverDevelopmentCommand,
             client: options.client === true
                 || options.clientLocation !== undefined
                 || options.clientDevelopmentUrl !== undefined
@@ -177,10 +177,10 @@ interface InitCommandOptions {
     readonly buildCommand?: string
     readonly server?: boolean
     readonly serverLocation?: string
-    readonly serverStartCommand?: string
-    readonly serverEntryFile?: string
-    readonly serverDevelopmentStartCommand?: string
-    readonly serverDevelopmentEntryFile?: string
+    readonly serverCommand?: string
+    readonly serverWorker?: string
+    readonly serverSandbox?: string
+    readonly serverDevelopmentCommand?: string
     readonly client?: boolean
     readonly clientLocation?: string
     readonly clientDevelopmentUrl?: string
