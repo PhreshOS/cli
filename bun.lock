@@ -6,8 +6,8 @@
       "name": "@phreshos/cli",
       "dependencies": {
         "@clack/prompts": "^1.7.0",
-        "@phreshos/core": "^0.1.52",
-        "@phreshos/node": "^0.1.25",
+        "@phreshos/core": "^0.1.53",
+        "@phreshos/node": "^0.1.26",
         "adm-zip": "^0.6.0",
         "commander": "^15.0.0",
         "picocolors": "^1.1.1",
@@ -32,9 +32,9 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.146.0", "", {}, "sha512-XC0QsnnhVe7sLIWmYmdPw7x5P0h4W8vUU3Nv1ySgWXtvCz8NizoAEpGXA0sOYoJQV2Rl13LgURAHQ5cI5ILCSA=="],
 
-    "@phreshos/core": ["@phreshos/core@0.1.52", "", {}, "sha512-FXndIP8YMYdRqSD2itQ766XjXf/9XmMt2sjegftS/tOmzGx66Dt9AfW4DdGYtSaDDRrmFm02ljH6TN7dqCBOaA=="],
+    "@phreshos/core": ["@phreshos/core@0.1.53", "", { "dependencies": { "zod": "^4.6.5" } }, "sha512-6PQJA5paERMN2FVl13yDklJFV4xbqbiTFoVwfVSP3QqLniQ2rstqHehdCpV6a4TjOk+yH2u5hYbE18t3IqWWqw=="],
 
-    "@phreshos/node": ["@phreshos/node@0.1.25", "", { "dependencies": { "@the-link/ipc": "^0.2.1", "@the-link/messagepack": "^0.1.0", "adm-zip": "^0.6.0", "jiti": "^2.7.0" }, "peerDependencies": { "@phreshos/core": "^0.1.52" } }, "sha512-BwzkyvipZCcWggLf9wbQic82rvZBpTPqIPisCUVHv2BX3SOZ+xMDW8H1BhoJLgMgVN0cM5aEBFLNyCRIFPSDOQ=="],
+    "@phreshos/node": ["@phreshos/node@0.1.26", "", { "dependencies": { "@the-link/ipc": "^0.2.1", "@the-link/messagepack": "^0.1.0", "adm-zip": "^0.6.0", "jiti": "^2.7.0" }, "peerDependencies": { "@phreshos/core": "^0.1.53" } }, "sha512-WleivlyemO+ugC3LrZ5OlaXY/VxvRXzgctYxRJbrC646H4EPlEGO3jejJuwODJquou4Jf6+AKrV5XJTXc7Uq1A=="],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.5", "", { "os": "android", "cpu": "arm" }, "sha512-DLe/i+l8ynIBY7XEQ191TeZvCoowIGa18R+dIV30GW7DiOtp74i/xX8hs8GUjW5ARV7VZuie3d6AumSmCwbeRA=="],
 
@@ -203,5 +203,7 @@
     "vitest": ["vitest@4.1.11", "", { "dependencies": { "@vitest/expect": "4.1.11", "@vitest/mocker": "4.1.11", "@vitest/pretty-format": "4.1.11", "@vitest/runner": "4.1.11", "@vitest/snapshot": "4.1.11", "@vitest/spy": "4.1.11", "@vitest/utils": "4.1.11", "es-module-lexer": "^2.0.0", "expect-type": "^1.3.0", "magic-string": "^0.30.21", "obug": "^2.1.1", "pathe": "^2.0.3", "picomatch": "^4.0.3", "std-env": "^4.0.0-rc.1", "tinybench": "^2.9.0", "tinyexec": "^1.0.2", "tinyglobby": "^0.2.15", "tinyrainbow": "^3.1.0", "vite": "^6.0.0 || ^7.0.0 || ^8.0.0", "why-is-node-running": "^2.3.0" }, "peerDependencies": { "@edge-runtime/vm": "*", "@opentelemetry/api": "^1.9.0", "@types/node": "^20.0.0 || ^22.0.0 || >=24.0.0", "@vitest/browser-playwright": "4.1.11", "@vitest/browser-preview": "4.1.11", "@vitest/browser-webdriverio": "4.1.11", "@vitest/coverage-istanbul": "4.1.11", "@vitest/coverage-v8": "4.1.11", "@vitest/ui": "4.1.11", "happy-dom": "*", "jsdom": "*" }, "optionalPeers": ["@edge-runtime/vm", "@opentelemetry/api", "@types/node", "@vitest/browser-playwright", "@vitest/browser-preview", "@vitest/browser-webdriverio", "@vitest/coverage-istanbul", "@vitest/coverage-v8", "@vitest/ui", "happy-dom", "jsdom"], "bin": { "vitest": "./vitest.mjs" } }, "sha512-fhACrNXUidIbGSBr5FlbuBkO7VWC1ZyLl0DO4CU2DrQoAPxX84Ysxs+HeGQpii5lZWV1Q4gBZTTu49mF+A6Edw=="],
 
     "why-is-node-running": ["why-is-node-running@2.3.0", "", { "dependencies": { "siginfo": "^2.0.0", "stackback": "0.0.2" }, "bin": { "why-is-node-running": "cli.js" } }, "sha512-hUrmaWBdVDcxvYqnyh09zunKzROWjbZTiNy8dBEjkS7ehEDQibXJ7XvlmtbwuTclUiIyN+CyXQD4Vmko8fNm8w=="],
+
+    "zod": ["zod@4.6.5", "", {}, "sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q=="],
   }
 }
