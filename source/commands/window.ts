@@ -7,6 +7,7 @@ import {
     eventOutput,
     eventPresentation,
     windowGeometryPresentation,
+    windowHeaderPresentation,
     windowMinimizePresentation,
     windowMaximizePresentation,
     windowOutput,
@@ -105,6 +106,16 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
         return await windowView(process)
     }))
 
+    defineCommand<WindowOptions & Readonly<{ hide?: boolean }>>(windows, {
+        ...state("changeHeader", "change whether the Desktop-owned Window header is shown", windowHeaderPresentation),
+        aliases: ["change-header"],
+        options: withJson(...processOptions, option("--hide", "hide rather than show the Window header")),
+        examples: ["phresh window change-header --process main --program terminal --hide", "phresh window change-header --process main --program terminal"]
+    }, async ({ options }) => withWindow(connect, options, async process => {
+        await windowOf(process).changeHeader(options.hide !== true)
+        return await windowView(process)
+    }))
+
     defineCommand<WindowOptions>(windows, {
         ...state("raise", "raise the Window within its own layer", windowRaisePresentation),
         examples: ["phresh window raise --process main --program terminal"]
@@ -121,7 +132,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
             ...processOptions,
             option("--event <event>", "Window event", {
                 mandatory: true,
-                choices: ["move", "resize", "geometry", "minimize", "maximize", "changeTitle", "front"]
+                choices: ["move", "resize", "geometry", "minimize", "maximize", "changeTitle", "changeHeader", "front"]
             }),
             timeoutOption
         ),
@@ -162,6 +173,6 @@ type WindowOptions = CommonOptions & ProcessCoordinates
 type PositionOptions = Readonly<{ x: string, y: string }>
 type SizeOptions = Readonly<{ width: string, height: string }>
 type WindowWaitOptions = Readonly<{
-    event: "move" | "resize" | "geometry" | "minimize" | "maximize" | "changeTitle" | "front"
+    event: "move" | "resize" | "geometry" | "minimize" | "maximize" | "changeTitle" | "changeHeader" | "front"
     timeout?: number
 }>

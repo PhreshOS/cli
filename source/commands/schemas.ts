@@ -136,6 +136,7 @@ export const endpointActionPresentation: OutputPresentation = fields(
 export const windowPresentation: OutputPresentation = fields(
     ["Process", "process"],
     ["Title", "title"],
+    ["Header", "header"],
     ["Position", "position"],
     ["Size", "size"],
     ["Minimized", "minimized"],
@@ -174,6 +175,11 @@ export const windowMaximizePresentation: OutputPresentation = fields(
 export const windowTitlePresentation: OutputPresentation = fields(
     ["Process", "process"],
     ["Title", "title"]
+)
+
+export const windowHeaderPresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Header", "header"]
 )
 
 export const windowRaisePresentation: OutputPresentation = fields(

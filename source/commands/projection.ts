@@ -58,8 +58,9 @@ export async function endpointView(process: Process, name: EndpointName) {
 
 export async function windowView(process: Process) {
     const window = process.client.window
-    const [title, position, size, minimized, maximized, front, layer] = await Promise.all([
+    const [title, header, position, size, minimized, maximized, front, layer] = await Promise.all([
         window.title(),
+        window.header(),
         window.position(),
         window.size(),
         window.minimized(),
@@ -68,5 +69,5 @@ export async function windowView(process: Process) {
         window.layer()
     ])
 
-    return { process: process.identity, title, position, size, minimized, maximized, front, layer }
+    return { process: process.identity, title, header, position, size, minimized, maximized, front, layer }
 }
