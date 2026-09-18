@@ -50,10 +50,8 @@
     "@phreshos/core": "^0.1.52",
     "@phreshos/node": "^0.1.25",
     "adm-zip": "^0.6.0",
-    "cli-table3": "^0.6.5",
     "commander": "^15.0.0",
-    "picocolors": "^1.1.1",
-    "string-width": "^4.2.3"
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.8",

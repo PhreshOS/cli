@@ -1,3 +1,4 @@
+import { parseExecuteRequest } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
@@ -19,10 +20,10 @@ import {
     lifecyclePresentation,
     valuePresentation
 } from "./schemas.ts"
-import { connected, requireProcess, type ConnectSystem } from "./connection.ts"
+import { connected, type ConnectSystem } from "./connection.ts"
 import { bounded, clientLaunch, payload, serverLaunch, type ClientOptions, type CommonOptions, type ProcessCoordinates, type ServerOptions } from "./input.ts"
-import { wait } from "./observation.ts"
-import { endpoint, endpointView, type EndpointName } from "./projection.ts"
+import type { EndpointName } from "./projection.ts"
+import { executeDescription } from "./execution.ts"
 
 export default function endpointCommands(root: Command, connect: ConnectSystem) {
     const endpoints = defineCommand(root, {
@@ -33,62 +34,57 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
 
     defineCommand<EndpointOptions>(endpoints, {
         name: "inspect",
-        description: "read whether one Endpoint is declared and running",
+        description: executeDescription("endpoint", "inspect"),
         requiresSystem: true,
         options: withJson(...endpointOptions),
         output: dataOutput(endpointOutput, "The selected Endpoint", endpointPresentation),
         examples: ["phresh endpoint inspect --process main --program terminal --endpoint server"]
-    }, async ({ options }) => withEndpoint(connect, options, async (process, name) => {
-        return await endpointView(process, name)
-    }))
+    }, async ({ options }) => executeEndpoint(connect, options, { $operation: "inspect" }))
 
     defineCommand<EndpointOptions & ClientOptions & ServerOptions>(endpoints, {
         name: "start",
-        description: "start a fresh Endpoint incarnation",
+        description: executeDescription("endpoint", "start"),
         requiresSystem: true,
         options: withJson(...endpointOptions, ...clientOverrideOptions, ...serverOverrideOptions),
         output: dataOutput(endpointOutput, "The started Endpoint", endpointActionPresentation),
         examples: ["phresh endpoint start --process main --program terminal --endpoint server --server-service"]
-    }, async ({ options }) => withEndpoint(connect, options, async (process, name) => {
+    }, async ({ options }) => {
         const client = clientLaunch(options)
         const server = serverLaunch(options)
-        if (name === "server" && client !== undefined) throw new Error("Client overrides require --endpoint client")
-        if (name === "client" && server !== undefined) throw new Error("Server overrides require --endpoint server")
-        if (name === "client") await process.client.start(typeof client === "object" ? client : undefined)
-        else await process.server.start(typeof server === "object" ? server : undefined)
-        return await endpointView(process, name)
-    }))
+        if (options.endpoint === "server" && client !== undefined) throw new Error("Client overrides require --endpoint client")
+        if (options.endpoint === "client" && server !== undefined) throw new Error("Server overrides require --endpoint server")
+        const launch = options.endpoint === "client"
+            ? typeof client === "object" ? client : undefined
+            : typeof server === "object" ? server : undefined
+        return executeEndpoint(connect, options, { $operation: "start", ...(launch ? { launch } : {}) })
+    })
 
     defineCommand<EndpointOptions>(endpoints, {
         name: "stop",
-        description: "stop one Endpoint",
+        description: executeDescription("endpoint", "stop"),
         requiresSystem: true,
         options: withJson(...endpointOptions),
         output: dataOutput(endpointOutput, "The stopped Endpoint", endpointActionPresentation),
         examples: ["phresh endpoint stop --process main --program terminal --endpoint client"]
-    }, async ({ options }) => withEndpoint(connect, options, async (process, name) => {
-        await endpoint(process, name).stop()
-        return await endpointView(process, name)
-    }))
+    }, async ({ options }) => executeEndpoint(connect, options, { $operation: "stop" }))
 
     defineCommand<EndpointOptions & TimeoutOptions>(endpoints, {
         name: "waitReady",
         aliases: ["wait-ready"],
-        description: "wait until the Server Endpoint reports readiness",
+        description: executeDescription("endpoint", "waitReady"),
         requiresSystem: true,
         options: withJson(...endpointOptions, timeoutOption),
         output: dataOutput(endpointOutput, "The ready Server Endpoint", endpointActionPresentation),
         examples: ["phresh endpoint wait-ready --process main --program terminal --endpoint server --timeout 30000"]
-    }, async ({ options }) => withEndpoint(connect, options, async (process, name) => {
-        if (name !== "server") throw new Error("waitReady requires --endpoint server")
-        await process.server.waitReady(timeout(options.timeout))
-        return await endpointView(process, "server")
+    }, async ({ options }) => executeEndpoint(connect, options, {
+        $operation: "waitReady",
+        ...(options.timeout === undefined ? {} : { timeout: timeout(options.timeout) })
     }))
 
     defineCommand<EndpointOptions & LifecycleOptions & TimeoutOptions>(endpoints, {
         name: "waitLifecycle",
         aliases: ["wait-lifecycle"],
-        description: "wait for one lifecycle transition of an exact Endpoint",
+        description: executeDescription("endpoint", "waitLifecycle"),
         requiresSystem: true,
         options: withJson(
             ...endpointOptions,
@@ -100,14 +96,15 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
             event: value.enumeration(["start", "stop"], "observed lifecycle event")
         }, ["scope", "event"], "Endpoint lifecycle event"), "One Endpoint lifecycle event", lifecyclePresentation),
         examples: ["phresh endpoint wait-lifecycle --process main --program terminal --endpoint server --event start"]
-    }, async ({ options }) => withEndpoint(connect, options, async (process, name) => {
-        await wait(endpoint(process, name).lifecycle, options.event, timeout(options.timeout))
-        return { scope: `endpoint:${process.identity}:${name}:lifecycle`, event: options.event }
+    }, async ({ options }) => executeEndpoint(connect, options, {
+        $operation: "waitLifecycle",
+        event: options.event,
+        ...(options.timeout === undefined ? {} : { timeout: timeout(options.timeout) })
     }))
 
     defineCommand<EndpointOptions & EventOptions & TimeoutOptions>(endpoints, {
         name: "ask",
-        description: "ask a Server event and return its answer",
+        description: executeDescription("endpoint", "ask"),
         requiresSystem: true,
         options: withJson(
             ...endpointOptions,
@@ -117,18 +114,19 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
         ),
         output: dataOutput(value.any("answer returned by the Server event contract"), "The Server answer", valuePresentation),
         examples: ["phresh endpoint ask --process main --program terminal --endpoint server --event status --json"]
-    }, async ({ options }) => withEndpoint(connect, options, async (process, name) => {
-        if (name !== "server") throw new Error("ask requires --endpoint server")
+    }, async ({ options }) => {
         const input = payload(options.payload)
-        const answer = options.timeout === undefined
-            ? await process.server.ask(options.event, input)
-            : await process.server.timeout(timeout(options.timeout)!).ask(options.event, input)
-        return answer
-    }))
+        return executeEndpoint(connect, options, {
+            $operation: "ask",
+            event: options.event,
+            ...(options.payload === undefined ? {} : { input }),
+            ...(options.timeout === undefined ? {} : { timeout: timeout(options.timeout) })
+        })
+    })
 
     defineCommand<EndpointOptions & EventOptions>(endpoints, {
         name: "publish",
-        description: "publish one event without waiting for an answer",
+        description: executeDescription("endpoint", "publish"),
         requiresSystem: true,
         options: withJson(
             ...endpointOptions,
@@ -137,14 +135,15 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
         ),
         output: dataOutput(endpointOutput, "The Endpoint after publishing", endpointActionPresentation),
         examples: ["phresh endpoint publish --process main --program terminal --endpoint client --event changed --payload '{\"value\":1}'"]
-    }, async ({ options }) => withEndpoint(connect, options, async (process, name) => {
-        endpoint(process, name).publish(options.event, payload(options.payload))
-        return await endpointView(process, name)
+    }, async ({ options }) => executeEndpoint(connect, options, {
+        $operation: "publish",
+        event: options.event,
+        ...(options.payload === undefined ? {} : { input: payload(options.payload) })
     }))
 
     defineCommand<EndpointOptions & EventOptions & TimeoutOptions>(endpoints, {
         name: "wait",
-        description: "wait for the next event emitted by one live Endpoint",
+        description: executeDescription("endpoint", "wait"),
         requiresSystem: true,
         options: withJson(
             ...endpointOptions,
@@ -153,23 +152,26 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
         ),
         output: dataOutput(eventOutput("The observed Endpoint event"), "One Endpoint event", eventPresentation),
         examples: ["phresh endpoint wait --process main --program terminal --endpoint client --event changed --json"]
-    }, async ({ options }) => withEndpoint(connect, options, async (process, name) => {
-        return {
-            scope: `endpoint:${process.identity}:${name}`,
-            event: options.event,
-            payload: await wait(endpoint(process, name), options.event, timeout(options.timeout))
-        }
+    }, async ({ options }) => executeEndpoint(connect, options, {
+        $operation: "wait",
+        event: options.event,
+        ...(options.timeout === undefined ? {} : { timeout: timeout(options.timeout) })
     }))
 }
 
-async function withEndpoint<Result>(
+async function executeEndpoint(
     connect: ConnectSystem,
     options: EndpointOptions,
-    action: (process: Awaited<ReturnType<typeof requireProcess>>, endpoint: EndpointName) => Promise<Result>
+    operation: Readonly<Record<string, unknown> & { $operation: string }>
 ) {
-    return await connected(connect, async system => {
-        return await action(await requireProcess(system, options.process, options.program), options.endpoint)
+    const request = parseExecuteRequest({
+        $domain: "endpoint",
+        ...operation,
+        process: options.process,
+        ...(options.program ? { program: options.program } : {}),
+        endpoint: options.endpoint
     })
+    return connected(connect, system => system.execute(request))
 }
 
 function timeout(value?: number) {

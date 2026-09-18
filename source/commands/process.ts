@@ -1,4 +1,3 @@
-import type { Process, Program, SystemProcessExit } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
@@ -14,10 +13,9 @@ import {
     processOutput,
     processPresentation
 } from "./schemas.ts"
-import { connected, requireProcess, requireProgram, type ConnectSystem } from "./connection.ts"
+import { connected, type ConnectSystem } from "./connection.ts"
 import { bounded, integer, launch, page, type CommonOptions, type LaunchOptions, type ProcessCoordinates } from "./input.ts"
-import { wait } from "./observation.ts"
-import { processView } from "./projection.ts"
+import { executeDescription } from "./execution.ts"
 
 export default function processCommands(root: Command, connect: ConnectSystem) {
     const processes = defineCommand(root, {
@@ -28,7 +26,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
 
     defineCommand<ProcessListOptions>(processes, {
         name: "list",
-        description: "list live Processes with bounded filtering",
+        description: executeDescription("process", "list"),
         requiresSystem: true,
         options: withJson(
             option("--program <identity>", "restrict results to one Program"),
@@ -39,9 +37,11 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
         output: dataOutput(pageOutput(processOutput, "matching Processes"), "A bounded page of Processes", processListPresentation),
         examples: ["phresh process list", "phresh process list --program terminal --json"]
     }, async ({ options }) => connected(connect, async system => {
-        const processes = options.program
-            ? await (await requireProgram(system, options.program)).processes()
-            : await system.process.list()
+        const processes = await system.execute({
+            $domain: "process",
+            $operation: "list",
+            ...(options.program ? { program: options.program } : {})
+        })
         const selected = page(
             processes,
             options.search,
@@ -49,23 +49,30 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
             bounded(options.limit, "--limit", 1, 100),
             current => `${current.identity}\n${current.name ?? ""}`
         )
-        return { ...selected, data: await Promise.all(selected.data.map(processView)) }
+        return selected
     }))
 
     defineCommand<ProcessOptions>(processes, {
         name: "inspect",
-        description: "read one live Process and its Endpoint state",
+        description: executeDescription("process", "find"),
         requiresSystem: true,
         options: withJson(...processOptions),
         output: dataOutput(processOutput, "The selected Process", processPresentation),
         examples: ["phresh process inspect --process main --program terminal"]
     }, async ({ options }) => connected(connect, async system => {
-        return await processView(await requireProcess(system, options.process, options.program))
+        const process = await system.execute({
+            $domain: "process",
+            $operation: "find",
+            process: options.process,
+            ...(options.program ? { program: options.program } : {})
+        })
+        if (!process) throw new Error(`Unknown Process "${options.process}"`)
+        return process
     }))
 
     defineCommand<ProcessCreateOptions>(processes, {
         name: "create",
-        description: "create a Process",
+        description: executeDescription("process", "create"),
         requiresSystem: true,
         options: withJson(
             option("--program <identity>", "owning Program identity", { mandatory: true }),
@@ -74,14 +81,18 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
         output: dataOutput(processOutput, "The created Process", processActionPresentation),
         examples: ["phresh process create --program terminal --server --client", "phresh process create --program terminal --name main --json"]
     }, async ({ options }) => connected(connect, async system => {
-        const program = await requireProgram(system, options.program)
-        return await processView(await program.createProcess(launch(options)))
+        return system.execute({
+            $domain: "process",
+            $operation: "create",
+            program: options.program,
+            launch: launch(options)
+        })
     }))
 
     defineCommand<ProcessCreateOptions>(processes, {
         name: "findOrCreate",
         aliases: ["find-or-create"],
-        description: "find the named Process or create it atomically",
+        description: executeDescription("process", "findOrCreate"),
         requiresSystem: true,
         options: withJson(
             option("--program <identity>", "owning Program identity", { mandatory: true }),
@@ -90,29 +101,33 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
         output: dataOutput(processOutput, "The existing or created Process", processActionPresentation),
         examples: ["phresh process find-or-create --program terminal --name main --json"]
     }, async ({ options }) => connected(connect, async system => {
-        const program = await requireProgram(system, options.program)
-        return await processView(await program.findOrCreateProcess(
-            launch(options, true) as ReturnType<typeof launch> & { name: string }
-        ))
+        return system.execute({
+            $domain: "process",
+            $operation: "findOrCreate",
+            program: options.program,
+            launch: launch(options, true) as ReturnType<typeof launch> & { name: string }
+        })
     }))
 
     defineCommand<ProcessOptions>(processes, {
         name: "exit",
-        description: "exit one Process and all of its live Endpoints",
+        description: executeDescription("process", "exit"),
         requiresSystem: true,
         options: withJson(...processOptions),
         output: dataOutput(processOutput, "The Process state immediately before exit", processIdentityPresentation),
         examples: ["phresh process exit --process main --program terminal"]
     }, async ({ options }) => connected(connect, async system => {
-        const process = await requireProcess(system, options.process, options.program)
-        const snapshot = await processView(process)
-        await process.exit()
-        return snapshot
+        return system.execute({
+            $domain: "process",
+            $operation: "exit",
+            process: options.process,
+            ...(options.program ? { program: options.program } : {})
+        })
     }))
 
     defineCommand<ProcessWaitOptions>(processes, {
         name: "wait",
-        description: "wait for one Process lifecycle event",
+        description: executeDescription("process", "wait"),
         requiresSystem: true,
         options: withJson(
             option("--event <event>", "Process lifecycle event", { mandatory: true, choices: ["create", "exit"] }),
@@ -126,38 +141,14 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
             eventPresentation
         ),
         examples: ["phresh process wait --event create", "phresh process wait --event exit --process main --program terminal --json"]
-    }, async ({ options }) => connected(connect, async system => {
-        if (options.process && options.event === "create") throw new Error("An individual Process does not emit create")
-
-        const timeout = options.timeout === undefined ? undefined : bounded(options.timeout, "--timeout", 1)
-        const target = options.process
-            ? await requireProcess(system, options.process, options.program)
-            : options.program
-                ? await requireProgram(system, options.program)
-                : system.process
-        const message = options.program && !options.process
-            ? await wait(target as Program, options.event === "create" ? "processCreate" : "processExit", timeout)
-            : await wait(target as Process | typeof system.process, options.event, timeout)
-
-        return {
-            scope: options.process ? `process:${options.process}` : options.program ? `program:${options.program}` : "process",
-            event: options.event,
-            payload: await eventView(options.event, message, options.process ? target as Process : undefined)
-        }
-    }))
-}
-
-async function eventView(event: ProcessWaitOptions["event"], message: unknown, scoped?: Process) {
-    if (event === "create") return processView(message as Process)
-
-    const exit = message as SystemProcessExit
-    const process = exit.process ?? scoped
-    return {
-        ...(process ? { process: await processView(process) } : {}),
-        status: exit.status,
-        code: exit.code,
-        signal: exit.signal
-    }
+    }, async ({ options }) => connected(connect, system => system.execute({
+        $domain: "process",
+        $operation: "wait",
+        event: options.event,
+        ...(options.process ? { process: options.process } : {}),
+        ...(options.program ? { program: options.program } : {}),
+        ...(options.timeout === undefined ? {} : { timeout: bounded(options.timeout, "--timeout", 1) })
+    })))
 }
 
 type ProcessOptions = CommonOptions & ProcessCoordinates

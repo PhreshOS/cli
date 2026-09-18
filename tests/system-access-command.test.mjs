@@ -7,9 +7,10 @@ import { gatewayPath } from "../dist/gateway.js"
 import { clientLaunch, launch, serverLaunch } from "../dist/commands/input.js"
 import { assertCommandContracts, attachCommandContract, defineCommand } from "../dist/contract/command.js"
 import { join } from "node:path"
-import { layers } from "@phreshos/core"
+import { execute, layers, listExecuteOperations } from "@phreshos/core"
 import { assertValue } from "../dist/contract/schema.js"
 import { programOutput, windowOutput } from "../dist/commands/schemas.js"
+import { executeCommandPaths } from "../dist/commands/execution.js"
 
 test("CLI accepts every shared layer in launch flags and emitted Window and Program data", () => {
     const program = new Command().exitOverride().name("phresh")
@@ -38,6 +39,7 @@ test("running-System commands use shared handles and explicit flags", async func
     const window = {
         async move(position) { calls.push(["move", position]) },
         async title() { return "Example" },
+        async header() { return true },
         async position() { return { x: 50, y: 0 } },
         async size() { return { width: 800, height: 600 } },
         async minimized() { return false },
@@ -51,6 +53,7 @@ test("running-System commands use shared handles and explicit flags", async func
     }
     const system = {
         process: { async find(identity) { calls.push(["find", identity]); return process } },
+        execute(request) { return execute(this, request) },
         async disconnect() { calls.push(["disconnect"]) }
     }
     const program = new Command().exitOverride().name("phresh")
@@ -80,6 +83,7 @@ test("running-System commands use shared handles and explicit flags", async func
     assert.deepEqual(JSON.parse(written[0]), {
         process: "one",
         title: "Example",
+        header: true,
         position: { x: 50, y: 0 },
         size: { width: 800, height: 600 },
         minimized: false, maximized: false,
@@ -141,6 +145,90 @@ test("describe covers the actual command tree without contacting the System", as
     assert.ok(described.examples.length > 0)
 })
 
+test("execute accepts and returns the authoritative raw JSON contract", async function () {
+    const program = new Command().exitOverride().name("phresh")
+    const system = {
+        execute(request) { return execute(this, request) },
+        async disconnect() {}
+    }
+    accessCommands(program, async () => system)
+
+    const written = []
+    const original = console.log
+    console.log = value => written.push(String(value))
+
+    try {
+        await program.parseAsync([
+            "node", "phresh", "execute",
+            JSON.stringify({ $domain: "operation", $operation: "list", domain: "endpoint" })
+        ])
+    }
+    finally {
+        console.log = original
+    }
+
+    const result = JSON.parse(written[0])
+    assert(result.length > 0)
+    assert(result.every(operation => operation.domain === "endpoint"))
+})
+
+test("every Execute operation has a flattened human-facing command", function () {
+    const program = new Command().exitOverride().name("phresh")
+    accessCommands(program, async () => { throw new Error("must not connect") })
+
+    const expected = listExecuteOperations().map(operation => `${operation.domain}.${operation.operation}`).sort()
+    assert.deepEqual(Object.keys(executeCommandPaths).sort(), expected)
+
+    const registered = new Set(descendants(program).map(commandPath))
+    for (const path of Object.values(executeCommandPaths)) {
+        assert(registered.has(path.join(" ")), `Missing flattened command: ${path.join(" ")}`)
+    }
+})
+
+test("program logs passes read-only SQL directly through Execute", async function () {
+    const requests = []
+    const system = {
+        execute(request) {
+            requests.push(request)
+            return Promise.resolve([{ createdAt: 1, process: "main", source: "server", kind: "log", content: "ready" }])
+        },
+        async disconnect() {}
+    }
+    const program = new Command().exitOverride().name("phresh")
+    accessCommands(program, async () => system)
+
+    const written = []
+    const original = console.log
+    console.log = value => written.push(String(value))
+
+    try {
+        await program.parseAsync([
+            "node", "phresh", "program", "logs", "--json",
+            "--program", "terminal",
+            "--statement", "select * from logs where process = ?",
+            "--values", '["main"]'
+        ])
+    }
+    finally {
+        console.log = original
+    }
+
+    assert.deepEqual(requests, [{
+        $domain: "program",
+        $operation: "logs",
+        identity: "terminal",
+        statement: "select * from logs where process = ?",
+        values: ["main"]
+    }])
+    assert.deepEqual(JSON.parse(written[0]), [{
+        createdAt: 1,
+        process: "main",
+        source: "server",
+        kind: "log",
+        content: "ready"
+    }])
+})
+
 test("the Program output contract excludes permission declarations", async function () {
     const program = new Command().exitOverride().name("phresh")
     accessCommands(program, async () => { throw new Error("must not connect") })
@@ -163,7 +251,7 @@ test("the Program output contract excludes permission declarations", async funct
     assert.equal(client.required.includes("permissions"), false)
 })
 
-test("human collection output fits the terminal while JSON preserves complete data", async function () {
+test("human collection output remains structured while JSON preserves complete data", async function () {
     const program = new Command().exitOverride().name("phresh")
     const output = {
         format: "data",
@@ -179,14 +267,14 @@ test("human collection output fits the terminal while JSON preserves complete da
             additionalProperties: false
         },
         presentation: {
-            format: "table",
+            format: "list",
             rows: "data",
-            columns: [
+            fields: [
                 { label: "Name", path: "name" },
                 { label: "Identity", path: "identity" },
                 { label: "Version", path: "version" },
                 { label: "Installed", path: "installed" },
-                { label: "Description", path: "description", width: 3 }
+                { label: "Description", path: "description" }
             ],
             item: "Program",
             items: "Programs",
@@ -216,9 +304,7 @@ test("human collection output fits the terminal while JSON preserves complete da
 
     const written = []
     const originalLog = console.log
-    const originalColumns = process.env.COLUMNS
     console.log = value => written.push(String(value ?? ""))
-    process.env.COLUMNS = "48"
 
     try {
         await program.parseAsync(["node", "phresh", "list"])
@@ -227,7 +313,6 @@ test("human collection output fits the terminal while JSON preserves complete da
         assert.match(human, /1 of 3 Programs · more available/)
         assert.doesNotMatch(human, /…/)
         assert.equal(human.trimStart().startsWith("{"), false)
-        assert.equal(human.split("\n").every(line => [...line].length <= 48), true)
 
         written.length = 0
         await program.parseAsync(["node", "phresh", "list", "--json"])
@@ -236,8 +321,6 @@ test("human collection output fits the terminal while JSON preserves complete da
     }
     finally {
         console.log = originalLog
-        if (originalColumns === undefined) delete process.env.COLUMNS
-        else process.env.COLUMNS = originalColumns
     }
 })
 
@@ -251,7 +334,7 @@ test("every System-access command is registered through the CLI contract", funct
     assert.doesNotThrow(() => assertCommandContracts(program))
 })
 
-test("only arbitrary Endpoint payloads retain JSON syntax", function () {
+test("only boundary values without a native flag shape retain JSON syntax", function () {
     const program = new Command().exitOverride().name("phresh")
 
     accessCommands(program, async () => { throw new Error("must not connect") })
@@ -263,6 +346,7 @@ test("only arbitrary Endpoint payloads retain JSON syntax", function () {
 
     assert.equal(options.some(option => option.flags.includes("--input")), false)
     assert.deepEqual(options.filter(option => option.flags.includes("<json>")), [
+        { path: "program logs", flags: "--values <json>" },
         { path: "endpoint ask", flags: "--payload <json>" },
         { path: "endpoint publish", flags: "--payload <json>" }
     ])

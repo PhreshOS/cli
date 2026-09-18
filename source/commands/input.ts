@@ -5,8 +5,13 @@ export type Metric = number | string
 export function payload(value?: string) {
     if (value === undefined) return undefined
 
+    return json(value, "--payload")
+}
+
+export function json(value: string, name: string) {
+
     try { return JSON.parse(value) as unknown }
-    catch { throw new Error("--payload must be valid JSON") }
+    catch { throw new Error(`${name} must be valid JSON`) }
 }
 
 export function metric(value: string): Metric {

@@ -1,14 +1,14 @@
 import { inspect } from "node:util"
 import type { DataOutputContract, OutputPresentation } from "../contract/output.ts"
 import { assertValue } from "../contract/schema.ts"
-import { readPath, renderFields, renderTable } from "./table.ts"
+import { readPath, renderFields, renderList } from "./format.ts"
 
 /** Validate command data once, then select its machine or human representation. */
 export function writeData(result: unknown, contract: DataOutputContract, machine: boolean) {
     const normalized = result ?? null
     assertValue(normalized, contract.value)
 
-    if (machine) {
+    if (machine || contract.presentation.format === "json") {
         console.log(JSON.stringify(normalized))
         return
     }
@@ -19,20 +19,21 @@ export function writeData(result: unknown, contract: DataOutputContract, machine
 
 function render(value: unknown, presentation: OutputPresentation): string {
     switch (presentation.format) {
-        case "table": return renderCollection(value, presentation)
+        case "list": return renderCollection(value, presentation)
         case "fields": return renderFields(presentation.fields, value)
         case "document": return String(readPath(value, presentation.content) ?? "")
         case "value": return inspect(value, { colors: false, depth: null, compact: false })
+        case "json": return JSON.stringify(value)
     }
 }
 
-function renderCollection(value: unknown, presentation: Extract<OutputPresentation, { format: "table" }>) {
+function renderCollection(value: unknown, presentation: Extract<OutputPresentation, { format: "list" }>) {
     const selected = readPath(value, presentation.rows)
     const rows = Array.isArray(selected) ? selected : []
 
     if (rows.length === 0) return presentation.empty
 
-    const table = renderTable(presentation.columns, rows)
+    const list = renderList(presentation.fields, rows)
     const totalValue = presentation.total ? readPath(value, presentation.total) : rows.length
     const total = typeof totalValue === "number" ? totalValue : rows.length
     const noun = total === 1 ? presentation.item : presentation.items
@@ -43,5 +44,5 @@ function renderCollection(value: unknown, presentation: Extract<OutputPresentati
         ? " · more available"
         : ""
 
-    return `${table}\n${summary}${truncated}`
+    return `${list}\n\n${summary}${truncated}`
 }

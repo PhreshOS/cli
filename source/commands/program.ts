@@ -1,8 +1,7 @@
-import type { Process, Program, ProgramProcessExit, SystemProgramUninstall } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
-import { option, timeoutOption, withJson } from "./options.ts"
+import { launchOptions, option, timeoutOption, withJson } from "./options.ts"
 import {
     dataOutput,
     eventOutput,
@@ -12,10 +11,9 @@ import {
     programOutput,
     programPresentation
 } from "./schemas.ts"
-import { connected, requireProgram, type ConnectSystem } from "./connection.ts"
-import { bounded, integer, page, type CommonOptions } from "./input.ts"
-import { wait } from "./observation.ts"
-import { processView, programView } from "./projection.ts"
+import { connected, type ConnectSystem } from "./connection.ts"
+import { bounded, integer, json, launch, page, type CommonOptions, type LaunchOptions } from "./input.ts"
+import { executeDescription } from "./execution.ts"
 
 export default function programCommands(root: Command, connect: ConnectSystem) {
     const programs = defineCommand(root, {
@@ -26,7 +24,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
 
     defineCommand<ProgramListOptions>(programs, {
         name: "list",
-        description: "list Programs with bounded filtering",
+        description: executeDescription("program", "list"),
         requiresSystem: true,
         options: withJson(
             option("--installed-only", "return only installed Programs"),
@@ -37,7 +35,11 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         output: dataOutput(pageOutput(programOutput, "matching Programs"), "A bounded page of Programs", programListPresentation),
         examples: ["phresh program list", "phresh program list --installed-only --json"]
     }, async ({ options }) => connected(connect, async system => {
-        const programs = await system.program.list(options.installedOnly === true)
+        const programs = await system.execute({
+            $domain: "program",
+            $operation: "list",
+            installedOnly: options.installedOnly === true
+        })
         const selected = page(
             programs,
             options.search,
@@ -45,23 +47,25 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             bounded(options.limit, "--limit", 1, 100),
             current => `${current.identity}\n${current.name}\n${current.description ?? ""}`
         )
-        return { ...selected, data: await Promise.all(selected.data.map(programView)) }
+        return selected
     }))
 
     defineCommand<ProgramOptions>(programs, {
         name: "inspect",
-        description: "read one Program declaration and installed state",
+        description: executeDescription("program", "find"),
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(programOutput, "The selected Program", programPresentation),
         examples: ["phresh program inspect --program terminal"]
     }, async ({ options }) => connected(connect, async system => {
-        return await programView(await requireProgram(system, options.program))
+        const program = await system.execute({ $domain: "program", $operation: "find", identity: options.program })
+        if (!program) throw new Error(`Unknown Program "${options.program}"`)
+        return program
     }))
 
     defineCommand<ProgramOptions>(programs, {
         name: "agent",
-        description: "read a Program's own agent operating policy",
+        description: executeDescription("program", "agent"),
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(value.object({
@@ -73,15 +77,70 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         }),
         examples: ["phresh program agent --program terminal --json"]
     }, async ({ options }) => connected(connect, async system => {
-        const program = await requireProgram(system, options.program)
-        const content = await program.agent()
-        if (content === null) throw new Error(`Program "${program.identity}" has no agent documentation`)
-        return { program: program.identity, content }
+        const result = await system.execute({ $domain: "program", $operation: "agent", identity: options.program })
+        if (result.content === null) throw new Error(`Program "${result.program}" has no agent documentation`)
+        return result
+    }))
+
+    defineCommand<ProgramOptions>(programs, {
+        name: "getLaunch",
+        aliases: ["get-launch"],
+        description: executeDescription("program", "getLaunch"),
+        requiresSystem: true,
+        options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
+        output: dataOutput(value.any("Saved Process launch or null"), "The saved Program launch", { format: "value" }),
+        examples: ["phresh program get-launch --program terminal --json"]
+    }, ({ options }) => connected(connect, system => system.execute({
+        $domain: "program",
+        $operation: "getLaunch",
+        identity: options.program
+    })))
+
+    defineCommand<ProgramLaunchOptions>(programs, {
+        name: "setLaunch",
+        aliases: ["set-launch"],
+        description: executeDescription("program", "setLaunch"),
+        requiresSystem: true,
+        options: withJson(
+            option("--program <identity>", "Program identity", { mandatory: true }),
+            ...launchOptions
+        ),
+        output: dataOutput(value.any("Saved Process launch"), "The saved Program launch", { format: "value" }),
+        examples: ["phresh program set-launch --program terminal --client --name main --json"]
+    }, ({ options }) => connected(connect, system => system.execute({
+        $domain: "program",
+        $operation: "setLaunch",
+        identity: options.program,
+        launch: launch(options)
+    })))
+
+    defineCommand<ProgramLogsOptions>(programs, {
+        name: "logs",
+        description: executeDescription("program", "logs"),
+        requiresSystem: true,
+        options: withJson(
+            option("--program <identity>", "Program identity", { mandatory: true }),
+            option("--statement <sql>", "read-only SQL statement", { mandatory: true }),
+            option("--values <json>", "bound statement values encoded as a JSON array")
+        ),
+        output: dataOutput(value.array(value.any("log query row"), "log query rows"), "Program log query result", { format: "value" }),
+        examples: ["phresh program logs --program terminal --statement 'select createdAt, process, source, kind, content from logs order by createdAt desc limit 100' --json"]
+    }, ({ options }) => connected(connect, system => {
+        const parsed = options.values === undefined ? undefined : json(options.values, "--values")
+        if (parsed !== undefined && !Array.isArray(parsed)) throw new Error("--values must be a JSON array")
+
+        return system.execute({
+            $domain: "program",
+            $operation: "logs",
+            identity: options.program,
+            statement: options.statement,
+            ...(parsed === undefined ? {} : { values: parsed })
+        })
     }))
 
     defineCommand<ProgramWaitOptions>(programs, {
         name: "wait",
-        description: "wait for one Program registry event",
+        description: executeDescription("program", "wait"),
         requiresSystem: true,
         options: withJson(
             option("--event <event>", "Program lifecycle event", {
@@ -97,48 +156,22 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             eventPresentation
         ),
         examples: ["phresh program wait --event create", "phresh program wait --event uninstall --program terminal --json"]
-    }, async ({ options }) => connected(connect, async system => {
-        if (options.program && (options.event === "create" || options.event === "install")) {
-            throw new Error(`An individual Program does not emit ${options.event}`)
-        }
-
-        if (!options.program && (options.event === "processCreate" || options.event === "processExit")) {
-            throw new Error(`${options.event} belongs to an individual Program`)
-        }
-
-        const target = options.program ? await requireProgram(system, options.program) : system.program
-        const message = await wait(target, options.event, timeout(options.timeout))
-        return {
-            scope: options.program ? `program:${options.program}` : "program",
-            event: options.event,
-            payload: await eventView(options.event, message, options.program ? target as Program : undefined)
-        }
-    }))
-}
-
-async function eventView(event: ProgramWaitOptions["event"], message: unknown, scoped?: Program) {
-    if (event === "uninstall") {
-        if (scoped) return { program: await programView(scoped), purge: (message as { purge: boolean }).purge }
-        const current = message as SystemProgramUninstall
-        return { program: await programView(current.program), purge: current.purge }
-    }
-
-    if (event === "processCreate") return processView(message as Process)
-
-    if (event === "processExit") {
-        const current = message as ProgramProcessExit
-        return { process: await processView(current.process), status: current.status, code: current.code, signal: current.signal }
-    }
-
-    if (scoped) return programView(scoped)
-    return programView(message as Program)
-}
-
-function timeout(value?: number) {
-    return value === undefined ? undefined : bounded(value, "--timeout", 1)
+    }, async ({ options }) => connected(connect, system => system.execute({
+        $domain: "program",
+        $operation: "wait",
+        event: options.event,
+        ...(options.program ? { program: options.program } : {}),
+        ...(options.timeout === undefined ? {} : { timeout: bounded(options.timeout, "--timeout", 1) })
+    })))
 }
 
 type ProgramOptions = CommonOptions & Readonly<{ program: string }>
+type ProgramLaunchOptions = CommonOptions & LaunchOptions & Readonly<{ program: string }>
+type ProgramLogsOptions = CommonOptions & Readonly<{
+    program: string
+    statement: string
+    values?: string
+}>
 type ProgramListOptions = CommonOptions & Readonly<{
     installedOnly?: boolean
     search?: string

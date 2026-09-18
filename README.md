@@ -14,8 +14,8 @@ It owns command parsing, terminal output, packaging presentation, System release
 acquisition, and native service management.
 
 The CLI owns its command contract. Runtime command executors use
-`@phreshos/node` and its shared System domain handles; the CLI does not define a
-second System interface or transport request language.
+`@phreshos/node` and Core's shared Execute operation catalog; the CLI does not
+define a second System interface or transport request language.
 
 ## Installation
 
@@ -34,6 +34,7 @@ phresh dev
 phresh install
 phresh system status
 phresh program list
+phresh execute '{"$domain":"operation","$operation":"list"}'
 ```
 
 Use `phresh describe` to inspect a command, or `phresh describe --all --json`
@@ -41,9 +42,9 @@ to read the complete machine-discoverable contract. See the
 [CLI documentation](https://docs.phreshos.com/sdks/cli) for Program project,
 System, and runtime commands.
 
-Runtime commands render responsive tables or labeled fields for people by
-default. Add `--json` to receive the complete result as one JSON value for
-automation.
+Runtime commands render direct lists or labeled fields for people by default.
+Add `--json` to receive the complete result as one JSON value for automation.
+`phresh execute` accepts and returns JSON directly.
 
 ## Development
 

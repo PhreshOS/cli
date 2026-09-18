@@ -76,9 +76,9 @@ export const programPresentation: OutputPresentation = fields(
     ["Client", "client"]
 )
 
-export const programListPresentation: OutputPresentation = table("data", "Program", "Programs", "No matching Programs", [
-    { label: "Name", path: "name", width: 2 },
-    { label: "Identity", path: "identity", width: 2 },
+export const programListPresentation: OutputPresentation = list("data", "Program", "Programs", "No matching Programs", [
+    { label: "Name", path: "name" },
+    { label: "Identity", path: "identity" },
     { label: "Version", path: "version" },
     { label: "Installed", path: "installed" }
 ])
@@ -109,10 +109,10 @@ export const processIdentityPresentation: OutputPresentation = fields(
     ["Program", "program"]
 )
 
-export const processListPresentation: OutputPresentation = table("data", "Process", "Processes", "No matching Processes", [
-    { label: "Name", path: "name", width: 2 },
-    { label: "Identity", path: "identity", width: 2 },
-    { label: "Program", path: "program", width: 2 },
+export const processListPresentation: OutputPresentation = list("data", "Process", "Processes", "No matching Processes", [
+    { label: "Name", path: "name" },
+    { label: "Identity", path: "identity" },
+    { label: "Program", path: "program" },
     { label: "Server", path: "server.running" },
     { label: "Client", path: "client.running" }
 ])
@@ -253,12 +253,12 @@ function fields(...values: readonly (readonly [label: string, path: string])[]):
     }
 }
 
-function table(
+function list(
     rows: string,
     item: string,
     items: string,
     empty: string,
-    columns: Extract<OutputPresentation, { format: "table" }>["columns"]
+    fields: Extract<OutputPresentation, { format: "list" }>["fields"]
 ): OutputPresentation {
-    return { format: "table", rows, columns, item, items, empty, total: "total", truncated: "truncated" }
+    return { format: "list", rows, fields, item, items, empty, total: "total", truncated: "truncated" }
 }

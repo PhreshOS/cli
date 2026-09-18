@@ -16,15 +16,16 @@ export interface TextOutputContract {
 }
 
 export type OutputPresentation =
-    | TablePresentation
+    | ListPresentation
     | FieldsPresentation
     | DocumentPresentation
     | ValuePresentation
+    | JsonPresentation
 
-export interface TablePresentation {
-    readonly format: "table"
+export interface ListPresentation {
+    readonly format: "list"
     readonly rows: string
-    readonly columns: readonly OutputField[]
+    readonly fields: readonly OutputField[]
     readonly item: string
     readonly items: string
     readonly empty: string
@@ -46,9 +47,11 @@ export interface ValuePresentation {
     readonly format: "value"
 }
 
+export interface JsonPresentation {
+    readonly format: "json"
+}
+
 export interface OutputField {
     readonly label: string
     readonly path: string
-    /** Relative share of the available terminal width when wrapping is required. */
-    readonly width?: number
 }
