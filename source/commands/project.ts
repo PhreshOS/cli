@@ -43,11 +43,11 @@ export default function projectCommands(program: Command, coreRange: string) {
             option("--server-command <command>", "production Server host command"),
             option("--server-worker <path>", "production Server Node Worker entry"),
             option("--server-sandbox <path>", "production Server Sandbox entry"),
-            option("--server-development-command <command>", "development Server command"),
+            option("--server-dev-command <command>", "development Server command"),
             option("--client", "include a Client endpoint"),
             option("--client-location <path>", "production Client directory"),
-            option("--client-development-url <url>", "fixed or external development Client URL"),
-            option("--client-development-start-command <command>", "development Client command"),
+            option("--client-dev-url <url>", "fixed or external development Client URL"),
+            option("--client-dev-command <command>", "development Client command"),
             option("--force", "replace an existing phresh.config.ts")
         ],
         guidance: [
@@ -65,14 +65,14 @@ export default function projectCommands(program: Command, coreRange: string) {
             serverCommand: options.serverCommand,
             serverWorker: options.serverWorker,
             serverSandbox: options.serverSandbox,
-            serverDevelopmentCommand: options.serverDevelopmentCommand,
+            serverDevCommand: options.serverDevCommand,
             client: options.client === true
                 || options.clientLocation !== undefined
-                || options.clientDevelopmentUrl !== undefined
-                || options.clientDevelopmentStartCommand !== undefined,
+                || options.clientDevUrl !== undefined
+                || options.clientDevCommand !== undefined,
             clientLocation: options.clientLocation,
-            clientDevelopmentUrl: options.clientDevelopmentUrl,
-            clientDevelopmentStartCommand: options.clientDevelopmentStartCommand,
+            clientDevUrl: options.clientDevUrl,
+            clientDevCommand: options.clientDevCommand,
             force: options.force === true
         }, process.cwd(), coreRange)
     })
@@ -180,11 +180,11 @@ interface InitCommandOptions {
     readonly serverCommand?: string
     readonly serverWorker?: string
     readonly serverSandbox?: string
-    readonly serverDevelopmentCommand?: string
+    readonly serverDevCommand?: string
     readonly client?: boolean
     readonly clientLocation?: string
-    readonly clientDevelopmentUrl?: string
-    readonly clientDevelopmentStartCommand?: string
+    readonly clientDevUrl?: string
+    readonly clientDevCommand?: string
     readonly force?: boolean
 }
 

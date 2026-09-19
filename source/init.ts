@@ -1,4 +1,4 @@
-import { type ClientConfig, type ClientDevelopment, type Config, type ServerConfig, type ServerExecution } from "@phreshos/core"
+import { type ClientConfig, type Config, type ServerConfig, type ServerExecution } from "@phreshos/core"
 import { configFile, containedServerEntry, readManifest } from "./project.ts"
 import { dim } from "./style.ts"
 import ensureProjectDependency, { projectScript } from "./project-dependency.ts"
@@ -94,21 +94,21 @@ export default async function init(options: InitOptions = {}, directory = proces
 
             : execution(options.serverCommand, options.serverWorker, options.serverSandbox, "production Server")
 
-        let development = developmentExecution(options.serverDevelopmentCommand, "development Server")
+        let devCommand = options.serverDevCommand
 
-        if (interactive && development === undefined) {
+        if (interactive && devCommand === undefined) {
 
             const suggested = manifest.scripts?.dev && projectScript(directory, manifest.packageManager, "dev")
 
             if (await yes("Development mode can run the Server directly from the project source.", "Run the Server from source during development?", Boolean(suggested && !clientSelected))) {
 
-                development = {
-                    command: await ask("This command runs from the project directory with access to development tooling.", "What command starts the development Server?", suggested || undefined)
-                }
+                devCommand = await ask("This command runs from the project directory with access to development tooling.", "What command starts the development Server?", suggested || undefined)
             }
         }
 
-        server = { location, ...production, ...development && { development } }
+        if (devCommand !== undefined && !devCommand.trim()) throw new Error("The development Server command must not be empty")
+
+        server = { location, ...production, ...devCommand !== undefined && { devCommand } }
     }
 
     let client: ClientConfig | undefined
@@ -119,11 +119,11 @@ export default async function init(options: InitOptions = {}, directory = proces
 
         if (!location) throw new Error("--client-location is required without a terminal")
 
-        let developmentUrl = options.clientDevelopmentUrl
+        let devUrl = options.clientDevUrl
 
-        let developmentStartCommand = options.clientDevelopmentStartCommand
+        let devCommand = options.clientDevCommand
 
-        if (interactive && developmentUrl === undefined && developmentStartCommand === undefined) {
+        if (interactive && devUrl === undefined && devCommand === undefined) {
 
             const suggested = manifest.scripts?.dev && projectScript(directory, manifest.packageManager, "dev")
 
@@ -131,29 +131,24 @@ export default async function init(options: InitOptions = {}, directory = proces
 
                 if (await yes("The Project can own the development server and stop it when the session ends.", "Should phresh dev start the Client server?", Boolean(suggested))) {
 
-                    developmentStartCommand = await ask("This command remains attached to the phresh dev session.", "What command starts the Client development server?", suggested || undefined)
+                    devCommand = await ask("This command remains attached to the phresh dev session.", "What command starts the Client development server?", suggested || undefined)
                 }
 
-                else developmentUrl = await ask("The System routes the Program asset path to this HTTP or HTTPS address during phresh dev.", "What URL serves the external development Client?", "http://localhost:5173/")
+                else devUrl = await ask("The System routes the Program asset path to this HTTP or HTTPS address during phresh dev.", "What URL serves the external development Client?", "http://localhost:5173/")
             }
         }
 
-        if (developmentUrl !== undefined && developmentUrl.trim().length === 0) throw new Error("A client development URL must not be empty")
+        if (devUrl !== undefined && devUrl.trim().length === 0) throw new Error("A client development URL must not be empty")
 
-        if (developmentUrl !== undefined && !httpUrl(developmentUrl)) throw new Error("A client development URL must use HTTP or HTTPS")
+        if (devUrl !== undefined && !httpUrl(devUrl)) throw new Error("A client development URL must use HTTP or HTTPS")
 
-        if (developmentStartCommand !== undefined && developmentStartCommand.trim().length === 0) throw new Error("A client development command must not be empty")
+        if (devCommand !== undefined && devCommand.trim().length === 0) throw new Error("A client development command must not be empty")
 
-        let development: ClientDevelopment | undefined
-
-        if (developmentStartCommand !== undefined) development = {
-            startCommand: developmentStartCommand,
-            ...developmentUrl !== undefined && { url: developmentUrl }
+        client = {
+            location,
+            ...devCommand !== undefined && { devCommand },
+            ...devUrl !== undefined && { devUrl }
         }
-
-        else if (developmentUrl !== undefined) development = { url: developmentUrl }
-
-        client = { location, ...development && { development } }
     }
 
     const described = {
@@ -183,7 +178,7 @@ export default async function init(options: InitOptions = {}, directory = proces
 
     if (config.client) interaction.detail("client", `./${config.client.location}`)
 
-    const next = [config.server?.development || config.client?.development ? "phresh dev" : null, "phresh start", "phresh install"].filter(Boolean)
+    const next = [config.server?.devCommand || config.client?.devCommand || config.client?.devUrl ? "phresh dev" : null, "phresh start", "phresh install"].filter(Boolean)
 
     interaction.message()
 
@@ -220,14 +215,16 @@ function compose(config: Config) {
 
             [serverExecution(config.server)[0]]: serverExecution(config.server)[1],
 
-            ...config.server.development && { development: config.server.development }
+            devCommand: config.server.devCommand
         }),
 
         half("client", config.client && {
 
             location: config.client.location,
 
-            ...config.client.development && { development: config.client.development }
+            devCommand: config.client.devCommand,
+
+            devUrl: config.client.devUrl
         })
     ]
 
@@ -258,12 +255,8 @@ function half(name: string, values: ComposedHalf | undefined) {
 
     const inside = Object.entries(values).map(function ([key, value]) {
 
-        if (typeof value === "string") return `        ${key}: ${JSON.stringify(value)}`
-
-        const nested = Object.entries(value).map(([nestedKey, nestedValue]) => `            ${nestedKey}: ${JSON.stringify(nestedValue)}`)
-
-        return `        ${key}: {\n${nested.join(",\n")}\n        }`
-    })
+        return value === undefined ? null : `        ${key}: ${JSON.stringify(value)}`
+    }).filter(Boolean)
 
     return `    ${name}: {\n${inside.join(",\n")}\n    }`
 }
@@ -296,15 +289,15 @@ export interface InitOptions {
 
     serverSandbox?: string
 
-    serverDevelopmentCommand?: string
+    serverDevCommand?: string
 
     client?: boolean
 
     clientLocation?: string
 
-    clientDevelopmentUrl?: string
+    clientDevUrl?: string
 
-    clientDevelopmentStartCommand?: string
+    clientDevCommand?: string
 
     force?: boolean
 }
@@ -319,14 +312,9 @@ interface ComposedHalf {
 
     sandbox?: string
 
-    development?: {
+    devCommand?: string
 
-        command?: string
-
-        url?: string
-
-        startCommand?: string
-    }
+    devUrl?: string
 }
 
 function execution(command: string | undefined, worker: string | undefined, sandbox: string | undefined, owner: string) {
@@ -347,15 +335,6 @@ function execution(command: string | undefined, worker: string | undefined, sand
     if (!sandbox?.trim()) throw new Error(`The ${owner} sandbox must not be empty`)
     if (!containedServerEntry(sandbox)) throw new Error(`The ${owner} sandbox entry must remain inside its Server directory`)
     return { sandbox } satisfies ServerExecution
-}
-
-function developmentExecution(command: string | undefined, owner: string) {
-
-    if (command === undefined) return undefined
-
-    if (!command.trim()) throw new Error(`The ${owner} command must not be empty`)
-
-    return { command }
 }
 
 async function askExecution(interaction: ReturnType<typeof prompts>, mode: "production", suggestedCommand?: string) {

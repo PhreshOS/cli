@@ -18,7 +18,7 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
         : ["sandbox", definition.server.sandbox]
     line(`server ${execution}`, value, place(project.directory, definition.server.location))
   }
-  if (definition.client) line("client", project.config.client?.development?.startCommand ?? place(project.directory, definition.client.location))
+  if (definition.client) line("client", project.config.client?.devCommand ?? place(project.directory, definition.client.location))
   line("storage", place(project.directory, String(definition.storage)))
   if (Object.keys(options).length) line("options", Object.entries(options).map(([name, value]) => `${name}=${value}`).join("  "))
   blank()

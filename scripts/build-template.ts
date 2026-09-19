@@ -122,7 +122,7 @@ writeFileSync(descriptionOutput, JSON.stringify({
 
     sha256: digest,
 
-    development: Boolean(config.server?.development || config.client?.development)
+    development: Boolean(config.server?.devCommand || config.client?.devCommand || config.client?.devUrl)
 }, null, 4) + "\n")
 
 function included(local: string) {
