@@ -1,4 +1,4 @@
-import { parseExecuteRequest } from "@phreshos/core"
+import { parseExecuteRequest, parseWindowFrame, parseWindowTransaction, type AppearanceMaterial, type WindowFrame, type WindowTransaction } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { option, processOptions, timeoutOption, withJson } from "./options.ts"
@@ -8,11 +8,13 @@ import {
     eventOutput,
     eventPresentation,
     windowGeometryPresentation,
+    windowFramePresentation,
     windowHeaderPresentation,
     windowMinimizePresentation,
     windowMaximizePresentation,
     windowOutput,
     windowPositionPresentation,
+    windowOpeningTransactionPresentation,
     windowPresentation,
     windowRaisePresentation,
     windowSizePresentation,
@@ -96,6 +98,49 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
         examples: ["phresh window change-header --process main --program terminal --hide", "phresh window change-header --process main --program terminal"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "changeHeader", header: options.hide !== true }))
 
+    defineCommand<WindowOptions & FrameOptions>(windows, {
+        ...state("changeFrame", windowFramePresentation),
+        aliases: ["change-frame"],
+        options: withJson(
+            ...processOptions,
+            option("--default", "use the default Window frame"),
+            option("--absent", "remove the Window frame"),
+            option("--radius <radius>", "frame radius in pixels or full"),
+            option("--color <color>", "Appearance color role or CSS color"),
+            option("--default-material", "use the default frame Material"),
+            option("--without-material", "render the frame without Material"),
+            option("--grain <value>", "frame Material grain", { parse: input => numeric(input, "--grain") }),
+            option("--grain-amount <value>", "frame Material grain intensity", { parse: input => numeric(input, "--grain-amount") }),
+            option("--backdrop <value>", "frame Material backdrop blur", { parse: input => numeric(input, "--backdrop") }),
+            option("--opacity <value>", "frame Material opacity", { parse: input => numeric(input, "--opacity") }),
+            option("--distortion <value>", "frame Material distortion", { parse: input => numeric(input, "--distortion") }),
+            option("--saturation <value>", "frame Material saturation", { parse: input => numeric(input, "--saturation") })
+        ),
+        examples: [
+            "phresh window change-frame --process overlay --absent",
+            "phresh window change-frame --process overlay --radius full --color primary"
+        ]
+    }, async ({ options }) => executeWindow(connect, options, { $operation: "changeFrame", frame: frame(options) }))
+
+    defineCommand<WindowOptions & TransactionOptions>(windows, {
+        ...state("changeOpeningTransaction", windowOpeningTransactionPresentation),
+        aliases: ["change-opening-transaction"],
+        options: withJson(
+            ...processOptions,
+            option("--default", "use the default Appearance transaction"),
+            option("--disabled", "open without a transaction"),
+            option("--duration <milliseconds>", "transaction duration", { parse: input => numeric(input, "--duration") }),
+            option("--easing <easing>", "standard easing name or four comma-separated cubic Bézier values")
+        ),
+        examples: [
+            "phresh window change-opening-transaction --process overlay --default",
+            "phresh window change-opening-transaction --process overlay --duration 240 --easing ease-out"
+        ]
+    }, async ({ options }) => executeWindow(connect, options, {
+        $operation: "changeOpeningTransaction",
+        transaction: transaction(options)
+    }))
+
     defineCommand<WindowOptions>(windows, {
         ...state("raise", windowRaisePresentation),
         examples: ["phresh window raise --process main --program terminal"]
@@ -109,7 +154,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
             ...processOptions,
             option("--event <event>", "Window event", {
                 mandatory: true,
-                choices: ["move", "resize", "geometry", "minimize", "maximize", "changeTitle", "changeHeader", "front"]
+                choices: ["move", "resize", "geometry", "minimize", "maximize", "changeTitle", "changeHeader", "changeFrame", "front"]
             }),
             timeoutOption
         ),
@@ -149,7 +194,84 @@ async function executeWindow(
 type WindowOptions = CommonOptions & ProcessCoordinates
 type PositionOptions = Readonly<{ x: string, y: string }>
 type SizeOptions = Readonly<{ width: string, height: string }>
+type FrameOptions = Readonly<{
+    default?: boolean
+    absent?: boolean
+    radius?: string
+    color?: string
+    defaultMaterial?: boolean
+    withoutMaterial?: boolean
+    grain?: number
+    grainAmount?: number
+    backdrop?: number
+    opacity?: number
+    distortion?: number
+    saturation?: number
+}>
+type TransactionOptions = Readonly<{
+    default?: boolean
+    disabled?: boolean
+    duration?: number
+    easing?: string
+}>
 type WindowWaitOptions = Readonly<{
-    event: "move" | "resize" | "geometry" | "minimize" | "maximize" | "changeTitle" | "changeHeader" | "front"
+    event: "move" | "resize" | "geometry" | "minimize" | "maximize" | "changeTitle" | "changeHeader" | "changeFrame" | "front"
     timeout?: number
 }>
+
+function frame(options: FrameOptions): WindowFrame {
+    const materialValues = material(options)
+    const customized = options.radius !== undefined || options.color !== undefined || materialValues !== undefined
+    const modes = Number(options.default === true) + Number(options.absent === true) + Number(customized)
+
+    if (modes !== 1) throw new Error("Choose exactly one of --default, --absent, or frame customization options")
+    if (options.default) return true
+    if (options.absent) return false
+
+    return parseWindowFrame({
+        ...(options.radius === undefined ? {} : { radius: options.radius === "full" ? "full" : numeric(options.radius, "--radius") }),
+        ...(options.color === undefined ? {} : { color: options.color }),
+        ...(materialValues === undefined ? {} : { material: materialValues })
+    })
+}
+
+function material(options: FrameOptions): boolean | Partial<AppearanceMaterial> | undefined {
+    const values = {
+        grain: options.grain,
+        grainAmount: options.grainAmount,
+        backdrop: options.backdrop,
+        opacity: options.opacity,
+        distortion: options.distortion,
+        saturation: options.saturation
+    }
+    const customized = Object.values(values).some(value => value !== undefined)
+    const modes = Number(options.defaultMaterial === true) + Number(options.withoutMaterial === true) + Number(customized)
+
+    if (modes > 1) throw new Error("Choose only one Material mode")
+    if (options.defaultMaterial) return true
+    if (options.withoutMaterial) return false
+    if (!customized) return undefined
+
+    return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined))
+}
+
+function transaction(options: TransactionOptions): WindowTransaction {
+    const customized = options.duration !== undefined || options.easing !== undefined
+    const modes = Number(options.default === true) + Number(options.disabled === true) + Number(customized)
+
+    if (modes !== 1) throw new Error("Choose exactly one of --default, --disabled, or --duration")
+    if (options.default) return true
+    if (options.disabled) return false
+    if (options.duration === undefined) throw new Error("--easing requires --duration")
+    if (options.easing === undefined) return parseWindowTransaction(options.duration)
+
+    const pieces = options.easing.split(",").map(value => value.trim())
+    const easing = pieces.length === 4 ? pieces.map(value => numeric(value, "--easing")) : options.easing
+    return parseWindowTransaction({ duration: options.duration, easing })
+}
+
+function numeric(value: string, name: string) {
+    const result = Number(value)
+    if (!Number.isFinite(result)) throw new Error(`${name} must be a finite number`)
+    return result
+}

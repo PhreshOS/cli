@@ -7,21 +7,58 @@ const metric: ValueContract = {
     anyOf: [value.number("pixels"), value.string("workspace-relative expression")]
 }
 
+const transaction: ValueContract = {
+    anyOf: [
+        value.boolean("default or disabled transaction"),
+        value.number("duration in milliseconds"),
+        value.object({
+            duration: value.number("duration in milliseconds"),
+            easing: value.any("CSS easing name or cubic Bézier tuple")
+        }, ["duration", "easing"], "appearance transaction")
+    ]
+}
+
+const frame: ValueContract = {
+    anyOf: [
+        value.boolean("default or absent frame"),
+        value.object({
+            radius: { anyOf: [value.number("radius in pixels"), value.literal("full", "fully rounded radius")] },
+            color: value.string("Appearance color role or CSS color"),
+            material: {
+                anyOf: [
+                    value.boolean("default or disabled Material"),
+                    value.object({
+                        grain: value.number("grain frequency"),
+                        grainAmount: value.number("grain intensity"),
+                        backdrop: value.number("backdrop blur"),
+                        opacity: value.number("Material opacity"),
+                        distortion: value.number("backdrop distortion"),
+                        saturation: value.number("backdrop saturation")
+                    }, [], "partial Appearance Material")
+                ]
+            }
+        }, [], "Window frame customization")
+    ]
+}
+
 const endpointDeclaration = value.nullable(value.object({
     start: value.boolean("whether a default Process starts this Endpoint"),
-    service: value.boolean("default Service role for new incarnations")
+    service: value.boolean("default Service role for new execution contexts")
 }, ["start", "service"], "resolved Server Endpoint declaration"))
 
 const clientDeclaration = value.nullable(value.object({
     start: value.boolean("whether a default Process starts this Endpoint"),
-    service: value.boolean("default Service role for new incarnations"),
+    service: value.boolean("default Service role for new execution contexts"),
     title: value.nullable(value.string("default Window title")),
+    header: value.nullable(value.boolean("default Window header visibility")),
+    frame: value.nullable(frame),
+    transaction: value.nullable(transaction),
     size: value.nullable(value.object({ width: metric, height: metric }, ["width", "height"], "default Window size")),
     position: value.nullable(value.object({ x: metric, y: metric }, ["x", "y"], "default Window position")),
     layer: value.nullable(value.enumeration(layers, "default Window layer")),
     minimize: value.nullable(value.boolean("default minimized state")),
     maximize: value.nullable(value.boolean("default maximized state"))
-}, ["start", "service", "title", "size", "position", "layer", "minimize", "maximize"], "resolved Client Endpoint declaration"))
+}, ["start", "service", "title", "header", "frame", "transaction", "size", "position", "layer", "minimize", "maximize"], "resolved Client Endpoint declaration"))
 
 export const programOutput = value.object({
     identity: value.string("stable Program identity"),
@@ -49,20 +86,23 @@ export const endpointOutput = value.object({
     program: value.string("owning Program identity"),
     endpoint: value.enumeration(["server", "client"], "Endpoint kind"),
     declared: value.boolean("whether the Program declares this Endpoint"),
-    running: value.boolean("whether the Endpoint currently exists"),
-    service: value.boolean("whether this Endpoint incarnation is addressable as a Service")
+    running: value.boolean("whether the Endpoint currently has a running execution context"),
+    service: value.boolean("whether this Endpoint execution context is addressable as a Service")
 }, ["process", "program", "endpoint", "declared", "running", "service"], "Endpoint state")
 
 export const windowOutput = value.object({
     process: value.string("owning Process identity"),
     title: value.string("Window title"),
+    header: value.boolean("whether the Desktop-owned Window header is shown"),
+    frame,
+    transaction,
     position: value.object({ x: metric, y: metric }, ["x", "y"], "Window position"),
     size: value.object({ width: metric, height: metric }, ["width", "height"], "Window size"),
     minimized: value.boolean("whether the Window is minimized"),
     maximized: value.boolean("whether the Window is maximized"),
     front: value.boolean("whether the Window is at the front of its layer"),
     layer: value.enumeration(layers, "Window layer")
-}, ["process", "title", "position", "size", "minimized", "maximized", "front", "layer"], "Window state")
+}, ["process", "title", "header", "frame", "transaction", "position", "size", "minimized", "maximized", "front", "layer"], "Window state")
 
 export const programPresentation: OutputPresentation = fields(
     ["Identity", "identity"],
@@ -137,13 +177,14 @@ export const windowPresentation: OutputPresentation = fields(
     ["Process", "process"],
     ["Title", "title"],
     ["Header", "header"],
+    ["Frame", "frame"],
+    ["Opening transaction", "transaction"],
     ["Position", "position"],
     ["Size", "size"],
     ["Minimized", "minimized"],
     ["Maximized", "maximized"],
     ["Front", "front"],
-    ["Layer", "layer"],
-    ["Location", "location"]
+    ["Layer", "layer"]
 )
 
 export const windowPositionPresentation: OutputPresentation = fields(
@@ -180,6 +221,16 @@ export const windowTitlePresentation: OutputPresentation = fields(
 export const windowHeaderPresentation: OutputPresentation = fields(
     ["Process", "process"],
     ["Header", "header"]
+)
+
+export const windowFramePresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Frame", "frame"]
+)
+
+export const windowOpeningTransactionPresentation: OutputPresentation = fields(
+    ["Process", "process"],
+    ["Opening transaction", "transaction"]
 )
 
 export const windowRaisePresentation: OutputPresentation = fields(
@@ -241,8 +292,8 @@ export function textOutput(description: string): OutputContract {
 function endpointState(description: string) {
     return value.object({
         declared: value.boolean("whether the Program declares this Endpoint"),
-        running: value.boolean("whether the Endpoint currently exists"),
-        service: value.boolean("whether this Endpoint incarnation is a Service")
+        running: value.boolean("whether the Endpoint currently has a running execution context"),
+        service: value.boolean("whether this Endpoint execution context is a Service")
     }, ["declared", "running", "service"], description)
 }
 

@@ -33,6 +33,8 @@ export const executeCommandPaths = Object.freeze({
     "window.maximize": ["window", "maximize"],
     "window.changeTitle": ["window", "changeTitle"],
     "window.changeHeader": ["window", "changeHeader"],
+    "window.changeFrame": ["window", "changeFrame"],
+    "window.changeOpeningTransaction": ["window", "changeOpeningTransaction"],
     "window.raise": ["window", "raise"],
     "window.wait": ["window", "wait"]
 } as const satisfies Readonly<Record<ExecuteOperationKey, readonly string[]>>)

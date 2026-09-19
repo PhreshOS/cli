@@ -26,20 +26,23 @@ export async function programView(program: Program) {
 }
 
 export async function processView(process: Process) {
-    const [server, client, serverService, clientService] = await Promise.all([
-        process.server.exists(),
-        process.client.exists(),
-        process.server.isService(),
-        process.client.isService()
+    const program = process.program()
+    const [server, client] = await Promise.all([
+        program.server === null
+            ? Promise.resolve({ running: false, service: false })
+            : Promise.all([process.server.running(), process.server.isService()]).then(([running, service]) => ({ running, service })),
+        program.client === null
+            ? Promise.resolve({ running: false, service: false })
+            : Promise.all([process.client.running(), process.client.isService()]).then(([running, service]) => ({ running, service }))
     ])
 
     return {
         identity: process.identity,
         name: process.name,
-        program: process.program().identity,
+        program: program.identity,
         startedAt: process.startedAt.toISOString(),
-        server: { declared: process.program().server !== null, running: server, service: serverService },
-        client: { declared: process.program().client !== null, running: client, service: clientService }
+        server: { declared: program.server !== null, ...server },
+        client: { declared: program.client !== null, ...client }
     }
 }
 
@@ -51,7 +54,7 @@ export async function endpointView(process: Process, name: EndpointName) {
         program: program.identity,
         endpoint: name,
         declared: name === "server" ? program.server !== null : program.client !== null,
-        running: await endpoint(process, name).exists(),
+        running: await endpoint(process, name).running(),
         service: await endpoint(process, name).isService()
     }
 }
