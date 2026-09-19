@@ -239,7 +239,7 @@ test("waits until the previous gateway can no longer accept connections", async 
 
     const temporary = await mkdtemp(join(tmpdir(), "phresh-gateway-close-"))
 
-    const gateway = join(temporary, "gateway.sock")
+    const gateway = process.platform === "win32" ? gatewayPath(temporary, "win32") : join(temporary, "gateway.sock")
 
     const { createServer } = await import("node:net")
 
