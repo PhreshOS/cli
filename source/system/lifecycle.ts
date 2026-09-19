@@ -2,7 +2,7 @@ import type { InstalledSystem, SystemService, SystemServiceDefinition } from "./
 import type { PreparedSystem, SystemActivation } from "./installation.ts"
 import SystemInstallation from "./installation.ts"
 import { downloadSystemRelease, resolveSystemRelease } from "./release.ts"
-import { gatewayReady, waitForGateway } from "./gateway-readiness.ts"
+import { gatewayReady, waitForGateway, waitForGatewayClose } from "./gateway-readiness.ts"
 import systemPaths from "./paths.ts"
 import systemService from "./service/index.ts"
 import nodeExecutable from "./node.ts"
@@ -50,6 +50,8 @@ interface LifecycleDependencies {
 
     wait(path: string, running: () => Promise<boolean>): Promise<void>
 
+    waitForStop(path: string): Promise<void>
+
     provisionSetup(): Promise<void>
 }
 
@@ -77,6 +79,8 @@ export default class SystemLifecycle {
             ready: dependencies?.ready ?? gatewayReady,
 
             wait: dependencies?.wait ?? waitForGateway,
+
+            waitForStop: dependencies?.waitForStop ?? waitForGatewayClose,
 
             provisionSetup: dependencies?.provisionSetup ?? provisionSetup
         }
@@ -120,7 +124,7 @@ export default class SystemLifecycle {
 
         catch (error) {
 
-            await service.stop().catch(() => undefined)
+            await this.stopService().catch(() => undefined)
 
             await activation.rollback()
 
@@ -154,7 +158,7 @@ export default class SystemLifecycle {
 
         const state = await service.inspect()
 
-        if (state.running) await service.stop()
+        if (state.running) await this.stopService()
 
         if (state.enabled) await service.disable()
 
@@ -189,7 +193,7 @@ export default class SystemLifecycle {
 
         await this.requireInstalledService()
 
-        await this.dependencies.service.stop()
+        await this.stopService()
 
         return await this.status()
     }
@@ -285,11 +289,11 @@ export default class SystemLifecycle {
 
     private async activate(prepared: PreparedSystem, previous: InstalledSystem | undefined, state: Awaited<ReturnType<SystemService["inspect"]>>, purge: boolean): Promise<SystemActivation> {
 
-        const { installation, service } = this.dependencies
+        const { installation } = this.dependencies
 
         try {
 
-            if (state.running) await service.stop()
+            if (state.running) await this.stopService()
 
             if (purge) await installation.purgeStorage()
 
@@ -369,6 +373,15 @@ export default class SystemLifecycle {
             await Promise.all([rm(homeRequest, { force: true }), rm(portRequest, { force: true })])
             throw error
         }
+    }
+
+    private async stopService() {
+
+        const { installation, service } = this.dependencies
+
+        await service.stop()
+
+        await this.dependencies.waitForStop(installation.paths.gateway)
     }
 }
 

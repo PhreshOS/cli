@@ -17,7 +17,7 @@ import LinuxSystemService from "../dist/system/service/linux.js"
 import WindowsSystemService from "../dist/system/service/windows.js"
 import { minimumSystemNodeVersion, supportsSystemNode } from "../dist/system/node.js"
 import { gatewayPath } from "../dist/gateway.js"
-import { waitForGateway } from "../dist/system/gateway-readiness.js"
+import { waitForGateway, waitForGatewayClose } from "../dist/system/gateway-readiness.js"
 import npmInvocation from "../dist/system/npm.js"
 
 test("requires the Node release that provides the supported built-in SQLite API", function () {
@@ -233,6 +233,46 @@ test("detects a service that stops after it was running", async function () {
 
         /stopped before its gateway became ready/
     )
+})
+
+test("waits until the previous gateway can no longer accept connections", async function () {
+
+    const temporary = await mkdtemp(join(tmpdir(), "phresh-gateway-close-"))
+
+    const gateway = join(temporary, "gateway.sock")
+
+    const { createServer } = await import("node:net")
+
+    const server = createServer()
+
+    try {
+
+        await new Promise((resolve, reject) => {
+
+            server.once("error", reject)
+
+            server.listen(gateway, resolve)
+        })
+
+        let settled = false
+
+        const waiting = waitForGatewayClose(gateway, 1_000).then(() => { settled = true })
+
+        await new Promise(resolve => setTimeout(resolve, 25))
+
+        assert.equal(settled, false)
+
+        await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
+
+        await waiting
+    }
+
+    finally {
+
+        if (server.listening) await new Promise(resolve => server.close(resolve))
+
+        await rm(temporary, { recursive: true, force: true })
+    }
 })
 
 test("stages, validates, activates, and reads one production distribution", async function () {
@@ -451,15 +491,15 @@ test("rolls installation back when the native service cannot start", async funct
     assert.deepEqual(events.slice(-3), ["stop", "rollback", "unregister"])
 })
 
-test("provisions Setup after the System commits and before installation returns", async function () {
+test("replaces a running System only after its gateway closes and provisions Setup after readiness", async function () {
 
     const events = []
 
     const installed = { version: "0.1.0", digest: "a".repeat(64), directory: "/installation/releases/0.1.0", installedAt: "now" }
 
-    let current
+    let current = { version: "0.0.9", digest: "b".repeat(64), directory: "/installation/releases/0.0.9", installedAt: "before" }
 
-    let running = false
+    let running = true
 
     const installation = {
 
@@ -536,12 +576,18 @@ test("provisions Setup after the System commits and before installation returns"
 
         async wait() { events.push("ready") },
 
+        async waitForStop() { events.push("stopped") },
+
         async provisionSetup() { events.push("setup") }
     })
 
     const status = await lifecycle.install()
 
     assert.equal(status.installed?.version, "0.1.0")
+
+    assert(events.indexOf("stop") < events.indexOf("stopped"))
+
+    assert(events.indexOf("stopped") < events.indexOf("activate"))
 
     assert(events.indexOf("start") < events.indexOf("ready"))
 

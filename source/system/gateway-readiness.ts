@@ -43,3 +43,17 @@ export async function waitForGateway(path: string, running: () => Promise<boolea
 
     throw new Error(`The PhreshOS System did not become ready within ${Math.ceil(timeout / 1000)} seconds`)
 }
+
+export async function waitForGatewayClose(path: string, timeout = 15_000) {
+
+    const until = Date.now() + timeout
+
+    while (Date.now() < until) {
+
+        if (!await gatewayReady(path)) return
+
+        await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
+    throw new Error(`The PhreshOS System gateway did not close within ${Math.ceil(timeout / 1000)} seconds`)
+}
