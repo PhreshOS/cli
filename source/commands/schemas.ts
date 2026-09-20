@@ -26,7 +26,7 @@ const frame: ValueContract = {
             color: value.string("Appearance color role or CSS color"),
             material: {
                 anyOf: [
-                    value.boolean("default or disabled Material"),
+                    value.literal(false, "disabled Material"),
                     value.object({
                         grain: value.number("grain frequency"),
                         grainAmount: value.number("grain intensity"),
@@ -64,7 +64,7 @@ export const programOutput = value.object({
     identity: value.string("stable Program identity"),
     assetId: value.string("public Program asset identity"),
     name: value.string("human-readable Program name"),
-    version: value.nullable(value.string("Program version")),
+    version: value.string("Resolved Program version"),
     description: value.nullable(value.string("Program description")),
     installed: value.boolean("whether production files are installed"),
     hasAgent: value.boolean("whether the Program provides agent documentation"),
@@ -89,6 +89,13 @@ export const endpointOutput = value.object({
     running: value.boolean("whether the Endpoint currently has a running execution context"),
     service: value.boolean("whether this Endpoint execution context is addressable as a Service")
 }, ["process", "program", "endpoint", "declared", "running", "service"], "Endpoint state")
+
+export const serviceOutput = value.object({
+    program: value.string("owning Program identity"),
+    process: value.string("Process and Service name"),
+    endpoint: value.enumeration(["server", "client"], "Endpoint kind"),
+    available: value.boolean("whether a ready Endpoint is currently available at this address")
+}, ["program", "process", "endpoint", "available"], "Service state")
 
 export const windowOutput = value.object({
     process: value.string("owning Process identity"),
@@ -173,12 +180,25 @@ export const endpointActionPresentation: OutputPresentation = fields(
     ["Service", "service"]
 )
 
+export const servicePresentation: OutputPresentation = fields(
+    ["Program", "program"],
+    ["Service", "process"],
+    ["Endpoint", "endpoint"],
+    ["Available", "available"]
+)
+
+export const serviceListPresentation: OutputPresentation = list("data", "Service", "Services", "No matching Services", [
+    { label: "Service", path: "process" },
+    { label: "Program", path: "program" },
+    { label: "Endpoint", path: "endpoint" }
+])
+
 export const windowPresentation: OutputPresentation = fields(
     ["Process", "process"],
     ["Title", "title"],
     ["Header", "header"],
     ["Frame", "frame"],
-    ["Opening transaction", "transaction"],
+    ["Transaction", "transaction"],
     ["Position", "position"],
     ["Size", "size"],
     ["Minimized", "minimized"],
@@ -228,9 +248,9 @@ export const windowFramePresentation: OutputPresentation = fields(
     ["Frame", "frame"]
 )
 
-export const windowOpeningTransactionPresentation: OutputPresentation = fields(
+export const windowTransactionPresentation: OutputPresentation = fields(
     ["Process", "process"],
-    ["Opening transaction", "transaction"]
+    ["Transaction", "transaction"]
 )
 
 export const windowRaisePresentation: OutputPresentation = fields(

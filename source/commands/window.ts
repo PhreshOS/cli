@@ -14,7 +14,7 @@ import {
     windowMaximizePresentation,
     windowOutput,
     windowPositionPresentation,
-    windowOpeningTransactionPresentation,
+    windowTransactionPresentation,
     windowPresentation,
     windowRaisePresentation,
     windowSizePresentation,
@@ -68,8 +68,8 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
         examples: ["phresh window set-geometry --process main --program terminal --x 0 --y 0 --width 100% --height 100%"]
     }, async ({ options }) => executeWindow(connect, options, {
         $operation: "setGeometry",
-        position: position(options.x, options.y),
-        size: size(options.width, options.height)
+        ...position(options.x, options.y),
+        ...size(options.width, options.height)
     }))
 
     defineCommand<WindowOptions & Readonly<{ restore?: boolean }>>(windows, {
@@ -85,29 +85,28 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
     }, async ({ options }) => executeWindow(connect, options, { $operation: "maximize", maximized: options.restore !== true }))
 
     defineCommand<WindowOptions & Readonly<{ title: string }>>(windows, {
-        ...state("changeTitle", windowTitlePresentation),
-        aliases: ["change-title"],
+        ...state("setTitle", windowTitlePresentation),
+        aliases: ["set-title"],
         options: withJson(...processOptions, option("--title <title>", "new Window title", { mandatory: true })),
-        examples: ["phresh window change-title --process main --program terminal --title Shell"]
-    }, async ({ options }) => executeWindow(connect, options, { $operation: "changeTitle", title: options.title }))
+        examples: ["phresh window set-title --process main --program terminal --title Shell"]
+    }, async ({ options }) => executeWindow(connect, options, { $operation: "setTitle", title: options.title }))
 
     defineCommand<WindowOptions & Readonly<{ hide?: boolean }>>(windows, {
-        ...state("changeHeader", windowHeaderPresentation),
-        aliases: ["change-header"],
+        ...state("setHeader", windowHeaderPresentation),
+        aliases: ["set-header"],
         options: withJson(...processOptions, option("--hide", "hide rather than show the Window header")),
-        examples: ["phresh window change-header --process main --program terminal --hide", "phresh window change-header --process main --program terminal"]
-    }, async ({ options }) => executeWindow(connect, options, { $operation: "changeHeader", header: options.hide !== true }))
+        examples: ["phresh window set-header --process main --program terminal --hide", "phresh window set-header --process main --program terminal"]
+    }, async ({ options }) => executeWindow(connect, options, { $operation: "setHeader", header: options.hide !== true }))
 
     defineCommand<WindowOptions & FrameOptions>(windows, {
-        ...state("changeFrame", windowFramePresentation),
-        aliases: ["change-frame"],
+        ...state("setFrame", windowFramePresentation),
+        aliases: ["set-frame"],
         options: withJson(
             ...processOptions,
             option("--default", "use the default Window frame"),
             option("--absent", "remove the Window frame"),
             option("--radius <radius>", "frame radius in pixels or full"),
             option("--color <color>", "Appearance color role or CSS color"),
-            option("--default-material", "use the default frame Material"),
             option("--without-material", "render the frame without Material"),
             option("--grain <value>", "frame Material grain", { parse: input => numeric(input, "--grain") }),
             option("--grain-amount <value>", "frame Material grain intensity", { parse: input => numeric(input, "--grain-amount") }),
@@ -117,27 +116,27 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
             option("--saturation <value>", "frame Material saturation", { parse: input => numeric(input, "--saturation") })
         ),
         examples: [
-            "phresh window change-frame --process overlay --absent",
-            "phresh window change-frame --process overlay --radius full --color primary"
+            "phresh window set-frame --process overlay --absent",
+            "phresh window set-frame --process overlay --radius full --color primary"
         ]
-    }, async ({ options }) => executeWindow(connect, options, { $operation: "changeFrame", frame: frame(options) }))
+    }, async ({ options }) => executeWindow(connect, options, { $operation: "setFrame", frame: frame(options) }))
 
     defineCommand<WindowOptions & TransactionOptions>(windows, {
-        ...state("changeOpeningTransaction", windowOpeningTransactionPresentation),
-        aliases: ["change-opening-transaction"],
+        ...state("setTransaction", windowTransactionPresentation),
+        aliases: ["set-transaction"],
         options: withJson(
             ...processOptions,
             option("--default", "use the default Appearance transaction"),
-            option("--disabled", "open without a transaction"),
+            option("--disabled", "disable the default Window transaction"),
             option("--duration <milliseconds>", "transaction duration", { parse: input => numeric(input, "--duration") }),
             option("--easing <easing>", "standard easing name or four comma-separated cubic Bézier values")
         ),
         examples: [
-            "phresh window change-opening-transaction --process overlay --default",
-            "phresh window change-opening-transaction --process overlay --duration 240 --easing ease-out"
+            "phresh window set-transaction --process overlay --default",
+            "phresh window set-transaction --process overlay --duration 240 --easing ease-out"
         ]
     }, async ({ options }) => executeWindow(connect, options, {
-        $operation: "changeOpeningTransaction",
+        $operation: "setTransaction",
         transaction: transaction(options)
     }))
 
@@ -154,12 +153,12 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
             ...processOptions,
             option("--event <event>", "Window event", {
                 mandatory: true,
-                choices: ["move", "resize", "geometry", "minimize", "maximize", "changeTitle", "changeHeader", "changeFrame", "front"]
+                choices: ["move", "resize", "minimize", "maximize", "changeTitle", "changeHeader", "changeFrame", "changeTransaction", "front"]
             }),
             timeoutOption
         ),
         output: dataOutput(eventOutput("The observed Window event"), "One Window event", eventPresentation),
-        examples: ["phresh window wait --process main --program terminal --event geometry --json"]
+        examples: ["phresh window wait --process main --program terminal --event move --json"]
     }, async ({ options }) => executeWindow(connect, options, {
         $operation: "wait",
         event: options.event,
@@ -199,7 +198,6 @@ type FrameOptions = Readonly<{
     absent?: boolean
     radius?: string
     color?: string
-    defaultMaterial?: boolean
     withoutMaterial?: boolean
     grain?: number
     grainAmount?: number
@@ -215,7 +213,7 @@ type TransactionOptions = Readonly<{
     easing?: string
 }>
 type WindowWaitOptions = Readonly<{
-    event: "move" | "resize" | "geometry" | "minimize" | "maximize" | "changeTitle" | "changeHeader" | "changeFrame" | "front"
+    event: "move" | "resize" | "minimize" | "maximize" | "changeTitle" | "changeHeader" | "changeFrame" | "changeTransaction" | "front"
     timeout?: number
 }>
 
@@ -235,7 +233,7 @@ function frame(options: FrameOptions): WindowFrame {
     })
 }
 
-function material(options: FrameOptions): boolean | Partial<AppearanceMaterial> | undefined {
+function material(options: FrameOptions): false | Partial<AppearanceMaterial> | undefined {
     const values = {
         grain: options.grain,
         grainAmount: options.grainAmount,
@@ -245,10 +243,9 @@ function material(options: FrameOptions): boolean | Partial<AppearanceMaterial> 
         saturation: options.saturation
     }
     const customized = Object.values(values).some(value => value !== undefined)
-    const modes = Number(options.defaultMaterial === true) + Number(options.withoutMaterial === true) + Number(customized)
+    const modes = Number(options.withoutMaterial === true) + Number(customized)
 
     if (modes > 1) throw new Error("Choose only one Material mode")
-    if (options.defaultMaterial) return true
     if (options.withoutMaterial) return false
     if (!customized) return undefined
 

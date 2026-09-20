@@ -16,7 +16,7 @@ export interface ProgramInstallationResult {
 
         name: string
 
-        version: string | null
+        version: string
     }
 
     replaced: boolean

@@ -15,8 +15,8 @@ export const endpointOptions = Object.freeze([
 ])
 
 export const clientOverrideOptions = Object.freeze([
-    option("--client-service", "address this Client execution context through system.service()"),
-    option("--no-client-service", "do not address this Client execution context through system.service()"),
+    option("--client-service", "make this Client execution context available through Service discovery"),
+    option("--no-client-service", "keep this Client execution context out of Service discovery"),
     option("--client-title <title>", "initial Window title"),
     option("--client-width <value>", "initial Window width"),
     option("--client-height <value>", "initial Window height"),
@@ -28,8 +28,8 @@ export const clientOverrideOptions = Object.freeze([
 ])
 
 export const serverOverrideOptions = Object.freeze([
-    option("--server-service", "address this Server execution context through system.service()"),
-    option("--no-server-service", "do not address this Server execution context through system.service()")
+    option("--server-service", "make this Server execution context available through Service discovery"),
+    option("--no-server-service", "keep this Server execution context out of Service discovery")
 ])
 
 export const launchOptions = Object.freeze([

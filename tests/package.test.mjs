@@ -11,6 +11,7 @@ test("package contract", async () => {
 
   const temporary = await mkdtemp(join(tmpdir(), "phresh-cli-package-"))
   const coreCandidate = process.env.PHRESHOS_CORE_PACKAGE
+  const nodeCandidate = process.env.PHRESHOS_NODE_PACKAGE
   const corePackage = `@phreshos/core@${metadata.dependencies["@phreshos/core"]}`
   const nodePackage = `@phreshos/node@${metadata.dependencies["@phreshos/node"]}`
 
@@ -52,7 +53,7 @@ test("package contract", async () => {
 
       assert.equal(files.some(file => file.startsWith("source/") || file.startsWith("tests/") || file.startsWith("scripts/")), false)
 
-      execFileSync(npm.command, [...npm.prefix, "install", archive, coreCandidate ?? corePackage, nodePackage, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })
+      execFileSync(npm.command, [...npm.prefix, "install", archive, coreCandidate ?? corePackage, nodeCandidate ?? nodePackage, "--no-audit", "--no-fund"], { cwd: temporary, stdio: "pipe" })
 
       const cli = join(temporary, "node_modules", "@phreshos", "cli", "dist", "cli.js")
 

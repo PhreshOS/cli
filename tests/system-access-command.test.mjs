@@ -41,7 +41,7 @@ test("running-System commands use shared handles and explicit flags", async func
         async title() { return "Example" },
         async header() { return true },
         async frame() { return true },
-        async openingTransaction() { return false },
+        async transaction() { return false },
         async position() { return { x: 50, y: 0 } },
         async size() { return { width: 800, height: 600 } },
         async minimized() { return false },
@@ -352,7 +352,9 @@ test("only boundary values without a native flag shape retain JSON syntax", func
     assert.deepEqual(options.filter(option => option.flags.includes("<json>")), [
         { path: "program logs", flags: "--values <json>" },
         { path: "endpoint ask", flags: "--payload <json>" },
-        { path: "endpoint publish", flags: "--payload <json>" }
+        { path: "endpoint publish", flags: "--payload <json>" },
+        { path: "service ask", flags: "--payload <json>" },
+        { path: "service publish", flags: "--payload <json>" }
     ])
 })
 
