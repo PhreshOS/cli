@@ -91,7 +91,7 @@ export default function projectCommands(program: Command, coreRange: string) {
         name: "install",
         description: "install a local or official Program",
         arguments: [{ syntax: "[name]", description: "name of an official Program" }],
-        options: [option("--run", "launch the installed Program before startup"), option("--purge", "delete existing installed Program storage")],
+        options: [option("--run", "launch one default Process after installation"), option("--purge", "delete existing installed Program storage")],
         guidance: [
             "Without a name, builds and installs the Program declared by this project.",
             "A name installs its verified official production release. --run launches the installed Program now."

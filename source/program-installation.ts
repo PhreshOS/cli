@@ -53,7 +53,9 @@ export default async function installProgram(program: Project | ProgramDefinitio
 
         else installed = await system.program.forceCreate(program)
 
-        if (options.run) stopObserving = installed.subscribe("processCreate", created => { process ??= created.identity })
+        // A definition-owned installLaunch can create the Process even when
+        // the CLI did not supply --run, so observation belongs to installation.
+        stopObserving = installed.subscribe("processCreate", created => { process ??= created.identity })
 
         for await (const chunk of installed.install({ launch: options.run ? true : undefined, purge: options.purge })) writeProgramCommandOutput(chunk)
 

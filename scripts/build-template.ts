@@ -111,7 +111,7 @@ const config = await readConfig(output)
 
 if (config.identity !== release.identity || config.name !== "Phresh Program" || config.version !== release.version) {
 
-    throw new Error(`The ${repository} source declaration does not match release v${release.version}`)
+    throw new Error(`The ${repository} source definition does not match release v${release.version}`)
 }
 
 writeFileSync(descriptionOutput, JSON.stringify({

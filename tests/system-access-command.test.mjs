@@ -350,6 +350,9 @@ test("only boundary values without a native flag shape retain JSON syntax", func
 
     assert.equal(options.some(option => option.flags.includes("--input")), false)
     assert.deepEqual(options.filter(option => option.flags.includes("<json>")), [
+        { path: "program allowsPermission", flags: "--value <json>" },
+        { path: "program allowPermission", flags: "--value <json>" },
+        { path: "program requestPermission", flags: "--value <json>" },
         { path: "program logs", flags: "--values <json>" },
         { path: "endpoint ask", flags: "--payload <json>" },
         { path: "endpoint publish", flags: "--payload <json>" },

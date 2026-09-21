@@ -6,7 +6,7 @@ import { prepareOfficialProgram } from "./program-release.ts"
 /**
  * Lay this program out on this machine's system.
  *
- * A local project is built and derived from its authoring declaration. An
+ * A local project is built and derived from its authoring definition. An
  * official name resolves a verified production package and turns its
  * canonical paths into the same concrete definition. From that point on,
  * both sources cross the exact same gateway and the System performs the exact
@@ -16,8 +16,7 @@ import { prepareOfficialProgram } from "./program-release.ts"
  * production Program is derived and sent. The command remains authoring
  * metadata and never becomes part of the installed Program.
  *
- * The System executes the Program's stored startup after installation.
- * `run` requests an additional Process before startup, created by System. It belongs
+ * `run` overrides the Program's install launch with one default Process. It belongs
  * to the installed Program and
  * therefore outlives this command; `phresh start` and `phresh dev` remain
  * attached authoring runs whose lifetime is the terminal's.
