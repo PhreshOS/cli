@@ -1,4 +1,4 @@
-import { parseExecuteRequest, parseWindowSurface, parseWindowTransaction, type AppearanceMaterial, type WindowSurface, type WindowTransaction } from "@phreshos/core"
+import { parseExecuteRequest } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { option, processOptions, timeoutOption, withJson } from "./options.ts"
@@ -8,13 +8,11 @@ import {
     eventOutput,
     eventPresentation,
     windowGeometryPresentation,
-    windowSurfacePresentation,
     windowHeaderPresentation,
     windowMinimizePresentation,
     windowMaximizePresentation,
     windowOutput,
     windowPositionPresentation,
-    windowTransactionPresentation,
     windowPresentation,
     windowRaisePresentation,
     windowSizePresentation,
@@ -98,48 +96,6 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
         examples: ["phresh window set-header --process main --program terminal --hide", "phresh window set-header --process main --program terminal"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "setHeader", header: options.hide !== true }))
 
-    defineCommand<WindowOptions & SurfaceOptions>(windows, {
-        ...state("setSurface", windowSurfacePresentation),
-        aliases: ["set-surface"],
-        options: withJson(
-            ...processOptions,
-            option("--default", "use the default Window surface"),
-            option("--absent", "remove the Window surface"),
-            option("--radius <radius>", "surface radius in pixels or full"),
-            option("--color <color>", "Appearance color role or CSS color"),
-            option("--without-material", "render the surface without Material"),
-            option("--grain <value>", "surface Material grain", { parse: input => numeric(input, "--grain") }),
-            option("--grain-amount <value>", "surface Material grain intensity", { parse: input => numeric(input, "--grain-amount") }),
-            option("--backdrop <value>", "surface Material backdrop blur", { parse: input => numeric(input, "--backdrop") }),
-            option("--opacity <value>", "surface Material opacity", { parse: input => numeric(input, "--opacity") }),
-            option("--distortion <value>", "surface Material distortion", { parse: input => numeric(input, "--distortion") }),
-            option("--saturation <value>", "surface Material saturation", { parse: input => numeric(input, "--saturation") })
-        ),
-        examples: [
-            "phresh window set-surface --process overlay --absent",
-            "phresh window set-surface --process overlay --radius full --color primary"
-        ]
-    }, async ({ options }) => executeWindow(connect, options, { $operation: "setSurface", surface: surface(options) }))
-
-    defineCommand<WindowOptions & TransactionOptions>(windows, {
-        ...state("setTransaction", windowTransactionPresentation),
-        aliases: ["set-transaction"],
-        options: withJson(
-            ...processOptions,
-            option("--default", "use the default Appearance transaction"),
-            option("--disabled", "disable the default Window transaction"),
-            option("--duration <milliseconds>", "transaction duration", { parse: input => numeric(input, "--duration") }),
-            option("--easing <easing>", "standard easing name or four comma-separated cubic Bézier values")
-        ),
-        examples: [
-            "phresh window set-transaction --process overlay --default",
-            "phresh window set-transaction --process overlay --duration 240 --easing ease-out"
-        ]
-    }, async ({ options }) => executeWindow(connect, options, {
-        $operation: "setTransaction",
-        transaction: transaction(options)
-    }))
-
     defineCommand<WindowOptions>(windows, {
         ...state("raise", windowRaisePresentation),
         examples: ["phresh window raise --process main --program terminal"]
@@ -153,7 +109,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
             ...processOptions,
             option("--event <event>", "Window event", {
                 mandatory: true,
-                choices: ["move", "resize", "minimize", "maximize", "changeTitle", "changeHeader", "changeSurface", "changeTransaction", "front"]
+                choices: ["move", "resize", "minimize", "maximize", "changeTitle", "changeHeader", "front"]
             }),
             timeoutOption
         ),
@@ -193,82 +149,7 @@ async function executeWindow(
 type WindowOptions = CommonOptions & ProcessCoordinates
 type PositionOptions = Readonly<{ x: string, y: string }>
 type SizeOptions = Readonly<{ width: string, height: string }>
-type SurfaceOptions = Readonly<{
-    default?: boolean
-    absent?: boolean
-    radius?: string
-    color?: string
-    withoutMaterial?: boolean
-    grain?: number
-    grainAmount?: number
-    backdrop?: number
-    opacity?: number
-    distortion?: number
-    saturation?: number
-}>
-type TransactionOptions = Readonly<{
-    default?: boolean
-    disabled?: boolean
-    duration?: number
-    easing?: string
-}>
 type WindowWaitOptions = Readonly<{
-    event: "move" | "resize" | "minimize" | "maximize" | "changeTitle" | "changeHeader" | "changeSurface" | "changeTransaction" | "front"
+    event: "move" | "resize" | "minimize" | "maximize" | "changeTitle" | "changeHeader" | "front"
     timeout?: number
 }>
-
-function surface(options: SurfaceOptions): WindowSurface {
-    const materialValues = material(options)
-    const customized = options.radius !== undefined || options.color !== undefined || materialValues !== undefined
-    const modes = Number(options.default === true) + Number(options.absent === true) + Number(customized)
-
-    if (modes !== 1) throw new Error("Choose exactly one of --default, --absent, or surface customization options")
-    if (options.default) return true
-    if (options.absent) return false
-
-    return parseWindowSurface({
-        ...(options.radius === undefined ? {} : { radius: options.radius === "full" ? "full" : numeric(options.radius, "--radius") }),
-        ...(options.color === undefined ? {} : { color: options.color }),
-        ...(materialValues === undefined ? {} : { material: materialValues })
-    })
-}
-
-function material(options: SurfaceOptions): false | Partial<AppearanceMaterial> | undefined {
-    const values = {
-        grain: options.grain,
-        grainAmount: options.grainAmount,
-        backdrop: options.backdrop,
-        opacity: options.opacity,
-        distortion: options.distortion,
-        saturation: options.saturation
-    }
-    const customized = Object.values(values).some(value => value !== undefined)
-    const modes = Number(options.withoutMaterial === true) + Number(customized)
-
-    if (modes > 1) throw new Error("Choose only one Material mode")
-    if (options.withoutMaterial) return false
-    if (!customized) return undefined
-
-    return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined))
-}
-
-function transaction(options: TransactionOptions): WindowTransaction {
-    const customized = options.duration !== undefined || options.easing !== undefined
-    const modes = Number(options.default === true) + Number(options.disabled === true) + Number(customized)
-
-    if (modes !== 1) throw new Error("Choose exactly one of --default, --disabled, or --duration")
-    if (options.default) return true
-    if (options.disabled) return false
-    if (options.duration === undefined) throw new Error("--easing requires --duration")
-    if (options.easing === undefined) return parseWindowTransaction(options.duration)
-
-    const pieces = options.easing.split(",").map(value => value.trim())
-    const easing = pieces.length === 4 ? pieces.map(value => numeric(value, "--easing")) : options.easing
-    return parseWindowTransaction({ duration: options.duration, easing })
-}
-
-function numeric(value: string, name: string) {
-    const result = Number(value)
-    if (!Number.isFinite(result)) throw new Error(`${name} must be a finite number`)
-    return result
-}

@@ -7,40 +7,6 @@ const metric: ValueContract = {
     anyOf: [value.number("pixels"), value.string("workspace-relative expression")]
 }
 
-const transaction: ValueContract = {
-    anyOf: [
-        value.boolean("default or disabled transaction"),
-        value.number("duration in milliseconds"),
-        value.object({
-            duration: value.number("duration in milliseconds"),
-            easing: value.any("CSS easing name or cubic Bézier tuple")
-        }, ["duration", "easing"], "appearance transaction")
-    ]
-}
-
-const surface: ValueContract = {
-    anyOf: [
-        value.boolean("default or absent surface"),
-        value.object({
-            radius: { anyOf: [value.number("radius in pixels"), value.literal("full", "fully rounded radius")] },
-            color: value.string("Appearance color role or CSS color"),
-            material: {
-                anyOf: [
-                    value.literal(false, "disabled Material"),
-                    value.object({
-                        grain: value.number("grain frequency"),
-                        grainAmount: value.number("grain intensity"),
-                        backdrop: value.number("backdrop blur"),
-                        opacity: value.number("Material opacity"),
-                        distortion: value.number("backdrop distortion"),
-                        saturation: value.number("backdrop saturation")
-                    }, [], "partial Appearance Material")
-                ]
-            }
-        }, [], "Window surface customization")
-    ]
-}
-
 const endpointDeclaration = value.nullable(value.object({
     start: value.boolean("whether a default Process starts this Endpoint"),
     service: value.boolean("default Service role for new execution contexts")
@@ -51,14 +17,12 @@ const clientDeclaration = value.nullable(value.object({
     service: value.boolean("default Service role for new execution contexts"),
     title: value.nullable(value.string("default Window title")),
     header: value.nullable(value.boolean("default Window header visibility")),
-    surface: value.nullable(surface),
-    transaction: value.nullable(transaction),
     size: value.nullable(value.object({ width: metric, height: metric }, ["width", "height"], "default Window size")),
     position: value.nullable(value.object({ x: metric, y: metric }, ["x", "y"], "default Window position")),
     layer: value.nullable(value.enumeration(layers, "default Window layer")),
     minimize: value.nullable(value.boolean("default minimized state")),
     maximize: value.nullable(value.boolean("default maximized state"))
-}, ["start", "service", "title", "header", "surface", "transaction", "size", "position", "layer", "minimize", "maximize"], "resolved Client Endpoint declaration"))
+}, ["start", "service", "title", "header", "size", "position", "layer", "minimize", "maximize"], "resolved Client Endpoint declaration"))
 
 export const programOutput = value.object({
     identity: value.string("stable Program identity"),
@@ -101,15 +65,13 @@ export const windowOutput = value.object({
     process: value.string("owning Process identity"),
     title: value.string("Window title"),
     header: value.boolean("whether the Desktop-owned Window header is shown"),
-    surface,
-    transaction,
     position: value.object({ x: metric, y: metric }, ["x", "y"], "Window position"),
     size: value.object({ width: metric, height: metric }, ["width", "height"], "Window size"),
     minimized: value.boolean("whether the Window is minimized"),
     maximized: value.boolean("whether the Window is maximized"),
     front: value.boolean("whether the Window is at the front of its layer"),
     layer: value.enumeration(layers, "Window layer")
-}, ["process", "title", "header", "surface", "transaction", "position", "size", "minimized", "maximized", "front", "layer"], "Window state")
+}, ["process", "title", "header", "position", "size", "minimized", "maximized", "front", "layer"], "Window state")
 
 export const programPresentation: OutputPresentation = fields(
     ["Identity", "identity"],
@@ -197,8 +159,6 @@ export const windowPresentation: OutputPresentation = fields(
     ["Process", "process"],
     ["Title", "title"],
     ["Header", "header"],
-    ["Surface", "surface"],
-    ["Transaction", "transaction"],
     ["Position", "position"],
     ["Size", "size"],
     ["Minimized", "minimized"],
@@ -241,16 +201,6 @@ export const windowTitlePresentation: OutputPresentation = fields(
 export const windowHeaderPresentation: OutputPresentation = fields(
     ["Process", "process"],
     ["Header", "header"]
-)
-
-export const windowSurfacePresentation: OutputPresentation = fields(
-    ["Process", "process"],
-    ["Surface", "surface"]
-)
-
-export const windowTransactionPresentation: OutputPresentation = fields(
-    ["Process", "process"],
-    ["Transaction", "transaction"]
 )
 
 export const windowRaisePresentation: OutputPresentation = fields(
