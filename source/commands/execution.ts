@@ -53,7 +53,7 @@ export const executeCommandPaths = Object.freeze({
     "window.maximize": ["window", "maximize"],
     "window.setTitle": ["window", "setTitle"],
     "window.setHeader": ["window", "setHeader"],
-    "window.setFrame": ["window", "setFrame"],
+    "window.setSurface": ["window", "setSurface"],
     "window.setTransaction": ["window", "setTransaction"],
     "window.raise": ["window", "raise"],
     "window.wait": ["window", "wait"]

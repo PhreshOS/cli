@@ -1,4 +1,4 @@
-import { parseExecuteRequest, parseWindowFrame, parseWindowTransaction, type AppearanceMaterial, type WindowFrame, type WindowTransaction } from "@phreshos/core"
+import { parseExecuteRequest, parseWindowSurface, parseWindowTransaction, type AppearanceMaterial, type WindowSurface, type WindowTransaction } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { option, processOptions, timeoutOption, withJson } from "./options.ts"
@@ -8,7 +8,7 @@ import {
     eventOutput,
     eventPresentation,
     windowGeometryPresentation,
-    windowFramePresentation,
+    windowSurfacePresentation,
     windowHeaderPresentation,
     windowMinimizePresentation,
     windowMaximizePresentation,
@@ -98,28 +98,28 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
         examples: ["phresh window set-header --process main --program terminal --hide", "phresh window set-header --process main --program terminal"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "setHeader", header: options.hide !== true }))
 
-    defineCommand<WindowOptions & FrameOptions>(windows, {
-        ...state("setFrame", windowFramePresentation),
-        aliases: ["set-frame"],
+    defineCommand<WindowOptions & SurfaceOptions>(windows, {
+        ...state("setSurface", windowSurfacePresentation),
+        aliases: ["set-surface"],
         options: withJson(
             ...processOptions,
-            option("--default", "use the default Window frame"),
-            option("--absent", "remove the Window frame"),
-            option("--radius <radius>", "frame radius in pixels or full"),
+            option("--default", "use the default Window surface"),
+            option("--absent", "remove the Window surface"),
+            option("--radius <radius>", "surface radius in pixels or full"),
             option("--color <color>", "Appearance color role or CSS color"),
-            option("--without-material", "render the frame without Material"),
-            option("--grain <value>", "frame Material grain", { parse: input => numeric(input, "--grain") }),
-            option("--grain-amount <value>", "frame Material grain intensity", { parse: input => numeric(input, "--grain-amount") }),
-            option("--backdrop <value>", "frame Material backdrop blur", { parse: input => numeric(input, "--backdrop") }),
-            option("--opacity <value>", "frame Material opacity", { parse: input => numeric(input, "--opacity") }),
-            option("--distortion <value>", "frame Material distortion", { parse: input => numeric(input, "--distortion") }),
-            option("--saturation <value>", "frame Material saturation", { parse: input => numeric(input, "--saturation") })
+            option("--without-material", "render the surface without Material"),
+            option("--grain <value>", "surface Material grain", { parse: input => numeric(input, "--grain") }),
+            option("--grain-amount <value>", "surface Material grain intensity", { parse: input => numeric(input, "--grain-amount") }),
+            option("--backdrop <value>", "surface Material backdrop blur", { parse: input => numeric(input, "--backdrop") }),
+            option("--opacity <value>", "surface Material opacity", { parse: input => numeric(input, "--opacity") }),
+            option("--distortion <value>", "surface Material distortion", { parse: input => numeric(input, "--distortion") }),
+            option("--saturation <value>", "surface Material saturation", { parse: input => numeric(input, "--saturation") })
         ),
         examples: [
-            "phresh window set-frame --process overlay --absent",
-            "phresh window set-frame --process overlay --radius full --color primary"
+            "phresh window set-surface --process overlay --absent",
+            "phresh window set-surface --process overlay --radius full --color primary"
         ]
-    }, async ({ options }) => executeWindow(connect, options, { $operation: "setFrame", frame: frame(options) }))
+    }, async ({ options }) => executeWindow(connect, options, { $operation: "setSurface", surface: surface(options) }))
 
     defineCommand<WindowOptions & TransactionOptions>(windows, {
         ...state("setTransaction", windowTransactionPresentation),
@@ -153,7 +153,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
             ...processOptions,
             option("--event <event>", "Window event", {
                 mandatory: true,
-                choices: ["move", "resize", "minimize", "maximize", "changeTitle", "changeHeader", "changeFrame", "changeTransaction", "front"]
+                choices: ["move", "resize", "minimize", "maximize", "changeTitle", "changeHeader", "changeSurface", "changeTransaction", "front"]
             }),
             timeoutOption
         ),
@@ -193,7 +193,7 @@ async function executeWindow(
 type WindowOptions = CommonOptions & ProcessCoordinates
 type PositionOptions = Readonly<{ x: string, y: string }>
 type SizeOptions = Readonly<{ width: string, height: string }>
-type FrameOptions = Readonly<{
+type SurfaceOptions = Readonly<{
     default?: boolean
     absent?: boolean
     radius?: string
@@ -213,27 +213,27 @@ type TransactionOptions = Readonly<{
     easing?: string
 }>
 type WindowWaitOptions = Readonly<{
-    event: "move" | "resize" | "minimize" | "maximize" | "changeTitle" | "changeHeader" | "changeFrame" | "changeTransaction" | "front"
+    event: "move" | "resize" | "minimize" | "maximize" | "changeTitle" | "changeHeader" | "changeSurface" | "changeTransaction" | "front"
     timeout?: number
 }>
 
-function frame(options: FrameOptions): WindowFrame {
+function surface(options: SurfaceOptions): WindowSurface {
     const materialValues = material(options)
     const customized = options.radius !== undefined || options.color !== undefined || materialValues !== undefined
     const modes = Number(options.default === true) + Number(options.absent === true) + Number(customized)
 
-    if (modes !== 1) throw new Error("Choose exactly one of --default, --absent, or frame customization options")
+    if (modes !== 1) throw new Error("Choose exactly one of --default, --absent, or surface customization options")
     if (options.default) return true
     if (options.absent) return false
 
-    return parseWindowFrame({
+    return parseWindowSurface({
         ...(options.radius === undefined ? {} : { radius: options.radius === "full" ? "full" : numeric(options.radius, "--radius") }),
         ...(options.color === undefined ? {} : { color: options.color }),
         ...(materialValues === undefined ? {} : { material: materialValues })
     })
 }
 
-function material(options: FrameOptions): false | Partial<AppearanceMaterial> | undefined {
+function material(options: SurfaceOptions): false | Partial<AppearanceMaterial> | undefined {
     const values = {
         grain: options.grain,
         grainAmount: options.grainAmount,
