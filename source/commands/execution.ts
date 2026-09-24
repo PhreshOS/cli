@@ -4,6 +4,7 @@ import { describeExecuteOperation, type ExecuteOperationKey } from "@phreshos/co
 export const executeCommandPaths = Object.freeze({
     "operation.list": ["operation", "list"],
     "operation.describe": ["operation", "describe"],
+    "system.logs": ["system", "logs"],
     "program.list": ["program", "list"],
     "program.find": ["program", "inspect"],
     "program.agent": ["program", "agent"],
@@ -19,7 +20,6 @@ export const executeCommandPaths = Object.freeze({
     "program.allowsPermission": ["program", "allowsPermission"],
     "program.allowPermission": ["program", "allowPermission"],
     "program.denyPermission": ["program", "denyPermission"],
-    "program.requestPermission": ["program", "requestPermission"],
     "program.logs": ["program", "logs"],
     "program.wait": ["program", "wait"],
     "process.list": ["process", "list"],

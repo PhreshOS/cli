@@ -245,28 +245,6 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         permission: parsePermissionName(options.permission)
     })))
 
-    defineCommand<ProgramPermissionRequestOptions>(programs, {
-        name: "requestPermission",
-        aliases: ["request-permission"],
-        description: executeDescription("program", "requestPermission"),
-        requiresSystem: true,
-        options: withJson(
-            option("--program <identity>", "Program identity", { mandatory: true }),
-            option("--permission <name>", "permission name", { mandatory: true }),
-            option("--value <json>", "complete requested permission value encoded as JSON"),
-            timeoutOption
-        ),
-        output: dataOutput(value.any("permission decision"), "The permission decision", { format: "value" }),
-        examples: ["phresh program request-permission --program terminal --permission uploads"]
-    }, ({ options }) => connected(connect, system => system.execute({
-        $domain: "program",
-        $operation: "requestPermission",
-        identity: options.program,
-        permission: parsePermissionName(options.permission),
-        ...(options.value === undefined ? {} : { value: permissionRequest(options.value) }),
-        ...(options.timeout === undefined ? {} : { timeout: bounded(options.timeout, "--timeout", 0) })
-    })))
-
     defineCommand<ProgramLogsOptions>(programs, {
         name: "logs",
         description: executeDescription("program", "logs"),
@@ -322,7 +300,6 @@ type ProgramOptions = CommonOptions & Readonly<{ program: string }>
 type ProgramStartupOptions = CommonOptions & LaunchOptions & Readonly<{ program: string }>
 type ProgramPermissionOptions = ProgramOptions & Readonly<{ permission: string }>
 type ProgramPermissionValueOptions = ProgramPermissionOptions & Readonly<{ value?: string }>
-type ProgramPermissionRequestOptions = ProgramPermissionValueOptions & Readonly<{ timeout?: number }>
 type ProgramLogsOptions = CommonOptions & Readonly<{
     program: string
     statement: string

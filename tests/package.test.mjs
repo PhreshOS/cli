@@ -65,7 +65,7 @@ test("package contract", async () => {
 
       const help = execFileSync(process.execPath, [cli, "system", "--help"], { encoding: "utf8" })
 
-      for (const word of ["install", "uninstall", "status", "version", "start", "stop", "enable", "disable"]) assert.match(help, new RegExp(`\\b${word}\\b`))
+      for (const word of ["install", "uninstall", "status", "version", "start", "stop", "enable", "disable", "logs"]) assert.match(help, new RegExp(`\\b${word}\\b`))
 
       assert.match(help, /\n\n$/)
 

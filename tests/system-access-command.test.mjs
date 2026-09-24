@@ -229,6 +229,49 @@ test("program logs passes read-only SQL directly through Execute", async functio
     }])
 })
 
+test("system logs passes read-only SQL directly through Execute", async function () {
+    const requests = []
+    const system = {
+        execute(request) {
+            requests.push(request)
+            return Promise.resolve([{ createdAt: 1, level: "error", source: "process", kind: "unexpectedServerEndpointExit", content: "Server Endpoint ended unexpectedly", data: {} }])
+        },
+        async disconnect() {}
+    }
+    const program = new Command().exitOverride().name("phresh")
+    accessCommands(program, async () => system)
+
+    const written = []
+    const original = console.log
+    console.log = value => written.push(String(value))
+
+    try {
+        await program.parseAsync([
+            "node", "phresh", "system", "logs", "--json",
+            "--statement", "select * from logs where level = ?",
+            "--values", '["error"]'
+        ])
+    }
+    finally {
+        console.log = original
+    }
+
+    assert.deepEqual(requests, [{
+        $domain: "system",
+        $operation: "logs",
+        statement: "select * from logs where level = ?",
+        values: ["error"]
+    }])
+    assert.deepEqual(JSON.parse(written[0]), [{
+        createdAt: 1,
+        level: "error",
+        source: "process",
+        kind: "unexpectedServerEndpointExit",
+        content: "Server Endpoint ended unexpectedly",
+        data: {}
+    }])
+})
+
 test("the Program output contract excludes permission declarations", async function () {
     const program = new Command().exitOverride().name("phresh")
     accessCommands(program, async () => { throw new Error("must not connect") })
@@ -348,12 +391,12 @@ test("only boundary values without a native flag shape retain JSON syntax", func
     assert.deepEqual(options.filter(option => option.flags.includes("<json>")), [
         { path: "program allowsPermission", flags: "--value <json>" },
         { path: "program allowPermission", flags: "--value <json>" },
-        { path: "program requestPermission", flags: "--value <json>" },
         { path: "program logs", flags: "--values <json>" },
         { path: "endpoint ask", flags: "--payload <json>" },
         { path: "endpoint publish", flags: "--payload <json>" },
         { path: "service ask", flags: "--payload <json>" },
-        { path: "service publish", flags: "--payload <json>" }
+        { path: "service publish", flags: "--payload <json>" },
+        { path: "system logs", flags: "--values <json>" }
     ])
 })
 
