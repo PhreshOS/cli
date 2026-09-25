@@ -491,6 +491,99 @@ test("rolls installation back when the native service cannot start", async funct
     assert.deepEqual(events.slice(-3), ["stop", "rollback", "unregister"])
 })
 
+test("restores a background service without inventing automatic-startup control", async function () {
+
+    const events = []
+
+    const previous = {
+
+        version: "0.0.9",
+
+        digest: "b".repeat(64),
+
+        directory: "/installation/releases/0.0.9",
+
+        installedAt: "before"
+    }
+
+    const installation = {
+
+        paths: {
+
+            root: "/installation",
+
+            releases: "/installation/releases",
+
+            current: "/installation/current",
+
+            storage: "/state",
+
+            gateway: "/state/gateway.sock",
+
+            homeRequest: "/installation/next-home",
+
+            portRequest: "/installation/next-port",
+
+            log: "/state/service.log"
+        },
+
+        async exclusive(work) { return await work() },
+
+        async current() { return previous },
+
+        async prepare(release) { return { release, directory: "/staging" } },
+
+        async abandon() { events.push("abandon") },
+
+        async activate() { throw new Error("activation failed") }
+    }
+
+    let running = true
+
+    const service = {
+
+        async inspect() {
+
+            return { registered: true, automaticStartup: false, enabled: false, running }
+        },
+
+        async register() { events.push("register") },
+
+        async unregister() { events.push("unregister") },
+
+        async start() { running = true; events.push("start") },
+
+        async stop() { running = false; events.push("stop") },
+
+        async enable() { events.push("enable") },
+
+        async disable() { events.push("disable") }
+    }
+
+    const lifecycle = new SystemLifecycle({
+
+        installation,
+
+        service,
+
+        async resolveRelease() { return { version: "0.1.0", archive: "archive", checksum: "checksum" } },
+
+        async downloadRelease(release) { return { ...release, bytes: Buffer.alloc(0), digest: "a".repeat(64) } },
+
+        async ready() { return running },
+
+        async wait() { events.push("ready") },
+
+        async waitForStop() { events.push("stopped") },
+
+        async provisionSetup() {}
+    })
+
+    await assert.rejects(lifecycle.install(), /activation failed/)
+
+    assert.deepEqual(events, ["stop", "stopped", "abandon", "register", "start", "ready"])
+})
+
 test("replaces a running System only after its gateway closes and provisions Setup after readiness", async function () {
 
     const events = []

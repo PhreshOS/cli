@@ -321,9 +321,14 @@ export default class SystemLifecycle {
 
         await service.register(definition(installation, await nodeExecutable()))
 
-        if (state.enabled) await service.enable()
+        // A background container service has no automatic-startup capability.
+        // Restoring its running state must not invoke an unsupported setting.
+        if (state.automaticStartup) {
 
-        else await service.disable()
+            if (state.enabled) await service.enable()
+
+            else await service.disable()
+        }
 
         if (state.running) {
 
