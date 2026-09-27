@@ -394,6 +394,7 @@ test("only boundary values without a native flag shape retain JSON syntax", func
         { path: "program logs", flags: "--values <json>" },
         { path: "endpoint ask", flags: "--payload <json>" },
         { path: "endpoint publish", flags: "--payload <json>" },
+        { path: "endpoint memory set", flags: "--value <json>" },
         { path: "service ask", flags: "--payload <json>" },
         { path: "service publish", flags: "--payload <json>" },
         { path: "system logs", flags: "--values <json>" }

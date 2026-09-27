@@ -5,6 +5,7 @@ import { value } from "../contract/schema.ts"
 import {
     clientOverrideOptions,
     endpointOptions,
+    processOptions,
     option,
     serverOverrideOptions,
     timeoutOption,
@@ -157,6 +158,43 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
         event: options.event,
         ...(options.timeout === undefined ? {} : { timeout: timeout(options.timeout) })
     }))
+
+    const memory = defineCommand(endpoints, {
+        name: "memory",
+        description: "read and change one running Client's memory"
+    })
+
+    defineCommand<MemoryOptions & { key: string }>(memory, {
+        name: "get",
+        description: executeDescription("endpoint", "memoryGet"),
+        requiresSystem: true,
+        options: withJson(...processOptions, option("--key <key>", "Memory key", { mandatory: true })),
+        output: dataOutput(value.any("JSON value or null"), "The Client memory value", valuePresentation)
+    }, ({ options }) => executeMemory(connect, options, "memoryGet", { key: options.key }))
+
+    defineCommand<MemoryOptions & { key: string, value: string }>(memory, {
+        name: "set",
+        description: executeDescription("endpoint", "memorySet"),
+        requiresSystem: true,
+        options: withJson(...processOptions, option("--key <key>", "Memory key", { mandatory: true }), option("--value <json>", "JSON value", { mandatory: true })),
+        output: dataOutput(value.any("Stored JSON value"), "The stored value", valuePresentation)
+    }, ({ options }) => executeMemory(connect, options, "memorySet", { key: options.key, value: payload(options.value) }))
+
+    defineCommand<MemoryOptions & { key: string }>(memory, {
+        name: "delete",
+        description: executeDescription("endpoint", "memoryDelete"),
+        requiresSystem: true,
+        options: withJson(...processOptions, option("--key <key>", "Memory key", { mandatory: true })),
+        output: dataOutput(value.boolean("Whether the key existed"), "Deletion result", valuePresentation)
+    }, ({ options }) => executeMemory(connect, options, "memoryDelete", { key: options.key }))
+
+    defineCommand<MemoryOptions>(memory, {
+        name: "entries",
+        description: executeDescription("endpoint", "memoryEntries"),
+        requiresSystem: true,
+        options: withJson(...processOptions),
+        output: dataOutput(value.any("Key-value entries"), "The Client memory entries", valuePresentation)
+    }, ({ options }) => executeMemory(connect, options, "memoryEntries"))
 }
 
 async function executeEndpoint(
@@ -178,7 +216,13 @@ function timeout(value?: number) {
     return value === undefined ? undefined : bounded(value, "--timeout", 1)
 }
 
+async function executeMemory(connect: ConnectSystem, options: MemoryOptions, operation: "memoryGet" | "memorySet" | "memoryDelete" | "memoryEntries", fields: Record<string, unknown> = {}) {
+    const request = parseExecuteRequest({ $domain: "endpoint", $operation: operation, process: options.process, ...(options.program ? { program: options.program } : {}), ...fields })
+    return connected(connect, system => system.execute(request))
+}
+
 type EndpointOptions = CommonOptions & ProcessCoordinates & Readonly<{ endpoint: EndpointName }>
+type MemoryOptions = CommonOptions & ProcessCoordinates
 type EventOptions = Readonly<{ event: string, payload?: string }>
 type LifecycleOptions = Readonly<{ event: "start" | "stop" }>
 type TimeoutOptions = Readonly<{ timeout?: number }>
