@@ -26,7 +26,7 @@ test("a detailed report keeps one opening separator and one closing blank line",
     console.log = value => output.push(value ?? "")
 
     try {
-        heading("Setup 0.1.30", "installed")
+        heading("Sprout 0.1.0", "installed")
         line("process", "2446bd59-4226-4937-951c-00478beebe88")
         blank()
     }
@@ -34,7 +34,7 @@ test("a detailed report keeps one opening separator and one closing blank line",
     finally { console.log = original }
 
     assert.equal(output.length, 4)
-    assert.match(output[0], /Setup 0\.1\.30.*installed/)
+    assert.match(output[0], /Sprout 0\.1\.0.*installed/)
     assert.equal(output[1], "")
     assert.match(output[2], /process.*2446bd59-4226-4937-951c-00478beebe88/)
     assert.equal(output[3], "")

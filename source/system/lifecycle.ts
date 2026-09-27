@@ -52,7 +52,7 @@ interface LifecycleDependencies {
 
     waitForStop(path: string): Promise<void>
 
-    provisionSetup(): Promise<void>
+    provisionSprout(): Promise<void>
 }
 
 /** Coordinates acquisition, immutable files, and the native service as one transaction. */
@@ -82,7 +82,7 @@ export default class SystemLifecycle {
 
             waitForStop: dependencies?.waitForStop ?? waitForGatewayClose,
 
-            provisionSetup: dependencies?.provisionSetup ?? provisionSetup
+            provisionSprout: dependencies?.provisionSprout ?? provisionSprout
         }
     }
 
@@ -135,13 +135,13 @@ export default class SystemLifecycle {
         // live gateway. A provisioning failure therefore leaves a healthy
         // System available for a retry instead of rolling it back around a
         // separate Program installation that may already have succeeded.
-        try { await this.dependencies.provisionSetup() }
+        try { await this.dependencies.provisionSprout() }
 
         catch (error) {
 
             const reason = error instanceof Error ? error.message : String(error)
 
-            throw new Error(`The PhreshOS System is running, but Setup could not be provisioned: ${reason}`, { cause: error })
+            throw new Error(`The PhreshOS System is running, but Sprout could not be provisioned: ${reason}`, { cause: error })
         }
 
         return await this.status()
@@ -390,9 +390,9 @@ export default class SystemLifecycle {
     }
 }
 
-async function provisionSetup() {
+async function provisionSprout() {
 
-    await installProgram({ name: "setup", announce: false })
+    await installProgram({ name: "sprout", announce: false })
 }
 
 function definition(installation: SystemInstallation, executable: string): SystemServiceDefinition {

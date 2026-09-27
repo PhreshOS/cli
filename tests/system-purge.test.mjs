@@ -52,10 +52,10 @@ test.each([false, true])("System install and uninstall pass the purge decision a
         installation, service,
         async resolveRelease() { return { version: "0.1.0" } },
         async downloadRelease(value) { return value },
-        async ready() { return running }, async wait() {}, async provisionSetup() { events.push("setup") }
+        async ready() { return running }, async wait() {}, async provisionSprout() { events.push("sprout") }
     })
     await lifecycle.install({ purge })
-    expect(events).toEqual(["prepare", "stop", ...(purge ? ["purge"] : []), "activate", "start", "commit", "setup"])
+    expect(events).toEqual(["prepare", "stop", ...(purge ? ["purge"] : []), "activate", "start", "commit", "sprout"])
     events.length = 0
     await lifecycle.uninstall({ purge })
     expect(events).toEqual(["stop", "unregister", ...(purge ? ["purge"] : []), "remove"])

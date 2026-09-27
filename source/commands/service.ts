@@ -23,23 +23,17 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
         guidance: ["Discovery returns ready Services; exact addresses remain stable while their providers are unavailable."]
     })
 
-    defineCommand<CommonOptions>(services, {
+    defineCommand<CommonOptions & { name?: string }>(services, {
         name: "list",
         description: executeDescription("service", "list"),
         requiresSystem: true,
-        options: withJson(),
+        options: withJson(option("--name <name>", "optional Process and Service name")),
         output: dataOutput(value.array(serviceOutput, "ready Services"), "Visible Services", serviceListPresentation),
-        examples: ["phresh service list"]
-    }, async () => executeService(connect, { $operation: "list" }))
-
-    defineCommand<CommonOptions & { name: string }>(services, {
-        name: "search",
-        description: executeDescription("service", "search"),
-        requiresSystem: true,
-        options: withJson(option("--name <name>", "Process and Service name", { mandatory: true })),
-        output: dataOutput(value.array(serviceOutput, "matching ready Services"), "Matching Services", serviceListPresentation),
-        examples: ["phresh service search --name ssh"]
-    }, async ({ options }) => executeService(connect, { $operation: "search", name: options.name }))
+        examples: ["phresh service list", "phresh service list --name ssh"]
+    }, async ({ options }) => executeService(connect, {
+        $operation: "list",
+        ...(options.name === undefined ? {} : { name: options.name })
+    }))
 
     defineCommand<ServiceOptions>(services, {
         name: "inspect",

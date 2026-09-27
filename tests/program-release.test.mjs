@@ -27,9 +27,9 @@ test("verifies and prepares an official Program package", async function () {
 
     archive.addFile("program.json", Buffer.from(JSON.stringify({
 
-        identity: "setup",
+        identity: "sprout",
 
-        name: "Setup",
+        name: "Sprout",
 
         version: "0.1.0",
 
@@ -44,26 +44,26 @@ test("verifies and prepares an official Program package", async function () {
 
     archive.addFile("icon.png", Buffer.from("icon"))
 
-    archive.addFile("agent.md", Buffer.from("# Setup"))
+    archive.addFile("agent.md", Buffer.from("# Sprout"))
 
     const bytes = archive.toBuffer()
 
     const digest = createHash("sha256").update(bytes).digest("hex")
 
-    const prepared = await prepareOfficialProgram("setup", async url => {
+    const prepared = await prepareOfficialProgram("sprout", async url => {
 
         const address = String(url)
 
         if (address.includes("/releases?")) return Response.json([release("v0.1.0")])
 
-        if (address.endsWith(".sha256")) return new Response(`${digest}  setup@0.1.0.zip\n`)
+        if (address.endsWith(".sha256")) return new Response(`${digest}  sprout@0.1.0.zip\n`)
 
         return new Response(bytes)
     })
 
     const program = prepared.program
 
-    assert.equal(program.identity, "setup")
+    assert.equal(program.identity, "sprout")
 
     assert.equal(program.version, "0.1.0")
 
@@ -164,9 +164,9 @@ function release(tag, overrides = {}) {
 
         assets: [
 
-            { name: `setup@${version}.zip`, browser_download_url: `https://example.test/setup@${version}.zip` },
+            { name: `sprout@${version}.zip`, browser_download_url: `https://example.test/sprout@${version}.zip` },
 
-            { name: `setup@${version}.zip.sha256`, browser_download_url: `https://example.test/setup@${version}.zip.sha256` }
+            { name: `sprout@${version}.zip.sha256`, browser_download_url: `https://example.test/sprout@${version}.zip.sha256` }
         ],
 
         ...overrides

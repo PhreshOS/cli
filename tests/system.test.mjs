@@ -576,7 +576,7 @@ test("restores a background service without inventing automatic-startup control"
 
         async waitForStop() { events.push("stopped") },
 
-        async provisionSetup() {}
+        async provisionSprout() {}
     })
 
     await assert.rejects(lifecycle.install(), /activation failed/)
@@ -584,7 +584,7 @@ test("restores a background service without inventing automatic-startup control"
     assert.deepEqual(events, ["stop", "stopped", "abandon", "register", "start", "ready"])
 })
 
-test("replaces a running System only after its gateway closes and provisions Setup after readiness", async function () {
+test("replaces a running System only after its gateway closes and provisions Sprout after readiness", async function () {
 
     const events = []
 
@@ -671,7 +671,7 @@ test("replaces a running System only after its gateway closes and provisions Set
 
         async waitForStop() { events.push("stopped") },
 
-        async provisionSetup() { events.push("setup") }
+        async provisionSprout() { events.push("sprout") }
     })
 
     const status = await lifecycle.install()
@@ -686,7 +686,7 @@ test("replaces a running System only after its gateway closes and provisions Set
 
     assert(events.indexOf("ready") < events.indexOf("commit"))
 
-    assert(events.indexOf("commit") < events.indexOf("setup"))
+    assert(events.indexOf("commit") < events.indexOf("sprout"))
 })
 
 test("native adapters keep startup enablement separate from current execution", async function () {

@@ -39,7 +39,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         const programs = await system.execute({
             $domain: "program",
             $operation: "list",
-            installedOnly: options.installedOnly === true
+            ...(options.installedOnly === true ? { installed: true } : {})
         })
         const selected = page(
             programs,

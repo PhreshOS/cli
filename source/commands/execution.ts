@@ -41,7 +41,6 @@ export const executeCommandPaths = Object.freeze({
     "endpoint.memoryDelete": ["endpoint", "memory", "delete"],
     "endpoint.memoryEntries": ["endpoint", "memory", "entries"],
     "service.list": ["service", "list"],
-    "service.search": ["service", "search"],
     "service.inspect": ["service", "inspect"],
     "service.waitReady": ["service", "waitReady"],
     "service.ask": ["service", "ask"],
