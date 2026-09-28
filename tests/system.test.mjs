@@ -1025,3 +1025,12 @@ function escape(value) {
 
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
+
+test("a System installation brings Sprout only when it is not installed yet", async () => {
+    const { provisionSprout } = await import("../dist/system/lifecycle.js")
+    const installs = []
+    await provisionSprout({ installed: async () => true, install: async () => { installs.push("sprout") } })
+    assert.deepEqual(installs, [])
+    await provisionSprout({ installed: async () => false, install: async () => { installs.push("sprout") } })
+    assert.deepEqual(installs, ["sprout"])
+})

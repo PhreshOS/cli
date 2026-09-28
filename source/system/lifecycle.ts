@@ -7,6 +7,7 @@ import systemPaths from "./paths.ts"
 import systemService from "./service/index.ts"
 import nodeExecutable from "./node.ts"
 import installProgram from "../install.ts"
+import { connectSystem, connected } from "../commands/connection.ts"
 import { existsSync } from "node:fs"
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
@@ -82,7 +83,7 @@ export default class SystemLifecycle {
 
             waitForStop: dependencies?.waitForStop ?? waitForGatewayClose,
 
-            provisionSprout: dependencies?.provisionSprout ?? provisionSprout
+            provisionSprout: dependencies?.provisionSprout ?? (() => provisionSprout())
         }
     }
 
@@ -390,9 +391,20 @@ export default class SystemLifecycle {
     }
 }
 
-async function provisionSprout() {
+/**
+ * Sprout is the first welcome of a new System, so a System installation brings it only when it is
+ * not there yet: on a first installation, or after `--purge` emptied the System. Installing a
+ * Program again replaces its running Processes and runs it as it declares, so doing it on every
+ * update would greet the owner again and end whatever Sprout left running.
+ */
+export async function provisionSprout(dependencies: Readonly<{ installed(): Promise<boolean>, install(): Promise<void> }> = {
+    installed: () => connected(connectSystem, async system => (await (await system.program.find("sprout"))?.installed()) ?? false),
+    install: async () => { await installProgram({ name: "sprout", announce: false }) }
+}) {
 
-    await installProgram({ name: "sprout", announce: false })
+    if (await dependencies.installed()) return
+
+    await dependencies.install()
 }
 
 function definition(installation: SystemInstallation, executable: string): SystemServiceDefinition {
