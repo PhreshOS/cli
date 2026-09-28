@@ -2,7 +2,9 @@ import type { Command } from "commander"
 import endpointCommands from "./endpoint.ts"
 import processCommands from "./process.ts"
 import programCommands from "./program.ts"
-import { connectSystem, type ConnectSystem } from "./connection.ts"
+import { connectSystem, type ConnectSystem } from "./system-connection.ts"
+import connectionCommands from "./connection.ts"
+import sessionCommands from "./session.ts"
 import windowCommands from "./window.ts"
 import executeCommand from "./execute.ts"
 import operationCommands from "./operation.ts"
@@ -18,5 +20,7 @@ export default function accessCommands(program: Command, connect: ConnectSystem 
     endpointCommands(program, connect)
     serviceCommands(program, connect)
     systemCommands(program, connect)
+    connectionCommands(program, connect)
+    sessionCommands(program, connect)
     windowCommands(program, connect)
 }

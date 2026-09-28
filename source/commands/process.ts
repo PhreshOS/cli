@@ -13,7 +13,7 @@ import {
     processOutput,
     processPresentation
 } from "./schemas.ts"
-import { connected, type ConnectSystem } from "./connection.ts"
+import { connected, type ConnectSystem } from "./system-connection.ts"
 import { bounded, integer, launch, page, type CommonOptions, type LaunchOptions, type ProcessCoordinates } from "./input.ts"
 import { executeDescription } from "./execution.ts"
 

@@ -18,7 +18,7 @@ import {
     windowSizePresentation,
     windowTitlePresentation
 } from "./schemas.ts"
-import { connected, type ConnectSystem } from "./connection.ts"
+import { connected, type ConnectSystem } from "./system-connection.ts"
 import { bounded, position, size, type CommonOptions, type ProcessCoordinates } from "./input.ts"
 import { executeDescription } from "./execution.ts"
 

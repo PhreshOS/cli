@@ -2,7 +2,7 @@ import { parseExecuteRequest } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
-import { connected, type ConnectSystem } from "./connection.ts"
+import { connected, type ConnectSystem } from "./system-connection.ts"
 import { dataOutput } from "./schemas.ts"
 
 /** Expose the shared SDK Execute adapter as an exact JSON interface. */
@@ -27,4 +27,3 @@ export default function executeCommand(root: Command, connect: ConnectSystem) {
         return connected(connect, system => system.execute(request))
     })
 }
-

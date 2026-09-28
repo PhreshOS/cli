@@ -45,6 +45,17 @@ export const processOutput = value.object({
     client: endpointState("Client Endpoint state")
 }, ["identity", "name", "program", "startedAt", "server", "client"], "Process state")
 
+export const connectionOutput = value.object({
+    identity: value.string("stable Connection identity"),
+    connected: value.boolean("whether the browser Connection is live"),
+    session: value.nullable(value.string("attached Session identity"))
+}, ["identity", "connected", "session"], "Connection state")
+
+export const sessionOutput = value.object({
+    identity: value.string("stable Session identity"),
+    valid: value.boolean("whether the Session can authorize Connections")
+}, ["identity", "valid"], "Session state")
+
 export const endpointOutput = value.object({
     process: value.string("owning Process identity"),
     program: value.string("owning Program identity"),
@@ -124,6 +135,28 @@ export const processListPresentation: OutputPresentation = list("data", "Process
     { label: "Program", path: "program" },
     { label: "Server", path: "server.running" },
     { label: "Client", path: "client.running" }
+])
+
+export const connectionPresentation: OutputPresentation = fields(
+    ["Identity", "identity"],
+    ["Connected", "connected"],
+    ["Session", "session"]
+)
+
+export const connectionListPresentation: OutputPresentation = list("data", "Connection", "Connections", "No matching Connections", [
+    { label: "Identity", path: "identity" },
+    { label: "Connected", path: "connected" },
+    { label: "Session", path: "session" }
+])
+
+export const sessionPresentation: OutputPresentation = fields(
+    ["Identity", "identity"],
+    ["Valid", "valid"]
+)
+
+export const sessionListPresentation: OutputPresentation = list("data", "Session", "Sessions", "No matching Sessions", [
+    { label: "Identity", path: "identity" },
+    { label: "Valid", path: "valid" }
 ])
 
 export const endpointPresentation: OutputPresentation = fields(

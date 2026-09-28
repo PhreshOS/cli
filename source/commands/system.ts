@@ -1,7 +1,7 @@
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
-import { connected, type ConnectSystem } from "./connection.ts"
+import { connected, type ConnectSystem } from "./system-connection.ts"
 import { executeDescription } from "./execution.ts"
 import { json } from "./input.ts"
 import { option, withJson } from "./options.ts"

@@ -21,7 +21,7 @@ import {
     lifecyclePresentation,
     valuePresentation
 } from "./schemas.ts"
-import { connected, type ConnectSystem } from "./connection.ts"
+import { connected, type ConnectSystem } from "./system-connection.ts"
 import { bounded, clientLaunch, payload, serverLaunch, type ClientOptions, type CommonOptions, type ProcessCoordinates, type ServerOptions } from "./input.ts"
 import type { EndpointName } from "./projection.ts"
 import { executeDescription } from "./execution.ts"

@@ -185,6 +185,76 @@ test("every Execute operation has a flattened human-facing command", function ()
     }
 })
 
+test("Connection and Session commands delegate exclusively to Execute", async function () {
+    const requests = []
+    const closed = []
+    const responses = {
+        "connection.list": [{ identity: "browser-1", connected: true, session: null }],
+        "connection.find": { identity: "browser-1", connected: true, session: null },
+        "connection.session": { identity: "session-1", valid: true },
+        "connection.signIn": { identity: "session-1", valid: true },
+        "session.list": [{ identity: "session-1", valid: true }],
+        "session.find": { identity: "session-1", valid: true },
+        "session.connections": [{ identity: "browser-1", connected: true, session: "session-1" }],
+        "session.signOut": null,
+        "connection.wait": { scope: "connection", connection: "browser-1", event: "sessionChange", payload: "session-1" },
+        "session.wait": { scope: "session", session: "session-1", event: "end", payload: { reason: "signedOut" } }
+    }
+    const system = {
+        async execute(request) {
+            requests.push(request)
+            return responses[`${request.$domain}.${request.$operation}`]
+        },
+        async disconnect() { closed.push(true) }
+    }
+    const program = new Command().exitOverride().name("phresh")
+    accessCommands(program, async () => system)
+
+    const written = []
+    const original = console.log
+    console.log = value => written.push(String(value))
+
+    try {
+        await program.parseAsync(["node", "phresh", "connection", "list", "--json"])
+        await program.parseAsync(["node", "phresh", "connection", "inspect", "--connection", "browser-1", "--json"])
+        await program.parseAsync(["node", "phresh", "connection", "session", "--connection", "browser-1", "--json"])
+        await program.parseAsync(["node", "phresh", "connection", "sign-in", "--connection", "browser-1", "--json"])
+        await program.parseAsync(["node", "phresh", "session", "list", "--json"])
+        await program.parseAsync(["node", "phresh", "session", "inspect", "--session", "session-1", "--json"])
+        await program.parseAsync(["node", "phresh", "session", "connections", "--session", "session-1", "--json"])
+        await program.parseAsync(["node", "phresh", "session", "sign-out", "--session", "session-1", "--json"])
+        await program.parseAsync(["node", "phresh", "connection", "wait", "--event", "sessionChange", "--connection", "browser-1", "--json"])
+        await program.parseAsync(["node", "phresh", "session", "wait", "--event", "end", "--session", "session-1", "--json"])
+    } finally {
+        console.log = original
+    }
+
+    assert.deepEqual(requests, [
+        { $domain: "connection", $operation: "list" },
+        { $domain: "connection", $operation: "find", identity: "browser-1" },
+        { $domain: "connection", $operation: "session", identity: "browser-1" },
+        { $domain: "connection", $operation: "signIn", identity: "browser-1" },
+        { $domain: "session", $operation: "list" },
+        { $domain: "session", $operation: "find", identity: "session-1" },
+        { $domain: "session", $operation: "connections", identity: "session-1" },
+        { $domain: "session", $operation: "signOut", identity: "session-1" },
+        { $domain: "connection", $operation: "wait", event: "sessionChange", identity: "browser-1" },
+        { $domain: "session", $operation: "wait", event: "end", identity: "session-1" }
+    ])
+    assert.equal(closed.length, requests.length)
+    assert.deepEqual(JSON.parse(written[0]), { data: responses["connection.list"], total: 1, truncated: false })
+    assert.deepEqual(JSON.parse(written[1]), responses["connection.find"])
+    assert.deepEqual(JSON.parse(written[2]), responses["connection.session"])
+    assert.deepEqual(JSON.parse(written[3]), responses["connection.signIn"])
+    assert.deepEqual(JSON.parse(written[4]), { data: responses["session.list"], total: 1, truncated: false })
+    assert.deepEqual(JSON.parse(written[5]), responses["session.find"])
+    assert.deepEqual(JSON.parse(written[6]), { data: responses["session.connections"], total: 1, truncated: false })
+    assert.equal(JSON.parse(written[7]), null)
+    assert.deepEqual(JSON.parse(written[8]), responses["connection.wait"])
+    assert.deepEqual(JSON.parse(written[9]), responses["session.wait"])
+    assert.equal(descendants(program).some(command => commandPath(command) === "connection disconnect"), false)
+})
+
 test("program logs passes read-only SQL directly through Execute", async function () {
     const requests = []
     const system = {

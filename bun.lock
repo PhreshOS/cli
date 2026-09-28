@@ -6,7 +6,7 @@
       "name": "@phreshos/cli",
       "dependencies": {
         "@clack/prompts": "^1.7.0",
-        "@phreshos/core": "^0.1.63",
+        "@phreshos/core": "^0.1.65",
         "@phreshos/node": "^0.1.35",
         "adm-zip": "^0.6.0",
         "commander": "^15.0.0",
@@ -32,7 +32,7 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.146.0", "", {}, "sha512-XC0QsnnhVe7sLIWmYmdPw7x5P0h4W8vUU3Nv1ySgWXtvCz8NizoAEpGXA0sOYoJQV2Rl13LgURAHQ5cI5ILCSA=="],
 
-    "@phreshos/core": ["@phreshos/core@0.1.63", "", { "dependencies": { "zod": "^4.6.5" } }, "sha512-wzIRrjok93QJQb/cpm5A/PVRm50x6FTP4Agj2l8kUsg1rkrTLZAU/iX63DlQ02hrkYypM0aEfhbpuZJn9jpV3Q=="],
+    "@phreshos/core": ["@phreshos/core@0.1.65", "", { "dependencies": { "zod": "^4.6.5" } }, "sha512-MhKB8aKZJri8ICxuGwHmMD9TGCv2rerbORiWtB5YuZGtQ0Pza+MrPQ8QSlrOKjkoOIUdPKKr2qpgHIK2dNwVug=="],
 
     "@phreshos/node": ["@phreshos/node@0.1.35", "", { "dependencies": { "@the-link/ipc": "^0.2.1", "@the-link/messagepack": "^0.1.0", "adm-zip": "^0.6.0", "jiti": "^2.7.0" }, "peerDependencies": { "@phreshos/core": "^0.1.63" } }, "sha512-Q9CdnrbqqN+LLCFWOQsNVW6kwdYRmypSQcdi9xKMzu5YUfhU7lh/La0z4SV/AI/lONd2bZ0xWkC6aW08SWOBoQ=="],
 
