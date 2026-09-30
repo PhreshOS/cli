@@ -102,7 +102,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         description: executeDescription("program", "getStartup"),
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
-        output: dataOutput(value.any("Stored System-start launch or null"), "The Program startup launch", { format: "value" }),
+        output: dataOutput(value.any("The launch started with the System, or null"), "The Program startup launch", { format: "value" }),
         examples: ["phresh program get-startup --program terminal --json"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
@@ -111,34 +111,34 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
     })))
 
     defineCommand<ProgramStartupOptions>(programs, {
-        name: "enableStartup",
-        aliases: ["enable-startup"],
-        description: executeDescription("program", "enableStartup"),
+        name: "setStartup",
+        aliases: ["set-startup"],
+        description: executeDescription("program", "setStartup"),
         requiresSystem: true,
         options: withJson(
             option("--program <identity>", "Program identity", { mandatory: true }),
             ...launchOptions
         ),
-        output: dataOutput(value.any("Stored System-start launch"), "The Program startup launch", { format: "value" }),
-        examples: ["phresh program enable-startup --program terminal --client --name main --json"]
+        output: dataOutput(value.any("The launch started with the System"), "The Program startup launch", { format: "value" }),
+        examples: ["phresh program set-startup --program terminal --json", "phresh program set-startup --program terminal --client --name main --json"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
-        $operation: "enableStartup",
+        $operation: "setStartup",
         identity: options.program,
         launch: launch(options)
     })))
 
     defineCommand<ProgramOptions>(programs, {
-        name: "disableStartup",
-        aliases: ["disable-startup"],
-        description: executeDescription("program", "disableStartup"),
+        name: "removeStartup",
+        aliases: ["remove-startup"],
+        description: executeDescription("program", "removeStartup"),
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
-        output: dataOutput(value.nullable(value.any("disabled startup")), "Startup is disabled", { format: "value" }),
-        examples: ["phresh program disable-startup --program terminal"]
+        output: dataOutput(value.nullable(value.any("removed startup")), "Startup is removed", { format: "value" }),
+        examples: ["phresh program remove-startup --program terminal"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
-        $operation: "disableStartup",
+        $operation: "removeStartup",
         identity: options.program
     })))
 

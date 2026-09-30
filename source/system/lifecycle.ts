@@ -428,7 +428,8 @@ function definition(installation: SystemInstallation, executable: string): Syste
     }
 }
 
-async function desktopOrigin(storage: string) {
+/** The address the System's Desktop is served on, as the System records it in its home. */
+export async function desktopOrigin(storage: string) {
 
     try {
 

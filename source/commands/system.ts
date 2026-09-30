@@ -14,6 +14,32 @@ export default function systemAccessCommands(root: Command, connect: ConnectSyst
         description: "access the running PhreshOS System"
     })
 
+    defineCommand<JsonOptions>(system, {
+        name: "about",
+        description: executeDescription("system", "about"),
+        requiresSystem: true,
+        options: withJson(),
+        output: dataOutput(value.any("the System's name, version, and release"), "What this System is", { format: "value" }),
+        examples: ["phresh system about --json"]
+    }, () => connected(connect, system => system.execute({ $domain: "system", $operation: "about" })))
+
+    defineCommand<SystemOpenOptions>(system, {
+        name: "open",
+        description: executeDescription("system", "open"),
+        requiresSystem: true,
+        options: withJson(
+            option("--type <media-type>", "exact media type of what to open", { mandatory: true }),
+            option("--uri <uri>", "where it is", { mandatory: true })
+        ),
+        output: dataOutput(value.nullable(value.any("opened")), "It was opened", { format: "value" }),
+        examples: ["phresh system open --type image/png --uri file:///home/me/picture.png"]
+    }, ({ options }) => connected(connect, system => system.execute({
+        $domain: "system",
+        $operation: "open",
+        type: options.type,
+        uri: options.uri
+    })))
+
     defineCommand<SystemLogsOptions>(system, {
         name: "logs",
         description: executeDescription("system", "logs"),
@@ -40,5 +66,15 @@ export default function systemAccessCommands(root: Command, connect: ConnectSyst
 interface SystemLogsOptions {
     readonly statement: string
     readonly values?: string
+    readonly json?: boolean
+}
+
+interface JsonOptions {
+    readonly json?: boolean
+}
+
+interface SystemOpenOptions {
+    readonly type: string
+    readonly uri: string
     readonly json?: boolean
 }

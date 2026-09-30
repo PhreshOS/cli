@@ -7,6 +7,7 @@ import connectionCommands from "./connection.ts"
 import sessionCommands from "./session.ts"
 import windowCommands from "./window.ts"
 import executeCommand from "./execute.ts"
+import fetchCommand from "./fetch.ts"
 import operationCommands from "./operation.ts"
 import serviceCommands from "./service.ts"
 import systemCommands from "./system.ts"
@@ -14,6 +15,7 @@ import systemCommands from "./system.ts"
 /** Expose the shared System domains through explicit Node SDK executors. */
 export default function accessCommands(program: Command, connect: ConnectSystem = connectSystem) {
     executeCommand(program, connect)
+    fetchCommand(program, connect)
     operationCommands(program, connect)
     programCommands(program, connect)
     processCommands(program, connect)
