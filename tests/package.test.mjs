@@ -107,4 +107,5 @@ test("package contract", async () => {
 
       await rm(temporary, { recursive: true, force: true })
   }
-}, 120_000)
+// A real npm install of the packed CLI: on Windows it alone can take minutes.
+}, 300_000)
