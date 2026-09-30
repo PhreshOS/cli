@@ -91,8 +91,9 @@ export function renderFetch(fetched: Fetched, color: boolean, now = Date.now()) 
     const count = (value: number, one: string, many = `${one}s`) => `${value} ${value === 1 ? one : many}`
     const field = (label: string, value: string) => `${color ? paint(label.padEnd(11), logoColor(1)) : label.padEnd(11)}${value}`
     const lines = [
-        bold(title),
-        dim("─".repeat(title.length)),
+        // The requested rendering mode owns color, even when the terminal environment forces it.
+        color ? bold(title) : title,
+        color ? dim("─".repeat(title.length)) : "─".repeat(title.length),
         field("System", `${fetched.system.name} ${fetched.system.version} · ${fetched.system.release.name}`),
         field("Uptime", uptime(now - fetched.system.startedAt.getTime())),
         field("Desktop", fetched.desktop),
