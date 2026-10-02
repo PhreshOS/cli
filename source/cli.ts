@@ -3,6 +3,7 @@ import { Command } from "commander"
 import { createRequire } from "node:module"
 import accessCommands from "./commands/access.ts"
 import describeCommands from "./commands/describe.ts"
+import skillCommand from "./commands/skill.ts"
 import projectCommands from "./commands/project.ts"
 import { assertCommandContracts, attachCommandContract } from "./contract/command.ts"
 import { PromptCancelled, ReportedFailure } from "./prompts.ts"
@@ -28,7 +29,10 @@ attachCommandContract(program, {
     name: "phresh",
     description: "create Programs and manage PhreshOS",
     options: [{ flags: "-v, --version", description: "display the CLI version" }],
-    guidance: ["Run phresh <command> --help for human guidance, or phresh describe for the machine-readable command contract."],
+    guidance: [
+        "Agents: run phresh skill first. It explains what PhreshOS is and how to work in it.",
+        "Run phresh <command> --help for human guidance, or phresh describe for the machine-readable command contract."
+    ],
     examples: ["phresh create", "phresh describe --all --json"]
 })
 
@@ -40,6 +44,7 @@ projectCommands(program, coreRange)
 systemCommands(program)
 accessCommands(program)
 describeCommands(program)
+skillCommand(program)
 assertCommandContracts(program)
 
 // Every command begins with the same breathing room. Keep this at the entry
