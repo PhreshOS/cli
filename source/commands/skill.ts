@@ -9,11 +9,12 @@ import { textOutput } from "./schemas.ts"
  */
 export const skill = `# PhreshOS
 
-PhreshOS is an operating system for programs built with web technology. It
-runs as a service on this machine, the System, for one owner: the user of
-this machine who installed it. Its Programs run inside it, and the owner uses
-them from the Desktop, in a browser. You use the same Programs, through
-\`phresh\`, at the same time as the owner.
+PhreshOS is a self-hosted system for programs built with web technology.
+Its core, the System, runs on this machine as a service, on top of the
+machine's own operating system, for one owner: the user of this machine who
+installed it. Its Programs run inside it, and the owner uses them from the
+Desktop, in a browser. You use the same Programs, through \`phresh\`, at the
+same time as the owner.
 
 ## You act as the owner
 
