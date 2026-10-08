@@ -29,6 +29,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(
             option("--installed-only", "return only installed Programs"),
+            option("--startup-only", "return only Programs that start with the System"),
             option("--search <text>", "case-insensitive identity, name, or description search"),
             option("--limit <count>", "maximum returned Programs", { parse: value => integer(value), default: 30 }),
             option("--offset <count>", "number of matching Programs to skip", { parse: value => integer(value), default: 0 })
@@ -39,7 +40,8 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         const programs = await system.execute({
             $domain: "program",
             $operation: "list",
-            ...(options.installedOnly === true ? { installed: true } : {})
+            ...(options.installedOnly === true ? { installed: true } : {}),
+            ...(options.startupOnly === true ? { startup: true } : {})
         })
         const selected = page(
             programs,
@@ -142,17 +144,34 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         identity: options.program
     })))
 
-    for (const operation of ["pinned", "pin", "unpin"] as const) defineCommand<ProgramOptions>(programs, {
-        name: operation,
-        description: executeDescription("program", operation),
+    defineCommand<ProgramOptions>(programs, {
+        name: "pinned",
+        description: executeDescription("program", "pinned"),
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(value.boolean("whether the Program is pinned"), "The Program pinned state", { format: "value" }),
-        examples: [`phresh program ${operation} --program terminal`]
+        examples: ["phresh program pinned --program terminal"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
-        $operation: operation,
+        $operation: "pinned",
         identity: options.program
+    })))
+
+    defineCommand<ProgramOptions & Readonly<{ unpin?: boolean }>>(programs, {
+        name: "pin",
+        description: executeDescription("program", "pin"),
+        requiresSystem: true,
+        options: withJson(
+            option("--program <identity>", "Program identity", { mandatory: true }),
+            option("--unpin", "unpin rather than pin the Program")
+        ),
+        output: dataOutput(value.boolean("whether the Program is pinned"), "The Program pinned state", { format: "value" }),
+        examples: ["phresh program pin --program terminal", "phresh program pin --program terminal --unpin"]
+    }, ({ options }) => connected(connect, system => system.execute({
+        $domain: "program",
+        $operation: "pin",
+        identity: options.program,
+        pinned: options.unpin !== true
     })))
 
     defineCommand<ProgramPermissionOptions>(programs, {
@@ -276,7 +295,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         options: withJson(
             option("--event <event>", "Program lifecycle event", {
                 mandatory: true,
-                choices: ["create", "forget", "install", "uninstall", "pinned", "processCreate", "processExit"]
+                choices: ["create", "forget", "install", "uninstall", "pin", "changePermissions", "changeStartup", "processCreate", "processExit"]
             }),
             option("--program <identity>", "observe events belonging to one Program"),
             timeoutOption
@@ -307,12 +326,13 @@ type ProgramLogsOptions = CommonOptions & Readonly<{
 }>
 type ProgramListOptions = CommonOptions & Readonly<{
     installedOnly?: boolean
+    startupOnly?: boolean
     search?: string
     limit: number
     offset: number
 }>
 type ProgramWaitOptions = CommonOptions & Readonly<{
-    event: "create" | "forget" | "install" | "uninstall" | "pinned" | "processCreate" | "processExit"
+    event: "create" | "forget" | "install" | "uninstall" | "pin" | "changePermissions" | "changeStartup" | "processCreate" | "processExit"
     program?: string
     timeout?: number
 }>

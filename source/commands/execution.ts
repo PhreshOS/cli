@@ -26,7 +26,6 @@ export const executeCommandPaths = Object.freeze({
     "program.removeStartup": ["program", "removeStartup"],
     "program.pinned": ["program", "pinned"],
     "program.pin": ["program", "pin"],
-    "program.unpin": ["program", "unpin"],
     "program.getPermission": ["program", "getPermission"],
     "program.listPermissions": ["program", "listPermissions"],
     "program.allowsPermission": ["program", "allowsPermission"],
