@@ -9,6 +9,8 @@ import npmInvocation from "./npm.ts"
 import { minimumSystemNodeVersion } from "./node.ts"
 import AdmZip from "adm-zip"
 
+const windows = process.platform === "win32"
+
 export interface PreparedSystem {
 
     release: DownloadedSystem
@@ -272,7 +274,15 @@ export default class SystemInstallation {
 
         try {
 
-            await symlink(relative(dirname(this.paths.current), directory), temporary, "dir")
+            // Only administrators may create symbolic links on Windows; a junction is the directory link
+            // anyone may create there, and it takes an absolute target.
+            if (windows) await symlink(directory, temporary, "junction")
+
+            else await symlink(relative(dirname(this.paths.current), directory), temporary, "dir")
+
+            // Windows cannot rename over an existing directory link, so the old one goes first; the
+            // service is stopped while the link changes.
+            if (windows) await rm(this.paths.current, { force: true })
 
             await rename(temporary, this.paths.current)
         }

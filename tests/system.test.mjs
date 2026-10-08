@@ -330,6 +330,13 @@ test("stages, validates, activates, and reads one production distribution", asyn
         assert.deepEqual(await installation.current(), activation.installed)
 
         assert.match(await readFile(join(activation.installed.directory, "server", "main.js"), "utf8"), /ready/)
+
+        // A newer release replaces the link the first one left.
+        const nextBytes = distribution()
+        const next = await installation.prepare({ version: "0.1.1", archive: "archive", checksum: "checksum", bytes: nextBytes, digest: createHash("sha256").update(nextBytes).digest("hex") })
+        const replacing = await installation.activate(next, activation.installed)
+        await replacing.commit()
+        assert.equal((await installation.current()).version, "0.1.1")
     }
 
     finally {
