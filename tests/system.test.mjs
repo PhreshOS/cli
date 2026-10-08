@@ -949,9 +949,10 @@ test("Windows keeps scheduled startup separate from current execution", async fu
 
         assert.match(xml, /<WorkingDirectory>C:\\People &amp; Work\\System<\/WorkingDirectory>/)
 
-        assert.match(xml, /<Command>C:\\Program Files\\nodejs\\node\.exe<\/Command>/)
+        // Node runs inside a console host started headless, so no terminal window opens.
+        assert.match(xml, /<Command>[^<]*\\System32\\conhost\.exe<\/Command>/)
 
-        const encoded = /<Arguments>&quot;.*windows-runner\.js&quot; ([A-Za-z0-9_-]+)<\/Arguments>/.exec(xml)?.[1]
+        const encoded = /<Arguments>--headless &quot;C:\\Program Files\\nodejs\\node\.exe&quot; &quot;.*windows-runner\.js&quot; ([A-Za-z0-9_-]+)<\/Arguments>/.exec(xml)?.[1]
 
         assert.ok(encoded)
 

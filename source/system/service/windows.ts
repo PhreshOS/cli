@@ -2,7 +2,7 @@ import type { SystemService, SystemServiceDefinition } from "../types.ts"
 import { execute, type ProcessResult } from "../process.ts"
 import { randomUUID } from "node:crypto"
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
-import { dirname, join } from "node:path"
+import { dirname, join, win32 } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const scheduler = "schtasks.exe"
@@ -12,6 +12,13 @@ const powershell = "powershell.exe"
 const defaultTask = "PhreshOS System"
 
 const runner = fileURLToPath(new URL("./windows-runner.js", import.meta.url))
+
+/**
+ * The task runs in the user's own session, where Windows opens a terminal window for any console
+ * program it starts, and closing that window would end the System. The console host started
+ * headless gives Node its console without a window.
+ */
+const consoleHost = win32.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "conhost.exe")
 
 /** A per-user Windows Task Scheduler service requiring no administrator rights. */
 export default class WindowsSystemService implements SystemService {
@@ -237,7 +244,7 @@ function task(name: string, sid: string, definition: SystemServiceDefinition, st
 
     const payload = Buffer.from(JSON.stringify({ definition, state })).toString("base64url")
 
-    const argumentsValue = `"${runner}" ${payload}`
+    const argumentsValue = `--headless "${definition.executable}" "${runner}" ${payload}`
 
     return `<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
@@ -274,7 +281,7 @@ function task(name: string, sid: string, definition: SystemServiceDefinition, st
   </Settings>
   <Actions Context="User">
     <Exec>
-      <Command>${xml(definition.executable)}</Command>
+      <Command>${xml(consoleHost)}</Command>
       <Arguments>${xml(argumentsValue)}</Arguments>
       <WorkingDirectory>${xml(definition.directory)}</WorkingDirectory>
     </Exec>
