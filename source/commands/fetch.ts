@@ -18,7 +18,7 @@ export type Fetched = Readonly<{
     programs: Readonly<{ installed: number, startup: number }>
     processes: Readonly<{ running: number, windows: number }>
     connections: Readonly<{ desktops: number, sessions: number }>
-    wallpaper: Readonly<{ light: string, dark: string }>
+    wallpapers: Readonly<{ light: string, dark: string }>
     colors: Readonly<{ light: AppearanceColors, dark: AppearanceColors }>
 }>
 
@@ -79,7 +79,7 @@ export async function fetchSystem(connect: ConnectSystem): Promise<Fetched> {
             programs: { installed: programs.length, startup: startups.filter(Boolean).length },
             processes: { running: processes.length, windows: windows.filter(Boolean).length },
             connections: { desktops: connections.length, sessions: sessions.length },
-            wallpaper: { light: appearance.wallpaper.light.desktop, dark: appearance.wallpaper.dark.desktop },
+            wallpapers: { light: appearance.wallpapers.light.desktop, dark: appearance.wallpapers.dark.desktop },
             colors: appearance.colors
         }
     })
@@ -100,7 +100,7 @@ export function renderFetch(fetched: Fetched, color: boolean, now = Date.now()) 
         field("Programs", `${fetched.programs.installed} installed · ${fetched.programs.startup} at startup`),
         field("Processes", `${fetched.processes.running} running · ${count(fetched.processes.windows, "Window")}`),
         field("Connected", `${count(fetched.connections.desktops, "Desktop")} · ${count(fetched.connections.sessions, "Session")}`),
-        field("Wallpaper", wallpaper(fetched.wallpaper)),
+        field("Wallpaper", wallpaper(fetched.wallpapers)),
         ...color ? ["", palette(fetched.colors.light), palette(fetched.colors.dark)] : []
     ]
     return beside(logo.map((line, index) => color ? paint(line, logoColor(index / (logo.length - 1))) : line), lines)
@@ -118,7 +118,7 @@ function uptime(milliseconds: number) {
     return parts.slice(0, 2).join(", ") || "less than a minute"
 }
 
-function wallpaper(value: Fetched["wallpaper"]) {
+function wallpaper(value: Fetched["wallpapers"]) {
     return value.light === value.dark ? basename(value.light) : `${basename(value.light)} · ${basename(value.dark)}`
 }
 
