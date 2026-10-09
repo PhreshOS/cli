@@ -18,7 +18,7 @@ export type Fetched = Readonly<{
     programs: Readonly<{ installed: number, startup: number }>
     processes: Readonly<{ running: number, windows: number }>
     connections: Readonly<{ desktops: number, sessions: number }>
-    wallpaper: Readonly<{ light: string | null, dark: string | null }>
+    wallpaper: Readonly<{ light: string, dark: string }>
     colors: Readonly<{ light: AppearanceColors, dark: AppearanceColors }>
 }>
 
@@ -79,7 +79,7 @@ export async function fetchSystem(connect: ConnectSystem): Promise<Fetched> {
             programs: { installed: programs.length, startup: startups.filter(Boolean).length },
             processes: { running: processes.length, windows: windows.filter(Boolean).length },
             connections: { desktops: connections.length, sessions: sessions.length },
-            wallpaper: appearance.desktopWallpaper,
+            wallpaper: { light: appearance.wallpaper.light.desktop, dark: appearance.wallpaper.dark.desktop },
             colors: appearance.colors
         }
     })
@@ -119,8 +119,7 @@ function uptime(milliseconds: number) {
 }
 
 function wallpaper(value: Fetched["wallpaper"]) {
-    const name = (address: string | null) => address === null ? "default" : basename(address)
-    return value.light === value.dark ? name(value.light) : `${name(value.light)} · ${name(value.dark)}`
+    return value.light === value.dark ? basename(value.light) : `${basename(value.light)} · ${basename(value.dark)}`
 }
 
 /** One block per Appearance color; a color terminals cannot draw is left out. */
