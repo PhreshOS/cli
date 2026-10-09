@@ -1,3 +1,5 @@
+import { writeFile } from "node:fs/promises"
+import { resolve } from "node:path"
 import { parseLaunch, type ClientLaunch, type Launch, type Position, type ServerLaunch, type Size } from "@phreshos/core"
 
 export type Metric = number | string
@@ -144,3 +146,10 @@ export type LaunchOptions = ClientOptions & ServerOptions & Readonly<{
     replace?: boolean
     option?: readonly string[]
 }>
+
+/** Writes an icon to a file and says where, since a PNG does not belong on a terminal. */
+export async function writeIcon(icon: Blob, output: string) {
+    const path = resolve(output)
+    await writeFile(path, new Uint8Array(await icon.arrayBuffer()))
+    return { path, bytes: icon.size }
+}

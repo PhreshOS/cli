@@ -3,7 +3,7 @@ import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
 import { connected, type ConnectSystem } from "./system-connection.ts"
 import { executeDescription } from "./execution.ts"
-import { json } from "./input.ts"
+import { json, writeIcon } from "./input.ts"
 import { option, withJson } from "./options.ts"
 import { dataOutput } from "./schemas.ts"
 
@@ -22,6 +22,18 @@ export default function systemAccessCommands(root: Command, connect: ConnectSyst
         output: dataOutput(value.any("the System's name, version, and release"), "What this System is", { format: "value" }),
         examples: ["phresh system about --json"]
     }, () => connected(connect, system => system.execute({ $domain: "system", $operation: "about" })))
+
+    defineCommand<SystemIconOptions>(system, {
+        name: "icon",
+        description: "Write the System's icon to a PNG file.",
+        requiresSystem: true,
+        options: withJson(
+            option("--size <size>", "rendered size", { choices: ["small", "medium", "large"] }),
+            option("--output <file>", "PNG file to write", { mandatory: true })
+        ),
+        output: dataOutput(value.any("written file"), "Where the icon was written", { format: "value" }),
+        examples: ["phresh system icon --size large --output phreshos.png"]
+    }, ({ options }) => connected(connect, async system => writeIcon(await system.icon(options.size), options.output)))
 
     defineCommand<SystemOpenOptions>(system, {
         name: "open",
@@ -78,3 +90,5 @@ interface SystemOpenOptions {
     readonly uri: string
     readonly json?: boolean
 }
+
+type SystemIconOptions = Readonly<{ json?: boolean, size?: "small" | "medium" | "large", output: string }>

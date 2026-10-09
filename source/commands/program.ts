@@ -12,8 +12,8 @@ import {
     programOutput,
     programPresentation
 } from "./schemas.ts"
-import { connected, type ConnectSystem } from "./system-connection.ts"
-import { bounded, integer, json, launch, page, type CommonOptions, type LaunchOptions } from "./input.ts"
+import { connected, requireProgram, type ConnectSystem } from "./system-connection.ts"
+import { bounded, integer, json, launch, page, payload, writeIcon, type CommonOptions, type LaunchOptions } from "./input.ts"
 import { executeDescription } from "./execution.ts"
 
 export default function programCommands(root: Command, connect: ConnectSystem) {
@@ -306,6 +306,95 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         })
     }))
 
+    const store = defineCommand(programs, {
+        name: "store",
+        description: "read and change one Program's key-value store"
+    })
+
+    defineCommand<ProgramKeyOptions>(store, {
+        name: "get",
+        description: executeDescription("program", "storeGet"),
+        requiresSystem: true,
+        options: withJson(option("--program <identity>", "Program identity", { mandatory: true }), option("--key <key>", "store key", { mandatory: true })),
+        output: dataOutput(value.any("stored JSON value, or null"), "The stored value", { format: "value" }),
+        examples: ["phresh program store get --program notes --key tab"]
+    }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "storeGet", identity: options.program, key: options.key })))
+
+    defineCommand<ProgramKeyOptions & Readonly<{ value: string, ttl?: number }>>(store, {
+        name: "set",
+        description: executeDescription("program", "storeSet"),
+        requiresSystem: true,
+        options: withJson(
+            option("--program <identity>", "Program identity", { mandatory: true }),
+            option("--key <key>", "store key", { mandatory: true }),
+            option("--value <json>", "JSON value", { mandatory: true }),
+            option("--ttl <milliseconds>", "time until the key expires", { parse: value => integer(value) })
+        ),
+        output: dataOutput(value.boolean("whether the value changed"), "Whether the value changed", { format: "value" }),
+        examples: ["phresh program store set --program notes --key tab --value '\"colors\"'"]
+    }, ({ options }) => connected(connect, system => system.execute({
+        $domain: "program", $operation: "storeSet", identity: options.program, key: options.key, value: payload(options.value) as never,
+        ...(options.ttl === undefined ? {} : { ttl: bounded(options.ttl, "--ttl", 1) })
+    })))
+
+    defineCommand<ProgramKeyOptions>(store, {
+        name: "delete",
+        description: executeDescription("program", "storeDelete"),
+        requiresSystem: true,
+        options: withJson(option("--program <identity>", "Program identity", { mandatory: true }), option("--key <key>", "store key", { mandatory: true })),
+        output: dataOutput(value.boolean("whether the key existed"), "Deletion result", { format: "value" }),
+        examples: ["phresh program store delete --program notes --key tab"]
+    }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "storeDelete", identity: options.program, key: options.key })))
+
+    defineCommand<ProgramLogsOptions>(programs, {
+        name: "query",
+        description: executeDescription("program", "query"),
+        requiresSystem: true,
+        options: withJson(
+            option("--program <identity>", "Program identity", { mandatory: true }),
+            option("--statement <sql>", "SQL statement", { mandatory: true }),
+            option("--values <json>", "bound statement values encoded as a JSON array")
+        ),
+        output: dataOutput(value.array(value.any("row"), "rows"), "Rows the statement returned", { format: "value" }),
+        examples: ["phresh program query --program notes --statement 'select * from notes limit 10' --json"]
+    }, ({ options }) => connected(connect, system => {
+        const parsed = options.values === undefined ? undefined : json(options.values, "--values")
+        if (parsed !== undefined && !Array.isArray(parsed)) throw new Error("--values must be a JSON array")
+        return system.execute({ $domain: "program", $operation: "query", identity: options.program, statement: options.statement, ...(parsed === undefined ? {} : { values: parsed }) })
+    }))
+
+    defineCommand<ProgramIconOptions>(programs, {
+        name: "icon",
+        description: "Write one Program's icon to a PNG file.",
+        requiresSystem: true,
+        options: withJson(
+            option("--program <identity>", "Program identity", { mandatory: true }),
+            option("--size <size>", "rendered size", { choices: ["small", "medium", "large"] }),
+            option("--output <file>", "PNG file to write", { mandatory: true })
+        ),
+        output: dataOutput(value.any("written file"), "Where the icon was written", { format: "value" }),
+        examples: ["phresh program icon --program notes --size large --output notes.png"]
+    }, ({ options }) => connected(connect, async system => writeIcon(await (await requireProgram(system, options.program)).icon(options.size), options.output)))
+
+    defineCommand<ProgramOptions>(programs, {
+        name: "exitProcesses",
+        aliases: ["exit-processes"],
+        description: executeDescription("program", "exitProcesses"),
+        requiresSystem: true,
+        options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
+        output: dataOutput(value.array(value.string("Process identity"), "ended Processes"), "The Processes that ended", { format: "value" }),
+        examples: ["phresh program exit-processes --program notes"]
+    }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "exitProcesses", identity: options.program })))
+
+    defineCommand<ProgramOptions>(programs, {
+        name: "forget",
+        description: executeDescription("program", "forget"),
+        requiresSystem: true,
+        options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
+        output: dataOutput(value.nullable(value.any("nothing")), "The Program is forgotten", { format: "value" }),
+        examples: ["phresh program forget --program notes"]
+    }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "forget", identity: options.program })))
+
     defineCommand<ProgramWaitOptions>(programs, {
         name: "wait",
         description: executeDescription("program", "wait"),
@@ -334,6 +423,8 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
 }
 
 type ProgramOptions = CommonOptions & Readonly<{ program: string }>
+type ProgramKeyOptions = ProgramOptions & Readonly<{ key: string }>
+type ProgramIconOptions = ProgramOptions & Readonly<{ size?: "small" | "medium" | "large", output: string }>
 type ProgramStartupOptions = CommonOptions & LaunchOptions & Readonly<{ program: string }>
 type ProgramPermissionOptions = ProgramOptions & Readonly<{ permission: string }>
 type ProgramPermissionValueOptions = ProgramPermissionOptions & Readonly<{ value?: string }>
