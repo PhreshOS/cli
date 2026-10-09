@@ -189,13 +189,13 @@ test("Connection and Session commands delegate exclusively to Execute", async fu
     const requests = []
     const closed = []
     const responses = {
-        "connection.list": [{ identity: "browser-1", connected: true, session: null }],
-        "connection.find": { identity: "browser-1", connected: true, session: null },
-        "connection.session": { identity: "session-1", valid: true },
-        "connection.signIn": { identity: "session-1", valid: true },
-        "session.list": [{ identity: "session-1", valid: true }],
-        "session.find": { identity: "session-1", valid: true },
-        "session.connections": [{ identity: "browser-1", connected: true, session: "session-1" }],
+        "connection.list": [{ identity: "browser-1", connected: true, session: null, connectedAt: "2026-01-01T00:00:00.000Z" }],
+        "connection.find": { identity: "browser-1", connected: true, session: null, connectedAt: "2026-01-01T00:00:00.000Z" },
+        "connection.session": { identity: "session-1", valid: true, createdAt: "2026-01-01T00:00:00.000Z", lastActiveAt: null },
+        "connection.signIn": { identity: "session-1", valid: true, createdAt: "2026-01-01T00:00:00.000Z", lastActiveAt: null },
+        "session.list": [{ identity: "session-1", valid: true, createdAt: "2026-01-01T00:00:00.000Z", lastActiveAt: null }],
+        "session.find": { identity: "session-1", valid: true, createdAt: "2026-01-01T00:00:00.000Z", lastActiveAt: null },
+        "session.connections": [{ identity: "browser-1", connected: true, session: "session-1", connectedAt: "2026-01-01T00:00:00.000Z" }],
         "session.signOut": null,
         "connection.wait": { scope: "connection", connection: "browser-1", event: "sessionChange", payload: "session-1" },
         "session.wait": { scope: "session", session: "session-1", event: "end", payload: { reason: "signedOut" } }
