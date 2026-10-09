@@ -1,6 +1,6 @@
 import type { Command } from "commander"
 import type { SystemStatus } from "./lifecycle.ts"
-import SystemLifecycle from "./lifecycle.ts"
+import SystemLifecycle, { loopback } from "./lifecycle.ts"
 import prompts, { ReportedFailure } from "../prompts.ts"
 import { accent, caution, dim, negative, positive } from "../style.ts"
 import { defineCommand } from "../contract/command.ts"
@@ -106,7 +106,7 @@ function action(system: Command, name: string, description: string, current: () 
 
             const status = await interaction.progress(`${title(name)}ing PhreshOS`, `PhreshOS ${past(name)}`, () => work(lifecycle))
 
-            if (name === "start") interaction.detail("desktop", accent(status.desktop))
+            if (name === "start") { interaction.detail("desktop", accent(status.desktop)); network(interaction, status) }
 
             interaction.finish(`System ${past(name)}`)
         })
@@ -125,6 +125,8 @@ function report(interaction: ReturnType<typeof prompts>, status: SystemStatus) {
     interaction.detail("version", accent(status.installed?.version ?? "unknown"))
 
     interaction.detail("desktop", accent(status.desktop))
+
+    network(interaction, status)
 
     interaction.detail("service", service(status))
 
@@ -173,4 +175,14 @@ function past(value: string) {
     if (value === "disable") return "disabled"
 
     return "started"
+}
+
+/** Where else the Desktop can be reached, when the System listens beyond this machine. */
+function network(interaction: ReturnType<typeof prompts>, status: SystemStatus) {
+
+    if (loopback(status.listening)) return
+
+    const everywhere = status.listening === "0.0.0.0" || status.listening === "::"
+
+    interaction.detail("listening", accent(everywhere ? `${status.listening}, every network interface` : status.listening))
 }

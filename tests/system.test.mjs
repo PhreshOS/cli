@@ -80,7 +80,7 @@ test("refuses release bytes that do not match the declared filename and digest",
 
 test("keeps installation files separate from persistent System state", function () {
 
-    const paths = systemPaths("darwin", "/Users/person", { PHRESHOS_HOME: "/temporary", PHRESHOS_PORT: "4400-4499" })
+    const paths = systemPaths("darwin", "/Users/person", { PHRESHOS_HOME: "/temporary", PHRESHOS_PORT: "4400-4499", PHRESHOS_HOST: "0.0.0.0" })
 
     const storage = normalize("/temporary")
 
@@ -97,6 +97,10 @@ test("keeps installation files separate from persistent System state", function 
     assert.equal(paths.portRequest, join(paths.root, "next-port"))
 
     assert.equal(paths.transientPorts, "4400-4499")
+
+    assert.equal(paths.hostRequest, join(paths.root, "next-host"))
+
+    assert.equal(paths.transientHost, "0.0.0.0")
 })
 
 test("passes an explicit production port selection through the native service boundary", async function () {
@@ -119,7 +123,11 @@ test("passes an explicit production port selection through the native service bo
 
         portRequest: join(temporary, "system", "next-port"),
 
+        hostRequest: join(temporary, "system", "next-host"),
+
         transientPorts: "4400-4499",
+
+        transientHost: "0.0.0.0",
 
         log: join(temporary, "storage", "service.log")
     }
@@ -127,6 +135,8 @@ test("passes an explicit production port selection through the native service bo
     let running = false
 
     let requested
+
+    let registered
 
     const lifecycle = new SystemLifecycle({
 
@@ -143,7 +153,9 @@ test("passes an explicit production port selection through the native service bo
 
             async inspect() { return { registered: true, automaticStartup: true, enabled: true, running } },
 
-            async start() { requested = await readFile(paths.portRequest, "utf8"); running = true }
+            async register(definition) { registered = definition },
+
+            async start() { requested = [await readFile(paths.portRequest, "utf8"), await readFile(paths.hostRequest, "utf8")]; running = true }
         },
 
         async ready() { return true },
@@ -155,7 +167,9 @@ test("passes an explicit production port selection through the native service bo
 
         await lifecycle.start()
 
-        assert.equal(requested, "4400-4499")
+        // Both reach the service as one-time requests, and a start registers the definition that names them.
+        assert.deepEqual(requested, ["4400-4499", "0.0.0.0"])
+        assert.deepEqual(registered.arguments.slice(-2), ["--host-request", paths.hostRequest])
     }
 
     finally { await rm(temporary, { recursive: true, force: true }) }
@@ -302,6 +316,8 @@ test("stages, validates, activates, and reads one production distribution", asyn
 
         portRequest: join(temporary, "system", "next-port"),
 
+        hostRequest: join(temporary, "system", "next-host"),
+
         log: join(temporary, "storage", "service.log")
     }
 
@@ -372,6 +388,8 @@ test("serializes operations that can change installation or service state", asyn
 
         portRequest: join(temporary, "system", "next-port"),
 
+        hostRequest: join(temporary, "system", "next-host"),
+
         log: join(temporary, "storage", "service.log")
     }
 
@@ -423,6 +441,8 @@ test("rolls installation back when the native service cannot start", async funct
         homeRequest: "/installation/next-home",
 
         portRequest: "/installation/next-port",
+
+        hostRequest: "/installation/next-host",
 
         log: "/state/service.log"
     }
@@ -499,7 +519,9 @@ test("rolls installation back when the native service cannot start", async funct
         "--home-request",
         "/installation/next-home",
         "--port-request",
-        "/installation/next-port"
+        "/installation/next-port",
+        "--host-request",
+        "/installation/next-host"
     ])
 
     assert.deepEqual(events.slice(-3), ["stop", "rollback", "unregister"])
@@ -537,6 +559,8 @@ test("restores a background service without inventing automatic-startup control"
             homeRequest: "/installation/next-home",
 
             portRequest: "/installation/next-port",
+
+            hostRequest: "/installation/next-host",
 
             log: "/state/service.log"
         },
@@ -625,6 +649,8 @@ test("replaces a running System only after its gateway closes and provisions Spr
             homeRequest: "/installation/next-home",
 
             portRequest: "/installation/next-port",
+
+            hostRequest: "/installation/next-host",
 
             log: "/state/service.log"
         },

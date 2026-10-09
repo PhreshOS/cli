@@ -31,7 +31,7 @@ test.each([false, true])("System install and uninstall pass the purge decision a
     let current
     const installed = { version: "0.1.0", digest: "a".repeat(64), directory: "/installation/releases/0.1.0", installedAt: "now" }
     const installation = {
-        paths: { root: join(directory, "installation"), current: join(directory, "current"), storage: join(directory, "state"), gateway: join(directory, "gateway"), log: join(directory, "service.log"), homeRequest: join(directory, "home-request"), portRequest: join(directory, "port-request") },
+        paths: { root: join(directory, "installation"), current: join(directory, "current"), storage: join(directory, "state"), gateway: join(directory, "gateway"), log: join(directory, "service.log"), homeRequest: join(directory, "home-request"), portRequest: join(directory, "port-request"), hostRequest: join(directory, "host-request") },
         async exclusive(work) { return work() },
         async current() { return current },
         async prepare(release) { events.push("prepare"); return { release, directory: "/staging" } },

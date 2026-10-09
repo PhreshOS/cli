@@ -180,6 +180,7 @@ function state(overrides = {}) {
     return {
 
         desktop: "http://localhost:4300",
+        listening: "localhost",
 
         registered: false,
 

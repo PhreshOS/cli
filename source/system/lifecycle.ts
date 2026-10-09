@@ -18,6 +18,9 @@ export interface SystemStatus {
 
     desktop: string
 
+    /** The interface the System listens on, as it records it: `localhost`, or one that other devices may reach. */
+    listening: string
+
     registered: boolean
 
     automaticStartup: boolean
@@ -178,6 +181,10 @@ export default class SystemLifecycle {
 
         await this.requireInstalledService()
 
+        // The service starts as this CLI defines it, so a System installed by an older CLI still
+        // receives every request this one hands over.
+        await this.dependencies.service.register(definition(this.dependencies.installation, await nodeExecutable()))
+
         await this.launchService()
 
         await this.waitUntilReady()
@@ -235,13 +242,15 @@ export default class SystemLifecycle {
 
         const ready = state.running && await this.dependencies.ready(installation.paths.gateway)
 
-        const desktop = await desktopOrigin(installation.paths.storage)
+        const [desktop, listening] = await Promise.all([desktopOrigin(installation.paths.storage), listeningInterface(installation.paths.storage)])
 
         return {
 
             ...(installed ? { installed } : {}),
 
             desktop,
+
+            listening,
 
             ...state,
 
@@ -357,11 +366,14 @@ export default class SystemLifecycle {
     private async launchService() {
 
         const { installation, service } = this.dependencies
-        const { homeRequest, portRequest, transientHome, transientPorts } = installation.paths
+        const { homeRequest, portRequest, hostRequest, transientHome, transientPorts, transientHost } = installation.paths
 
-        await Promise.all([rm(homeRequest, { force: true }), rm(portRequest, { force: true })])
+        const forget = () => Promise.all([homeRequest, portRequest, hostRequest].map(path => rm(path, { force: true })))
 
-        if (transientHome || transientPorts !== undefined) {
+        await forget()
+
+        // What this shell set reaches the service only through these requests, read once at its start.
+        if (transientHome || transientPorts !== undefined || transientHost !== undefined) {
 
             await mkdir(dirname(homeRequest), { recursive: true })
 
@@ -369,14 +381,16 @@ export default class SystemLifecycle {
 
                 ...transientHome ? [writeFile(homeRequest, transientHome, { mode: 0o600 })] : [],
 
-                ...transientPorts === undefined ? [] : [writeFile(portRequest, transientPorts, { mode: 0o600 })]
+                ...transientPorts === undefined ? [] : [writeFile(portRequest, transientPorts, { mode: 0o600 })],
+
+                ...transientHost === undefined ? [] : [writeFile(hostRequest, transientHost, { mode: 0o600 })]
             ])
         }
 
         try { await service.start() }
         catch (error) {
 
-            await Promise.all([rm(homeRequest, { force: true }), rm(portRequest, { force: true })])
+            await forget()
             throw error
         }
     }
@@ -419,13 +433,33 @@ function definition(installation: SystemInstallation, executable: string): Syste
             "--home-request",
             installation.paths.homeRequest,
             "--port-request",
-            installation.paths.portRequest
+            installation.paths.portRequest,
+            "--host-request",
+            installation.paths.hostRequest
         ],
 
         directory: installation.paths.current,
 
         output: installation.paths.log
     }
+}
+
+/** The interface the System listens on, as it records it in its home; `localhost` until it has. */
+export async function listeningInterface(storage: string) {
+
+    try { return (await readFile(join(storage, "listening"), "utf8")).trim() || "localhost" }
+    catch (error) {
+
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return "localhost"
+
+        throw error
+    }
+}
+
+/** Whether only this machine can reach an interface. */
+export function loopback(host: string) {
+
+    return host === "localhost" || host === "::1" || host.startsWith("127.")
 }
 
 /** The address the System's Desktop is served on, as the System records it in its home. */
