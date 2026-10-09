@@ -19,7 +19,7 @@ function fakeSystem(calls) {
         },
         program: { async list(options) { calls.push(options); return [program({}), program(null), program(null)] } },
         process: { async list() { return [process(true), process(false)] } },
-        appearance: { async snapshot() { return { wallpapers: { light: { signIn: "sign-in-light.webp", desktop: "meadow.jpg" }, dark: { signIn: "sign-in-dark.webp", desktop: "desktop-dark.webp" } }, colors: { light: colors, dark: colors } } } },
+        appearance: { async snapshot() { return { wallpapers: { light: { signIn: "SIGN_IN_LIGHT_WALLPAPER", desktop: "meadow.jpg" }, dark: { signIn: "SIGN_IN_DARK_WALLPAPER", desktop: "DESKTOP_DARK_WALLPAPER" } }, colors: { light: colors, dark: colors } } } },
         async disconnect() { calls.push("disconnect") }
     }
 }
@@ -47,7 +47,7 @@ test("fetch shows the logo beside the report, and colors only where the terminal
     assert.match(plain, /Uptime {5}less than a minute/)
     const later = Date.parse("2026-10-02T11:05:00.000Z")
     assert.match(renderFetch(fetched, false, later), /Uptime {5}2 days, 3 hours$/m)
-    assert.match(plain, /Wallpaper  meadow\.jpg · desktop-dark\.webp/)
+    assert.match(plain, /Wallpaper  meadow\.jpg · DESKTOP_DARK_WALLPAPER/)
 
     const painted = renderFetch(fetched, true)
     // Nine colors in each theme; the one that is not hex is left out.
