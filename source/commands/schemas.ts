@@ -49,15 +49,17 @@ export const connectionOutput = value.object({
     identity: value.string("stable Connection identity"),
     connected: value.boolean("whether the browser Connection is live"),
     session: value.nullable(value.string("attached Session identity")),
-    connectedAt: value.string("ISO time the browser connected")
-}, ["identity", "connected", "session", "connectedAt"], "Connection state")
+    connectedAt: value.string("ISO time the browser connected"),
+    device: value.nullable(value.string("browser and system, such as Chrome on macOS"))
+}, ["identity", "connected", "session", "connectedAt", "device"], "Connection state")
 
 export const sessionOutput = value.object({
     identity: value.string("stable Session identity"),
     valid: value.boolean("whether the Session can authorize Connections"),
     createdAt: value.string("ISO time the owner signed in"),
+    device: value.nullable(value.string("browser and system it signed in from")),
     lastActiveAt: value.nullable(value.string("ISO time it was last used; now while a Connection uses it"))
-}, ["identity", "valid", "createdAt", "lastActiveAt"], "Session state")
+}, ["identity", "valid", "createdAt", "device", "lastActiveAt"], "Session state")
 
 export const endpointOutput = value.object({
     process: value.string("owning Process identity"),
@@ -144,19 +146,22 @@ export const connectionPresentation: OutputPresentation = fields(
     ["Identity", "identity"],
     ["Connected", "connected"],
     ["Session", "session"],
-    ["Connected at", "connectedAt"]
+    ["Connected at", "connectedAt"],
+    ["Device", "device"]
 )
 
 export const connectionListPresentation: OutputPresentation = list("data", "Connection", "Connections", "No matching Connections", [
     { label: "Identity", path: "identity" },
     { label: "Connected", path: "connected" },
     { label: "Session", path: "session" },
+    { label: "Device", path: "device" },
     { label: "Connected at", path: "connectedAt" }
 ])
 
 export const sessionPresentation: OutputPresentation = fields(
     ["Identity", "identity"],
     ["Valid", "valid"],
+    ["Device", "device"],
     ["Signed in", "createdAt"],
     ["Last active", "lastActiveAt"]
 )
@@ -164,6 +169,7 @@ export const sessionPresentation: OutputPresentation = fields(
 export const sessionListPresentation: OutputPresentation = list("data", "Session", "Sessions", "No matching Sessions", [
     { label: "Identity", path: "identity" },
     { label: "Valid", path: "valid" },
+    { label: "Device", path: "device" },
     { label: "Signed in", path: "createdAt" },
     { label: "Last active", path: "lastActiveAt" }
 ])
