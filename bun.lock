@@ -6,8 +6,8 @@
       "name": "@phreshos/cli",
       "dependencies": {
         "@clack/prompts": "^1.7.0",
-        "@phreshos/core": "^0.2.0",
-        "@phreshos/node": "^0.2.0",
+        "@phreshos/core": "^0.2.1",
+        "@phreshos/node": "^0.2.1",
         "adm-zip": "^0.6.0",
         "commander": "^15.0.0",
         "picocolors": "^1.1.1",
@@ -32,9 +32,9 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.146.0", "", {}, "sha512-XC0QsnnhVe7sLIWmYmdPw7x5P0h4W8vUU3Nv1ySgWXtvCz8NizoAEpGXA0sOYoJQV2Rl13LgURAHQ5cI5ILCSA=="],
 
-    "@phreshos/core": ["@phreshos/core@0.2.0", "", { "dependencies": { "zod": "^4.6.5" } }, "sha512-ASLmpT+gr4p6h101qGE2G8MK8RvN5GsFXGSeMGbuCxjX6h7CHswpUBatasbJhLGhW9GRJrzNUY0C+eaAdr97eA=="],
+    "@phreshos/core": ["@phreshos/core@0.2.1", "", { "dependencies": { "zod": "^4.6.5" } }, "sha512-VutkXifxCl96OFZAF9KyW87JdNPoF0R4SLnxGUktG2Dv8VceaznDPe5L13kgVzUNKO5mm+niR1obJGT6nI6o2A=="],
 
-    "@phreshos/node": ["@phreshos/node@0.2.0", "", { "dependencies": { "@the-link/ipc": "^0.3.0", "@the-link/messagepack": "^0.2.0", "adm-zip": "^0.6.0", "jiti": "^2.7.0" }, "peerDependencies": { "@phreshos/core": "^0.2.0" } }, "sha512-Rxgo16lXYvbKGGsPwZdZ7BNkter+nMNngEF0aE6295SYAOaQfi8vtLYs9Pdcir/4dLQeBG9Z+WJM06R5NxsOMA=="],
+    "@phreshos/node": ["@phreshos/node@0.2.1", "", { "dependencies": { "@the-link/ipc": "^0.3.0", "@the-link/messagepack": "^0.2.0", "adm-zip": "^0.6.0", "jiti": "^2.7.0" }, "peerDependencies": { "@phreshos/core": "^0.2.1" } }, "sha512-gtLiaNSZsasaCXXPi+3amXyNv2J8WgCz1cSUbXmllVrSXNYfIXj/HzdFpsBUnGSyghABqQ/B5zK+eD6KM6VV6A=="],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.5", "", { "os": "android", "cpu": "arm" }, "sha512-DLe/i+l8ynIBY7XEQ191TeZvCoowIGa18R+dIV30GW7DiOtp74i/xX8hs8GUjW5ARV7VZuie3d6AumSmCwbeRA=="],
 
