@@ -1,10 +1,13 @@
 import { githubApiHeaders } from "../github.ts"
 import type { DownloadedSystem, SystemRelease } from "./types.ts"
 import { createHash } from "node:crypto"
+import { createRequire } from "node:module"
 
 const releases = "https://api.github.com/repos/PhreshOS/system/releases?per_page=100"
 
-const compatible = { major: 0, minor: 1 }
+// A CLI installs the System line of its own version, CLI 0.2.x the System 0.2.x, read from the
+// CLI's own manifest so a release that moves the line moves both at once.
+const compatible = parseVersion(`v${(createRequire(import.meta.url)("../../package.json") as Readonly<{ version: string }>).version}`)!
 
 /** Resolve the newest stable release in the System line supported by this CLI. */
 export async function resolveSystemRelease(fetcher: typeof fetch = fetch) {

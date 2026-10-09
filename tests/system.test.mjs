@@ -19,6 +19,7 @@ import { minimumSystemNodeVersion, supportsSystemNode } from "../dist/system/nod
 import { gatewayPath } from "../dist/gateway.js"
 import { waitForGateway, waitForGatewayClose } from "../dist/system/gateway-readiness.js"
 import npmInvocation from "../dist/system/npm.js"
+import manifest from "../package.json" with { type: "json" }
 
 test("requires the Node release that provides the supported built-in SQLite API", function () {
 
@@ -33,22 +34,28 @@ test("requires the Node release that provides the supported built-in SQLite API"
     assert.equal(supportsSystemNode("24.15.0-rc.1"), false)
 })
 
-test("selects the newest complete release from the compatible stable line", function () {
+test("selects the newest complete release from the CLI's own System line", function () {
+
+    // The line of this CLI's version: CLI 0.2.x installs System 0.2.x.
+    const [major, minor] = manifest.version.split(".").map(Number)
+    const line = `${major}.${minor}`
 
     const selected = selectSystemRelease([
 
-        release("v0.1.1"),
+        release(`v${line}.1`),
 
-        release("v0.2.0"),
+        release(`v${major}.${minor + 1}.0`),
 
-        release("v0.1.4", { prerelease: true }),
+        ...minor > 0 ? [release(`v${major}.${minor - 1}.9`)] : [],
 
-        release("v0.1.3"),
+        release(`v${line}.4`, { prerelease: true }),
 
-        release("v0.1.5", { assets: [] })
+        release(`v${line}.3`),
+
+        release(`v${line}.5`, { assets: [] })
     ])
 
-    assert.equal(selected.version, "0.1.3")
+    assert.equal(selected.version, `${line}.3`)
 })
 
 test("refuses release bytes that do not match the declared filename and digest", async function () {
