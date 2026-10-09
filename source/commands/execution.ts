@@ -31,6 +31,7 @@ export const executeCommandPaths = Object.freeze({
     "program.allowsPermission": ["program", "allowsPermission"],
     "program.allowPermission": ["program", "allowPermission"],
     "program.denyPermission": ["program", "denyPermission"],
+    "program.resetPermission": ["program", "resetPermission"],
     "program.logs": ["program", "logs"],
     "program.wait": ["program", "wait"],
     "process.list": ["process", "list"],

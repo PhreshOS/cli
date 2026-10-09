@@ -264,6 +264,24 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         permission: parsePermissionName(options.permission)
     })))
 
+    defineCommand<ProgramPermissionOptions>(programs, {
+        name: "resetPermission",
+        aliases: ["reset-permission"],
+        description: executeDescription("program", "resetPermission"),
+        requiresSystem: true,
+        options: withJson(
+            option("--program <identity>", "Program identity", { mandatory: true }),
+            option("--permission <name>", "permission name", { mandatory: true })
+        ),
+        output: dataOutput(value.any("effective permission"), "The effective permission", { format: "value" }),
+        examples: ["phresh program reset-permission --program terminal --permission network"]
+    }, ({ options }) => connected(connect, system => system.execute({
+        $domain: "program",
+        $operation: "resetPermission",
+        identity: options.program,
+        permission: parsePermissionName(options.permission)
+    })))
+
     defineCommand<ProgramLogsOptions>(programs, {
         name: "logs",
         description: executeDescription("program", "logs"),
