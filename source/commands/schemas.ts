@@ -41,9 +41,13 @@ export const processOutput = value.object({
     name: value.nullable(value.string("stable Program-local Process name")),
     program: value.string("owning Program identity"),
     startedAt: value.string("ISO start time"),
+    opened: value.nullable(value.object({
+        type: value.string("media type, such as image/png"),
+        uri: value.string("where it is")
+    }, ["type", "uri"], "what it was started to open through system.open()")),
     server: endpointState("Server Endpoint state"),
     client: endpointState("Client Endpoint state")
-}, ["identity", "name", "program", "startedAt", "server", "client"], "Process state")
+}, ["identity", "name", "program", "startedAt", "opened", "server", "client"], "Process state")
 
 export const connectionOutput = value.object({
     identity: value.string("stable Connection identity"),
@@ -113,6 +117,7 @@ export const processPresentation: OutputPresentation = fields(
     ["Name", "name"],
     ["Program", "program"],
     ["Started", "startedAt"],
+    ["Opened", "opened.uri"],
     ["Server declared", "server.declared"],
     ["Server running", "server.running"],
     ["Server service", "server.service"],
