@@ -21,7 +21,11 @@ import { executeDescription } from "./execution.ts"
 export default function sessionCommands(root: Command, connect: ConnectSystem) {
     const sessions = defineCommand(root, {
         name: "session",
-        description: "inspect and end authentication Sessions"
+        description: "the owner's sign-ins, and ending them",
+        guidance: [
+            "A Session is one sign-in; several browsers can share it. It stays valid while a browser uses it, and for a day after.",
+            "Signing out signs out every browser using that Session, possibly the owner's own: ask first."
+        ]
     })
 
     defineCommand<ListOptions>(sessions, {
@@ -34,7 +38,7 @@ export default function sessionCommands(root: Command, connect: ConnectSystem) {
             option("--offset <count>", "number of matching Sessions to skip", { parse: value => integer(value), default: 0 })
         ),
         output: dataOutput(pageOutput(sessionOutput, "matching Sessions"), "A bounded page of Sessions", sessionListPresentation),
-        examples: ["phresh session list", "phresh session list --json"]
+        examples: ["phresh session list   # every sign-in still valid", "phresh session list --json   # the same, as data"]
     }, ({ options }) => connected(connect, async system => {
         const values = await system.execute({ $domain: "session", $operation: "list" })
         return page(values, options.search, bounded(options.offset, "--offset", 0), bounded(options.limit, "--limit", 1, 100), value => value.identity)
@@ -46,7 +50,7 @@ export default function sessionCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--session <identity>", "Session identity", { mandatory: true })),
         output: dataOutput(sessionOutput, "The selected Session", sessionPresentation),
-        examples: ["phresh session inspect --session <identity>"]
+        examples: ["phresh session inspect --session <identity>   # one sign-in, by an identity from session list"]
     }, ({ options }) => connected(connect, async system => {
         const result = await system.execute({ $domain: "session", $operation: "find", identity: options.session })
         if (!result) throw new Error(`Unknown Session "${options.session}"`)
@@ -64,7 +68,7 @@ export default function sessionCommands(root: Command, connect: ConnectSystem) {
             option("--offset <count>", "number of matching Connections to skip", { parse: value => integer(value), default: 0 })
         ),
         output: dataOutput(pageOutput(connectionOutput, "matching Connections"), "A bounded page of Connections", connectionListPresentation),
-        examples: ["phresh session connections --session <identity>"]
+        examples: ["phresh session connections --session <identity>   # the browsers using it"]
     }, ({ options }) => connected(connect, async system => {
         const values = await system.execute({ $domain: "session", $operation: "connections", identity: options.session })
         return page(values, options.search, bounded(options.offset, "--offset", 0), bounded(options.limit, "--limit", 1, 100), value => value.identity)
@@ -77,7 +81,7 @@ export default function sessionCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--session <identity>", "Session identity", { mandatory: true })),
         output: dataOutput(value.nullable(value.any("ended Session")), "The Session has ended", valuePresentation),
-        examples: ["phresh session sign-out --session <identity>"]
+        examples: ["phresh session sign-out --session <identity>   # signs out every browser using it; ask the owner first"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "session", $operation: "signOut", identity: options.session
     })))
@@ -94,7 +98,7 @@ export default function sessionCommands(root: Command, connect: ConnectSystem) {
             timeoutOption
         ),
         output: dataOutput(eventOutput("The observed Session event"), "One Session event", eventPresentation),
-        examples: ["phresh session wait --event sessionCreate", "phresh session wait --event end --session <identity>"]
+        examples: ["phresh session wait --event sessionCreate   # waits until someone signs in", "phresh session wait --event end --session <identity>   # waits until that sign-in ends"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "session", $operation: "wait", event: options.event,
         ...(options.session ? { identity: options.session } : {}),

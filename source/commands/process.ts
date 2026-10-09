@@ -20,8 +20,13 @@ import { executeDescription } from "./execution.ts"
 export default function processCommands(root: Command, connect: ConnectSystem) {
     const processes = defineCommand(root, {
         name: "process",
-        description: "discover and control live Program executions",
-        guidance: ["A Process is one execution of a Program and owns its Server and Client Endpoints."]
+        description: "start, find, and end the runs of Programs",
+        guidance: [
+            "A Process is one run of a Program. A run has up to two sides: its Server, on this machine, and its Client, its Window on the Desktop.",
+            "To open a Program, create a Process with only --program: it starts as its author declared, the way the owner opens it from the Desktop. Add other options only when asked for something different.",
+            "A run has an identity, and may have a name unique within its Program; commands accept either, a name together with --program.",
+            "Ending a run closes its Window and stops its Server: ask the owner before ending one they use."
+        ]
     })
 
     defineCommand<ProcessListOptions>(processes, {
@@ -35,7 +40,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
             option("--offset <count>", "number of matching Processes to skip", { parse: value => integer(value), default: 0 })
         ),
         output: dataOutput(pageOutput(processOutput, "matching Processes"), "A bounded page of Processes", processListPresentation),
-        examples: ["phresh process list", "phresh process list --program terminal --json"]
+        examples: ["phresh process list   # every run you can see", "phresh process list --program terminal --json   # only Terminal's runs, as data"]
     }, async ({ options }) => connected(connect, async system => {
         const processes = await system.execute({
             $domain: "process",
@@ -58,7 +63,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(...processOptions),
         output: dataOutput(processOutput, "The selected Process", processPresentation),
-        examples: ["phresh process inspect --process main --program terminal"]
+        examples: ["phresh process inspect --process main --program terminal   # the run of Terminal named main"]
     }, async ({ options }) => connected(connect, async system => {
         const process = await system.execute({
             $domain: "process",
@@ -79,7 +84,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
             ...launchOptions
         ),
         output: dataOutput(processOutput, "The created Process", processActionPresentation),
-        examples: ["phresh process create --program terminal --server --client", "phresh process create --program terminal --name main --json"]
+        examples: ["phresh process create --program terminal   # starts Terminal as it declares: the usual way to open a Program", "phresh process create --program terminal --name main --json   # the same, naming the run main to find it again"]
     }, async ({ options }) => connected(connect, async system => {
         return system.execute({
             $domain: "process",
@@ -99,7 +104,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
             ...namedLaunchOptions
         ),
         output: dataOutput(processOutput, "The existing or created Process", processActionPresentation),
-        examples: ["phresh process find-or-create --program terminal --name main --json"]
+        examples: ["phresh process find-or-create --program terminal --name main --json   # the run named main, started first if it is not running"]
     }, async ({ options }) => connected(connect, async system => {
         return system.execute({
             $domain: "process",
@@ -115,7 +120,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(...processOptions),
         output: dataOutput(processOutput, "The Process state immediately before exit", processIdentityPresentation),
-        examples: ["phresh process exit --process main --program terminal"]
+        examples: ["phresh process exit --process main --program terminal   # ends that run and closes its Window; ask the owner first"]
     }, async ({ options }) => connected(connect, async system => {
         return system.execute({
             $domain: "process",
@@ -140,7 +145,7 @@ export default function processCommands(root: Command, connect: ConnectSystem) {
             "One Process event",
             eventPresentation
         ),
-        examples: ["phresh process wait --event create", "phresh process wait --event exit --process main --program terminal --json"]
+        examples: ["phresh process wait --event create   # waits until any run starts", "phresh process wait --event exit --process main --program terminal --json   # waits until that run ends, and says how"]
     }, async ({ options }) => connected(connect, system => system.execute({
         $domain: "process",
         $operation: "wait",

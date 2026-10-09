@@ -43,7 +43,7 @@ export default function operationCommands(root: Command, connect: ConnectSystem)
             items: "Operations",
             empty: "No matching operations"
         }),
-        examples: ["phresh operation list", "phresh operation list --domain endpoint --json"]
+        examples: ["phresh operation list   # every operation execute can run", "phresh operation list --domain endpoint --json   # only those about Endpoints"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "operation",
         $operation: "list",
@@ -59,7 +59,7 @@ export default function operationCommands(root: Command, connect: ConnectSystem)
             option("--operation <operation>", "operation name", { mandatory: true })
         ),
         output: dataOutput(description, "Execute operation contract", valuePresentation),
-        examples: ["phresh operation describe --domain endpoint --operation ask --json"]
+        examples: ["phresh operation describe --domain endpoint --operation ask --json   # what endpoint.ask takes and returns, as JSON Schema"]
     }, ({ options }) => connected(connect, async system => {
         const result = await system.execute({
             $domain: "operation",

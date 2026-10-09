@@ -26,7 +26,7 @@ export default function projectCommands(program: Command, coreRange: string) {
             "Creates a complete Server and Client project from the maintained Phresh Program template bundled with this CLI.",
             "In a terminal, omitted values are collected interactively. Automation supplies the directory and optional choices through named options."
         ],
-        examples: ["phresh create", "phresh create my-program --package-manager bun"],
+        examples: ["phresh create   # asks for what it needs, then makes a Program project in a new folder", "phresh create my-program --package-manager bun   # the same without questions: the folder and the package manager given"],
         output: textOutput("Created Program project and installation status")
     }, async ({ arguments: [directory], options }) => {
         await create({ directory, name: options.name, packageManager: options.packageManager, install: options.install })
@@ -54,7 +54,7 @@ export default function projectCommands(program: Command, coreRange: string) {
             "Reads identity, version, and description from package.json, then writes phresh.config.ts.",
             "A terminal asks only for values the project cannot provide. Without a terminal, declare at least one endpoint with options."
         ],
-        examples: ["phresh init --server --client", "phresh init --client --client-location dist/client"],
+        examples: ["phresh init --server --client   # an existing project that has both a Server and a Client", "phresh init --client --client-location dist/client   # an existing project with only a Client, built into dist/client"],
         output: textOutput("Initialized Program configuration")
     }, async ({ options }) => {
         await init({
@@ -81,7 +81,7 @@ export default function projectCommands(program: Command, coreRange: string) {
         name: "pack",
         description: "build and package this Program",
         guidance: ["Runs an optional buildCommand, then packages the production files declared for each endpoint."],
-        examples: ["phresh pack"],
+        examples: ["phresh pack   # builds this project and writes its release archive"],
         output: textOutput("Packaged Program release")
     }, async function () {
         await pack()
@@ -97,7 +97,7 @@ export default function projectCommands(program: Command, coreRange: string) {
             "A name installs its verified official production release. --run launches the installed Program now."
         ],
         requiresSystem: true,
-        examples: ["phresh install", "phresh install terminal --run"],
+        examples: ["phresh install   # builds and installs the Program in this folder", "phresh install terminal   # installs the official Terminal; add --run to also start it now"],
         output: textOutput("Installed Program and optional Process identity")
     }, async ({ arguments: [name], options }) => {
         await install({ name, run: options.run === true, purge: options.purge === true })
@@ -113,7 +113,7 @@ export default function projectCommands(program: Command, coreRange: string) {
             "Removes installed files while preserving Processes, data, and runtime Program state unless --purge is supplied."
         ],
         requiresSystem: true,
-        examples: ["phresh uninstall", "phresh uninstall terminal --purge"],
+        examples: ["phresh uninstall   # removes the Program of this folder; its data stays", "phresh uninstall terminal --purge   # removes Terminal and its data too; it cannot be undone"],
         output: textOutput("Uninstalled Program state")
     }, async ({ arguments: [name], options }) => {
         await uninstall({ name, purge: options.purge === true })
@@ -138,7 +138,10 @@ function attached(program: Command, name: string, description: string, guidance:
         allowUnknownOptions: true,
         requiresSystem: true,
         guidance,
-        examples: [`phresh ${name}`, `phresh ${name} --run-option-example=value`],
+        examples: [
+            `phresh ${name}   # runs this project${mode === "development" ? " in development" : "'s production build"} while the command runs; Ctrl+C stops it`,
+            `phresh ${name} --run-option-document=notes.md   # the same, started with the option document=notes.md`
+        ],
         output: textOutput("Attached Process lifecycle and output")
     }, async ({ arguments: [arguments_] }) => {
         await launch(mode, process.cwd(), runOptions(name, arguments_))

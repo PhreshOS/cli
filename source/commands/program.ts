@@ -19,8 +19,12 @@ import { executeDescription } from "./execution.ts"
 export default function programCommands(root: Command, connect: ConnectSystem) {
     const programs = defineCommand(root, {
         name: "program",
-        description: "discover PhreshOS Programs and their agent documentation",
-        guidance: ["A Program is the stable installed or retained definition that owns Processes."]
+        description: "the Programs in the System: what they are, their documentation, permissions, data, and startup",
+        guidance: [
+            "A Program is software in the System, installed or running from a project. Its runs are Processes (see phresh process).",
+            "Before using a Program, read its documentation for agents: phresh program agent --program <identity>.",
+            "Changing permissions, startup, pins, or data changes the owner's System: do it only when asked."
+        ]
     })
 
     defineCommand<ProgramListOptions>(programs, {
@@ -35,7 +39,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--offset <count>", "number of matching Programs to skip", { parse: value => integer(value), default: 0 })
         ),
         output: dataOutput(pageOutput(programOutput, "matching Programs"), "A bounded page of Programs", programListPresentation),
-        examples: ["phresh program list", "phresh program list --installed-only --json"]
+        examples: ["phresh program list   # every Program you can see, installed or attached", "phresh program list --installed-only --json   # only installed ones, as data"]
     }, async ({ options }) => connected(connect, async system => {
         const programs = await system.execute({
             $domain: "program",
@@ -59,7 +63,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(programOutput, "The selected Program", programPresentation),
-        examples: ["phresh program inspect --program terminal"]
+        examples: ["phresh program inspect --program terminal   # what Terminal is: name, version, what it declares"]
     }, async ({ options }) => connected(connect, async system => {
         const program = await system.execute({ $domain: "program", $operation: "find", identity: options.program })
         if (!program) throw new Error(`Unknown Program "${options.program}"`)
@@ -78,7 +82,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             format: "document",
             content: "content"
         }),
-        examples: ["phresh program agent --program terminal --json"]
+        examples: ["phresh program agent --program terminal   # Terminal's documentation for agents: read it before using Terminal"]
     }, async ({ options }) => connected(connect, async system => {
         const result = await system.execute({ $domain: "program", $operation: "agent", identity: options.program })
         if (result.content === null) throw new Error(`Program "${result.program}" has no agent documentation`)
@@ -91,7 +95,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(value.any("Complete canonical Program definition"), "The Program definition", { format: "value" }),
-        examples: ["phresh program definition --program terminal --json"]
+        examples: ["phresh program definition --program terminal --json   # everything Terminal's author declared"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "definition",
@@ -105,7 +109,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(value.any("The launch started with the System, or null"), "The Program startup launch", { format: "value" }),
-        examples: ["phresh program get-startup --program terminal --json"]
+        examples: ["phresh program get-startup --program terminal   # what Terminal starts when the System starts, or null"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "getStartup",
@@ -122,7 +126,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             ...launchOptions
         ),
         output: dataOutput(value.any("The launch started with the System"), "The Program startup launch", { format: "value" }),
-        examples: ["phresh program set-startup --program terminal --json", "phresh program set-startup --program terminal --client --name main --json"]
+        examples: ["phresh program set-startup --program terminal   # start Terminal as it declares each time the System starts", "phresh program set-startup --program terminal --name main   # the same, naming that run main"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "setStartup",
@@ -137,7 +141,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(value.nullable(value.any("removed startup")), "Startup is removed", { format: "value" }),
-        examples: ["phresh program remove-startup --program terminal"]
+        examples: ["phresh program remove-startup --program terminal   # Terminal no longer starts with the System"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "removeStartup",
@@ -150,7 +154,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(value.boolean("whether the Program is pinned"), "The Program pinned state", { format: "value" }),
-        examples: ["phresh program pinned --program terminal"]
+        examples: ["phresh program pinned --program terminal   # whether Terminal is pinned to the Taskbar"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "pinned",
@@ -166,7 +170,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--unpin", "unpin rather than pin the Program")
         ),
         output: dataOutput(value.boolean("whether the Program is pinned"), "The Program pinned state", { format: "value" }),
-        examples: ["phresh program pin --program terminal", "phresh program pin --program terminal --unpin"]
+        examples: ["phresh program pin --program terminal   # pins Terminal to the Taskbar", "phresh program pin --program terminal --unpin   # unpins it"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "pin",
@@ -184,7 +188,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--permission <name>", "permission name", { mandatory: true })
         ),
         output: dataOutput(value.any("effective permission assignment"), "The effective permission", { format: "value" }),
-        examples: ["phresh program get-permission --program terminal --permission network --json"]
+        examples: ["phresh program get-permission --program terminal --permission network   # what Terminal may reach on the network"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "getPermission",
@@ -199,7 +203,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(value.any("effective permission assignments"), "The effective permissions", { format: "value" }),
-        examples: ["phresh program list-permissions --program terminal --json"]
+        examples: ["phresh program list-permissions --program terminal   # every permission Terminal has"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "listPermissions",
@@ -217,7 +221,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--value <json>", "requested permission value encoded as JSON")
         ),
         output: dataOutput(value.boolean("whether the requested access is allowed"), "The permission decision", { format: "value" }),
-        examples: ["phresh program allows-permission --program terminal --permission network --value '[\"https://example.com\"]'"]
+        examples: ["phresh program allows-permission --program terminal --permission network --value '[\"https://example.com\"]'   # whether Terminal may reach example.com"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "allowsPermission",
@@ -237,7 +241,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--value <json>", "complete allowed permission value encoded as JSON")
         ),
         output: dataOutput(value.any("stored permission assignment"), "The stored permission", { format: "value" }),
-        examples: ["phresh program allow-permission --program terminal --permission network --value '[\"https://example.com\"]'"]
+        examples: ["phresh program allow-permission --program terminal --permission network --value '[\"https://example.com\"]'   # lets Terminal reach example.com, replacing its network permission"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "allowPermission",
@@ -256,7 +260,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--permission <name>", "permission name", { mandatory: true })
         ),
         output: dataOutput(value.any("stored permission assignment"), "The stored permission", { format: "value" }),
-        examples: ["phresh program deny-permission --program terminal --permission network"]
+        examples: ["phresh program deny-permission --program terminal --permission network   # denies Terminal the network"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "denyPermission",
@@ -274,7 +278,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--permission <name>", "permission name", { mandatory: true })
         ),
         output: dataOutput(value.any("effective permission"), "The effective permission", { format: "value" }),
-        examples: ["phresh program reset-permission --program terminal --permission network"]
+        examples: ["phresh program reset-permission --program terminal --permission network   # back to what Terminal declares"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "resetPermission",
@@ -292,7 +296,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--values <json>", "bound statement values encoded as a JSON array")
         ),
         output: dataOutput(value.array(value.any("log query row"), "log query rows"), "Program log query result", { format: "value" }),
-        examples: ["phresh program logs --program terminal --statement 'select createdAt, process, source, kind, content from logs order by createdAt desc limit 100' --json"]
+        examples: ["phresh program logs --program terminal --statement 'select * from logs order by createdAt desc limit 20'   # the 20 newest lines Terminal printed"]
     }, ({ options }) => connected(connect, system => {
         const parsed = options.values === undefined ? undefined : json(options.values, "--values")
         if (parsed !== undefined && !Array.isArray(parsed)) throw new Error("--values must be a JSON array")
@@ -317,7 +321,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true }), option("--key <key>", "store key", { mandatory: true })),
         output: dataOutput(value.any("stored JSON value, or null"), "The stored value", { format: "value" }),
-        examples: ["phresh program store get --program notes --key tab"]
+        examples: ["phresh program store get --program notes --key tab   # the value notes keeps under tab"]
     }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "storeGet", identity: options.program, key: options.key })))
 
     defineCommand<ProgramKeyOptions & Readonly<{ value: string, ttl?: number }>>(store, {
@@ -331,7 +335,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--ttl <milliseconds>", "time until the key expires", { parse: value => integer(value) })
         ),
         output: dataOutput(value.boolean("whether the value changed"), "Whether the value changed", { format: "value" }),
-        examples: ["phresh program store set --program notes --key tab --value '\"colors\"'"]
+        examples: ["phresh program store set --program notes --key tab --value '\"colors\"'   # sets it; the value is JSON, so a string is quoted"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program", $operation: "storeSet", identity: options.program, key: options.key, value: payload(options.value) as never,
         ...(options.ttl === undefined ? {} : { ttl: bounded(options.ttl, "--ttl", 1) })
@@ -343,7 +347,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true }), option("--key <key>", "store key", { mandatory: true })),
         output: dataOutput(value.boolean("whether the key existed"), "Deletion result", { format: "value" }),
-        examples: ["phresh program store delete --program notes --key tab"]
+        examples: ["phresh program store delete --program notes --key tab   # deletes it"]
     }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "storeDelete", identity: options.program, key: options.key })))
 
     defineCommand<ProgramLogsOptions>(programs, {
@@ -356,7 +360,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--values <json>", "bound statement values encoded as a JSON array")
         ),
         output: dataOutput(value.array(value.any("row"), "rows"), "Rows the statement returned", { format: "value" }),
-        examples: ["phresh program query --program notes --statement 'select * from notes limit 10' --json"]
+        examples: ["phresh program query --program notes --statement 'select * from notes limit 10' --json   # reads the Program's own database"]
     }, ({ options }) => connected(connect, system => {
         const parsed = options.values === undefined ? undefined : json(options.values, "--values")
         if (parsed !== undefined && !Array.isArray(parsed)) throw new Error("--values must be a JSON array")
@@ -373,7 +377,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--output <file>", "PNG file to write", { mandatory: true })
         ),
         output: dataOutput(value.any("written file"), "Where the icon was written", { format: "value" }),
-        examples: ["phresh program icon --program notes --size large --output notes.png"]
+        examples: ["phresh program icon --program notes --output notes.png   # the Program's icon as a PNG file; --size small, medium, or large"]
     }, ({ options }) => connected(connect, async system => writeIcon(await (await requireProgram(system, options.program)).icon(options.size), options.output)))
 
     defineCommand<ProgramOptions>(programs, {
@@ -383,7 +387,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(value.array(value.string("Process identity"), "ended Processes"), "The Processes that ended", { format: "value" }),
-        examples: ["phresh program exit-processes --program notes"]
+        examples: ["phresh program exit-processes --program notes   # ends every run of notes; ask the owner first"]
     }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "exitProcesses", identity: options.program })))
 
     defineCommand<ProgramOptions>(programs, {
@@ -392,7 +396,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
         output: dataOutput(value.nullable(value.any("nothing")), "The Program is forgotten", { format: "value" }),
-        examples: ["phresh program forget --program notes"]
+        examples: ["phresh program forget --program notes   # ends its runs and removes it from the System; its files stay"]
     }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "forget", identity: options.program })))
 
     defineCommand<ProgramWaitOptions>(programs, {
@@ -412,7 +416,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             "One Program event",
             eventPresentation
         ),
-        examples: ["phresh program wait --event create", "phresh program wait --event uninstall --program terminal --json"]
+        examples: ["phresh program wait --event install   # waits until a Program is installed", "phresh program wait --event uninstall --program terminal --json   # waits until Terminal is uninstalled"]
     }, async ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "wait",

@@ -20,7 +20,7 @@ export default function systemAccessCommands(root: Command, connect: ConnectSyst
         requiresSystem: true,
         options: withJson(),
         output: dataOutput(value.any("the System's name, version, and release"), "What this System is", { format: "value" }),
-        examples: ["phresh system about --json"]
+        examples: ["phresh system about --json   # name, version, release, and when it started"]
     }, () => connected(connect, system => system.execute({ $domain: "system", $operation: "about" })))
 
     defineCommand<SystemIconOptions>(system, {
@@ -32,7 +32,7 @@ export default function systemAccessCommands(root: Command, connect: ConnectSyst
             option("--output <file>", "PNG file to write", { mandatory: true })
         ),
         output: dataOutput(value.any("written file"), "Where the icon was written", { format: "value" }),
-        examples: ["phresh system icon --size large --output phreshos.png"]
+        examples: ["phresh system icon --output phreshos.png   # the System's icon as a PNG file; --size small, medium, or large"]
     }, ({ options }) => connected(connect, async system => writeIcon(await system.icon(options.size), options.output)))
 
     defineCommand<SystemOpenOptions>(system, {
@@ -44,7 +44,7 @@ export default function systemAccessCommands(root: Command, connect: ConnectSyst
             option("--uri <uri>", "where it is", { mandatory: true })
         ),
         output: dataOutput(value.nullable(value.any("opened")), "It was opened", { format: "value" }),
-        examples: ["phresh system open --type image/png --uri file:///home/me/picture.png"]
+        examples: ["phresh system open --type image/png --uri file:///home/me/picture.png   # opens the picture with the Program that opens PNG images"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "system",
         $operation: "open",
@@ -61,7 +61,7 @@ export default function systemAccessCommands(root: Command, connect: ConnectSyst
             option("--values <json>", "bound statement values encoded as a JSON array")
         ),
         output: dataOutput(value.array(value.any("log query row"), "log query rows"), "System log query result", { format: "value" }),
-        examples: ["phresh system logs --statement 'select createdAt, level, source, kind, content, data from logs order by createdAt desc limit 100' --json"]
+        examples: ["phresh system logs --statement 'select * from logs order by createdAt desc limit 20'   # the 20 newest System records"]
     }, ({ options }) => connected(connect, system => {
         const parsed = options.values === undefined ? undefined : json(options.values, "--values")
         if (parsed !== undefined && !Array.isArray(parsed)) throw new Error("--values must be a JSON array")

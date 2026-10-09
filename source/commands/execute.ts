@@ -9,12 +9,15 @@ import { dataOutput } from "./schemas.ts"
 export default function executeCommand(root: Command, connect: ConnectSystem) {
     defineCommand<Record<string, never>, [string]>(root, {
         name: "execute",
-        description: "execute one raw JSON operation through the Node SDK",
+        description: "run any System operation as one JSON request",
         arguments: [{ syntax: "<request>", description: "Execute request encoded as JSON" }],
-        guidance: ["Use operation.list and operation.describe to discover the available request contracts."],
+        guidance: [
+            "Every command of this CLI is one of these operations; prefer the command, which checks its options. Use execute when a script builds requests as data.",
+            "phresh operation list names the operations; phresh operation describe --domain <domain> --operation <operation> gives the JSON Schema of what one takes and returns."
+        ],
         examples: [
-            "phresh execute '{\"$domain\":\"operation\",\"$operation\":\"list\"}'",
-            "phresh execute '{\"$domain\":\"endpoint\",\"$operation\":\"ask\",\"program\":\"tilo\",\"process\":\"main\",\"endpoint\":\"server\",\"event\":\"board.list\",\"input\":null}'"
+            "phresh execute '{\"$domain\":\"operation\",\"$operation\":\"list\"}'   # every operation, as JSON",
+            "phresh execute '{\"$domain\":\"endpoint\",\"$operation\":\"ask\",\"program\":\"tilo\",\"process\":\"main\",\"endpoint\":\"server\",\"event\":\"board.list\",\"input\":null}'   # the same as phresh endpoint ask"
         ],
         output: dataOutput(value.any("JSON result returned by the selected Execute operation"), "Execute result", { format: "json" }),
         requiresSystem: true

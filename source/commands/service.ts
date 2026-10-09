@@ -19,8 +19,12 @@ const availabilityEvents = ["available", "unavailable"] as const
 export default function serviceCommands(root: Command, connect: ConnectSystem) {
     const services = defineCommand(root, {
         name: "service",
-        description: "discover and communicate with named Endpoint Services",
-        guidance: ["Discovery returns ready Services; exact addresses remain stable while their providers are unavailable."]
+        description: "find the Services Programs offer, and talk to them",
+        guidance: [
+            "A Service is one side of a named run, offered for others to talk to. Its address is the Program, the run's name (--process), and the side (--endpoint).",
+            "service list shows the Services ready now. An address stays the same while its run restarts, so you can wait for it to come back.",
+            "A Program's agent documentation (phresh program agent --program <identity>) says which Services it offers and what they answer."
+        ]
     })
 
     defineCommand<CommonOptions & { name?: string }>(services, {
@@ -29,7 +33,7 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--name <name>", "optional Process and Service name")),
         output: dataOutput(value.array(serviceOutput, "ready Services"), "Visible Services", serviceListPresentation),
-        examples: ["phresh service list", "phresh service list --name ssh"]
+        examples: ["phresh service list   # every Service ready now", "phresh service list --name ssh   # only Services named ssh"]
     }, async ({ options }) => executeService(connect, {
         $operation: "list",
         ...(options.name === undefined ? {} : { name: options.name })
@@ -41,7 +45,7 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(...addressOptions),
         output: dataOutput(serviceOutput, "The selected Service", servicePresentation),
-        examples: ["phresh service inspect --program terminal --process ssh --endpoint server"]
+        examples: ["phresh service inspect --program terminal --process ssh --endpoint server   # whether that Service is available now"]
     }, async ({ options }) => executeAddressedService(connect, options, { $operation: "inspect" }))
 
     defineCommand<ServiceOptions & TimeoutOptions>(services, {
@@ -51,7 +55,7 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(...addressOptions, timeoutOption),
         output: dataOutput(serviceOutput, "The ready Service", servicePresentation),
-        examples: ["phresh service wait-ready --program terminal --process ssh --endpoint server"]
+        examples: ["phresh service wait-ready --program terminal --process ssh --endpoint server   # waits until it is"]
     }, async ({ options }) => executeAddressedService(connect, options, {
         $operation: "waitReady",
         ...(options.timeout === undefined ? {} : { timeout: timeout(options.timeout) })
@@ -70,7 +74,7 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
             timeoutOption
         ),
         output: dataOutput(value.any("answer returned by the Server Service contract"), "The Service answer", valuePresentation),
-        examples: ["phresh service ask --program tilo --process board --endpoint server --event board.list --json"]
+        examples: ["phresh service ask --program tilo --process board --endpoint server --event board.list --json   # asks the board Service of Tilo a question"]
     }, async ({ options }) => executeAddressedService(connect, options, {
         $operation: "ask",
         event: options.event,
@@ -88,7 +92,7 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
             option("--payload <json>", "arbitrary event payload as JSON")
         ),
         output: dataOutput(serviceOutput, "The addressed Service", servicePresentation),
-        examples: ["phresh service publish --program tilo --process board --endpoint client --event changed"]
+        examples: ["phresh service publish --program tilo --process board --endpoint client --event changed   # tells it something, without an answer"]
     }, async ({ options }) => executeAddressedService(connect, options, {
         $operation: "publish",
         event: options.event,
@@ -101,7 +105,7 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(...addressOptions, option("--event <event>", "event name", { mandatory: true }), timeoutOption),
         output: dataOutput(eventOutput("The observed Service event"), "One Service event", eventPresentation),
-        examples: ["phresh service wait --program tilo --process board --endpoint client --event changed"]
+        examples: ["phresh service wait --program tilo --process board --endpoint client --event changed   # waits until it publishes changed"]
     }, async ({ options }) => executeAddressedService(connect, options, {
         $operation: "wait",
         event: options.event,
@@ -115,7 +119,7 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(...addressOptions, option("--event <event>", "availability event", { mandatory: true, choices: availabilityEvents }), timeoutOption),
         output: dataOutput(eventOutput("The observed Service availability event"), "One Service lifecycle event", lifecyclePresentation),
-        examples: ["phresh service wait-lifecycle --program tilo --process board --endpoint server --event available"]
+        examples: ["phresh service wait-lifecycle --program tilo --process board --endpoint server --event available   # waits until it becomes available"]
     }, async ({ options }) => executeAddressedService(connect, options, {
         $operation: "waitLifecycle",
         event: options.event,
@@ -129,7 +133,7 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: withJson(option("--event <event>", "discovery event", { mandatory: true, choices: availabilityEvents }), timeoutOption),
         output: dataOutput(eventOutput("The observed Service discovery event"), "One Service discovery event", lifecyclePresentation),
-        examples: ["phresh service wait-discovery --event available"]
+        examples: ["phresh service wait-discovery --event available   # waits until any Service becomes available"]
     }, async ({ options }) => executeService(connect, {
         $operation: "waitDiscovery",
         event: options.event,

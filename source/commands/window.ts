@@ -25,8 +25,14 @@ import { executeDescription } from "./execution.ts"
 export default function windowCommands(root: Command, connect: ConnectSystem) {
     const windows = defineCommand(root, {
         name: "window",
-        description: "inspect and control authoritative Client Windows",
-        guidance: ["A Window belongs to the Client Endpoint of one exact Process."]
+        description: "read, move, resize, and arrange the Windows on the Desktop",
+        guidance: [
+            "A Window is the Client of one run (Process): name the run with --process, and --program when --process is a name.",
+            "Windows live on a plane larger than the screen. 0, 0 is the middle of the view the Desktop shows, not its top-left corner. A position is the Window's top-left corner.",
+            "A number is pixels; a share such as -1/2, 1/2, 50%, or 1/1 is a part of the view, so the Window fits any screen. The view's edges are -1/2 and 1/2. Shares and pixels combine: 1/2 - 300.",
+            "Centered: x = -width/2, y = -height/2. Left half: --x -1/2 --y -1/2 --width 1/2 --height 1/1. Full view: maximize.",
+            "A change applies at once on every Desktop; read the Window again to see it."
+        ]
     })
 
     defineCommand<WindowOptions>(windows, state("inspect", windowPresentation), async ({ options }) => {
@@ -37,20 +43,20 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
         ...state("move", windowPositionPresentation),
         options: withJson(
             ...processOptions,
-            option("--x <value>", "horizontal pixels or workspace-relative expression", { mandatory: true }),
-            option("--y <value>", "vertical pixels or workspace-relative expression", { mandatory: true })
+            option("--x <value>", "where the Window's left edge is, counted from the middle of the view (0 is the middle, not the screen's edge): pixels such as -450, or a share of the view such as -1/2 (the view's left edge) or 1/2 - 300", { mandatory: true }),
+            option("--y <value>", "where the Window's top edge is, counted from the middle of the view, as --x: -1/2 is the view's top edge", { mandatory: true })
         ),
-        examples: ["phresh window move --process main --program terminal --x 50% --y 0"]
+        examples: ["phresh window move --process main --program terminal --x -450 --y -320   # puts a 900 x 640 Window in the middle of the view (0, 0 is the middle)"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "move", position: position(options.x, options.y) }))
 
     defineCommand<WindowOptions & SizeOptions>(windows, {
         ...state("resize", windowSizePresentation),
         options: withJson(
             ...processOptions,
-            option("--width <value>", "width in pixels or a workspace-relative expression", { mandatory: true }),
-            option("--height <value>", "height in pixels or a workspace-relative expression", { mandatory: true })
+            option("--width <value>", "the width: pixels such as 900, or a share of the view such as 1/2, 50%, or 1/1 (the whole view)", { mandatory: true }),
+            option("--height <value>", "the height, as --width", { mandatory: true })
         ),
-        examples: ["phresh window resize --process main --program terminal --width 800 --height 600"]
+        examples: ["phresh window resize --process main --program terminal --width 800 --height 600   # 800 x 600 pixels; its top-left corner stays"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "resize", size: size(options.width, options.height) }))
 
     defineCommand<WindowOptions & PositionOptions & SizeOptions>(windows, {
@@ -58,12 +64,12 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
         aliases: ["set-geometry"],
         options: withJson(
             ...processOptions,
-            option("--x <value>", "horizontal pixels or workspace-relative expression", { mandatory: true }),
-            option("--y <value>", "vertical pixels or workspace-relative expression", { mandatory: true }),
-            option("--width <value>", "width in pixels or a workspace-relative expression", { mandatory: true }),
-            option("--height <value>", "height in pixels or a workspace-relative expression", { mandatory: true })
+            option("--x <value>", "where the Window's left edge is, counted from the middle of the view (0 is the middle, not the screen's edge): pixels such as -450, or a share of the view such as -1/2 (the view's left edge) or 1/2 - 300", { mandatory: true }),
+            option("--y <value>", "where the Window's top edge is, counted from the middle of the view, as --x: -1/2 is the view's top edge", { mandatory: true }),
+            option("--width <value>", "the width: pixels such as 900, or a share of the view such as 1/2, 50%, or 1/1 (the whole view)", { mandatory: true }),
+            option("--height <value>", "the height, as --width", { mandatory: true })
         ),
-        examples: ["phresh window set-geometry --process main --program terminal --x 0 --y 0 --width 100% --height 100%"]
+        examples: ["phresh window set-geometry --process main --program terminal --x -1/2 --y -1/2 --width 1/2 --height 1/1   # the left half of the view: -1/2 is the view's left and top edge"]
     }, async ({ options }) => executeWindow(connect, options, {
         $operation: "setGeometry",
         ...position(options.x, options.y),
@@ -72,33 +78,33 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
 
     defineCommand<WindowOptions & Readonly<{ restore?: boolean }>>(windows, {
         ...state("minimize", windowMinimizePresentation),
-        options: withJson(...processOptions, option("--restore", "restore rather than minimize the Window")),
-        examples: ["phresh window minimize --process main --program terminal", "phresh window minimize --process main --program terminal --restore"]
+        options: withJson(...processOptions, option("--restore", "restore the Window instead; left out, minimize it")),
+        examples: ["phresh window minimize --process main --program terminal   # minimizes it", "phresh window minimize --process main --program terminal --restore   # restores it"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "minimize", minimized: options.restore !== true }))
 
     defineCommand<WindowOptions & Readonly<{ restore?: boolean }>>(windows, {
         ...state("maximize", windowMaximizePresentation),
-        options: withJson(...processOptions, option("--restore", "restore rather than maximize the Window")),
-        examples: ["phresh window maximize --process main --program terminal", "phresh window maximize --process main --program terminal --restore"]
+        options: withJson(...processOptions, option("--restore", "restore the Window to its size and place instead; left out, maximize it")),
+        examples: ["phresh window maximize --process main --program terminal   # fills the view", "phresh window maximize --process main --program terminal --restore   # back to its size and place"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "maximize", maximized: options.restore !== true }))
 
     defineCommand<WindowOptions & Readonly<{ title: string }>>(windows, {
         ...state("setTitle", windowTitlePresentation),
         aliases: ["set-title"],
-        options: withJson(...processOptions, option("--title <title>", "new Window title", { mandatory: true })),
-        examples: ["phresh window set-title --process main --program terminal --title Shell"]
+        options: withJson(...processOptions, option("--title <title>", "the new title", { mandatory: true })),
+        examples: ["phresh window set-title --process main --program terminal --title Shell   # its title becomes Shell"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "setTitle", title: options.title }))
 
     defineCommand<WindowOptions & Readonly<{ hide?: boolean }>>(windows, {
         ...state("setHeader", windowHeaderPresentation),
         aliases: ["set-header"],
-        options: withJson(...processOptions, option("--hide", "hide rather than show the Window header")),
-        examples: ["phresh window set-header --process main --program terminal --hide", "phresh window set-header --process main --program terminal"]
+        options: withJson(...processOptions, option("--hide", "hide the title bar; left out, show it")),
+        examples: ["phresh window set-header --process main --program terminal --hide   # hides the Desktop's title bar; the Program draws its own", "phresh window set-header --process main --program terminal   # shows it again"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "setHeader", header: options.hide !== true }))
 
     defineCommand<WindowOptions>(windows, {
         ...state("raise", windowRaisePresentation),
-        examples: ["phresh window raise --process main --program terminal"]
+        examples: ["phresh window raise --process main --program terminal   # brings it in front of the other Windows"]
     }, async ({ options }) => executeWindow(connect, options, { $operation: "raise" }))
 
     defineCommand<WindowOptions & WindowWaitOptions>(windows, {
@@ -114,7 +120,7 @@ export default function windowCommands(root: Command, connect: ConnectSystem) {
             timeoutOption
         ),
         output: dataOutput(eventOutput("The observed Window event"), "One Window event", eventPresentation),
-        examples: ["phresh window wait --process main --program terminal --event move --json"]
+        examples: ["phresh window wait --process main --program terminal --event move --json   # waits until it moves"]
     }, async ({ options }) => executeWindow(connect, options, {
         $operation: "wait",
         event: options.event,

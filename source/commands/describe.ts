@@ -15,7 +15,7 @@ export default function describeCommands(root: Command) {
             jsonOption
         ],
         guidance: ["Omit the path to start at the CLI root. Add --all to retrieve the complete selected contract tree."],
-        examples: ["phresh describe", "phresh describe process create", "phresh describe --all --json"],
+        examples: ["phresh describe   # every command group, as data", "phresh describe process create   # one command: its options, what it needs, its result", "phresh describe --all --json   # every command at once"],
         output: dataOutput(
             value.any("one command contract or a complete contract tree"),
             "CLI command contract",

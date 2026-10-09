@@ -10,7 +10,11 @@ import { executeDescription } from "./execution.ts"
 export default function permissionCommands(root: Command, connect: ConnectSystem) {
     const permission = defineCommand(root, {
         name: "permission",
-        description: "decide permission requests waiting for the owner"
+        description: "permission requests waiting for the owner's decision",
+        guidance: [
+            "A Program asks for a permission while it runs; the owner decides. Deciding here decides for the owner: grant only what the owner would.",
+            "A Program's standing permissions are under phresh program (list-permissions, allow-permission, deny-permission, reset-permission)."
+        ]
     })
 
     defineCommand<CommonOptions>(permission, {
@@ -19,7 +23,7 @@ export default function permissionCommands(root: Command, connect: ConnectSystem
         requiresSystem: true,
         options: withJson(),
         output: dataOutput(value.array(value.any("permission request"), "permission requests"), "Permission requests waiting for a decision", valuePresentation),
-        examples: ["phresh permission requests --json"]
+        examples: ["phresh permission requests --json   # permission requests waiting for the owner"]
     }, () => connected(connect, system => system.execute({ $domain: "permission", $operation: "requests" })))
 
     for (const decision of ["allow", "deny", "cancel"] as const) {
@@ -29,7 +33,11 @@ export default function permissionCommands(root: Command, connect: ConnectSystem
             requiresSystem: true,
             options: withJson(option("--request <identity>", "permission request identity", { mandatory: true })),
             output: dataOutput(value.nullable(value.any("nothing")), "The request ended", valuePresentation),
-            examples: [`phresh permission ${decision} --request <identity>`]
+            examples: [`phresh permission ${decision} --request <identity>   # ${{
+                allow: "grants what it asks; decide only as the owner would",
+                deny: "refuses it",
+                cancel: "ends it undecided; the Program hears no answer"
+            }[decision]}`]
         }, ({ options }) => connected(connect, system => system.execute({ $domain: "permission", $operation: decision, request: options.request })))
     }
 
@@ -39,7 +47,7 @@ export default function permissionCommands(root: Command, connect: ConnectSystem
         requiresSystem: true,
         options: withJson(option("--event <event>", "Permission event", { mandatory: true, choices: ["permissionRequest", "permissionResolve"] }), timeoutOption),
         output: dataOutput(eventOutput("The observed Permission event"), "One Permission event", eventPresentation),
-        examples: ["phresh permission wait --event permissionRequest"]
+        examples: ["phresh permission wait --event permissionRequest   # waits until a Program asks for a permission"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "permission", $operation: "wait", event: options.event,
         ...(options.timeout === undefined ? {} : { timeout: bounded(options.timeout, "--timeout", 1) })

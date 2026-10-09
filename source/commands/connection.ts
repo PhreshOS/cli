@@ -21,7 +21,11 @@ import { executeDescription } from "./execution.ts"
 export default function connectionCommands(root: Command, connect: ConnectSystem) {
     const connections = defineCommand(root, {
         name: "connection",
-        description: "inspect live browser Connections and their Sessions"
+        description: "the browsers connected to the System now, and how they are signed in",
+        guidance: [
+            "A Connection is one browser showing the Desktop, signed in or not; its sign-in is a Session (see phresh session).",
+            "Signing a browser in gives it the owner's access: do it only when the owner asks."
+        ]
     })
 
     defineCommand<ListOptions>(connections, {
@@ -34,7 +38,7 @@ export default function connectionCommands(root: Command, connect: ConnectSystem
             option("--offset <count>", "number of matching Connections to skip", { parse: value => integer(value), default: 0 })
         ),
         output: dataOutput(pageOutput(connectionOutput, "matching Connections"), "A bounded page of Connections", connectionListPresentation),
-        examples: ["phresh connection list", "phresh connection list --json"]
+        examples: ["phresh connection list   # the browsers connected now", "phresh connection list --json   # the same, as data"]
     }, ({ options }) => connected(connect, async system => {
         const values = await system.execute({ $domain: "connection", $operation: "list" })
         return page(values, options.search, bounded(options.offset, "--offset", 0), bounded(options.limit, "--limit", 1, 100), value => value.identity)
@@ -46,7 +50,7 @@ export default function connectionCommands(root: Command, connect: ConnectSystem
         requiresSystem: true,
         options: withJson(option("--connection <identity>", "Connection identity", { mandatory: true })),
         output: dataOutput(connectionOutput, "The selected Connection", connectionPresentation),
-        examples: ["phresh connection inspect --connection <identity>"]
+        examples: ["phresh connection inspect --connection <identity>   # one browser, by an identity from connection list"]
     }, ({ options }) => connected(connect, async system => {
         const result = await system.execute({ $domain: "connection", $operation: "find", identity: options.connection })
         if (!result) throw new Error(`Unknown Connection "${options.connection}"`)
@@ -59,7 +63,7 @@ export default function connectionCommands(root: Command, connect: ConnectSystem
         requiresSystem: true,
         options: withJson(option("--connection <identity>", "Connection identity", { mandatory: true })),
         output: dataOutput(value.nullable(sessionOutput), "The attached Session, if any", valuePresentation),
-        examples: ["phresh connection session --connection <identity>"]
+        examples: ["phresh connection session --connection <identity>   # the sign-in it uses, or null"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "connection", $operation: "session", identity: options.connection
     })))
@@ -71,7 +75,7 @@ export default function connectionCommands(root: Command, connect: ConnectSystem
         requiresSystem: true,
         options: withJson(option("--connection <identity>", "unsigned Connection identity", { mandatory: true })),
         output: dataOutput(sessionOutput, "The created Session", sessionPresentation),
-        examples: ["phresh connection sign-in --connection <identity>"]
+        examples: ["phresh connection sign-in --connection <identity>   # signs that browser in without a password; ask the owner first"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "connection", $operation: "signIn", identity: options.connection
     })))
@@ -88,7 +92,7 @@ export default function connectionCommands(root: Command, connect: ConnectSystem
             timeoutOption
         ),
         output: dataOutput(eventOutput("The observed Connection event"), "One Connection event", eventPresentation),
-        examples: ["phresh connection wait --event connectionCreate", "phresh connection wait --event sessionChange --connection <identity>"]
+        examples: ["phresh connection wait --event connectionCreate   # waits until a browser connects", "phresh connection wait --event sessionChange --connection <identity>   # waits until that browser signs in or out"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "connection", $operation: "wait", event: options.event,
         ...(options.connection ? { identity: options.connection } : {}),

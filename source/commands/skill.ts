@@ -23,6 +23,17 @@ ask is limited for you, so what you do is done as if the owner did it. Read
 before you change; confirm with the owner before anything they cannot undo,
 such as removing a Program, deleting data, or ending what they are using.
 
+## Do what was asked, the default way
+
+Every option you leave out means "as usual": as the Program declares, as the
+owner set it, or the System's default. Add an option only when the request
+asks for something different from that.
+
+The examples in \`--help\` show what each option does, one at a time, with a
+comment saying why it is there. They are not a recipe: copy an option from an
+example only when you need what its comment says. The first example of a
+command is its plain use.
+
 ## What is in the System
 
 - A **Program** is software installed in the System. Each one describes
@@ -36,6 +47,19 @@ such as removing a Program, deleting data, or ending what they are using.
   to talk to: you publish to it, ask it, and listen to it.
 - The **System** holds everything around the Programs: who may reach what, the
   files of this machine, the Appearance, and more.
+
+## Open a Program
+
+Start a run with only its identity. Its Server and Client start as its author
+declared, the same as when the owner opens it from the Desktop:
+
+    phresh process create --program <identity>
+
+A run is found later by its identity, or by a name you gave it with \`--name\`;
+a name always goes with \`--program\`:
+
+    phresh process create --program <identity> --name main
+    phresh process inspect --process main --program <identity>
 
 ## Programs are how you work
 
@@ -52,9 +76,32 @@ relies on the same Programs. When no Program offers what you need, the System's
 own operations are reachable through \`phresh execute\`; \`phresh operation
 list\` names them.
 
+## Windows
+
+Windows live on a plane larger than the screen. **0, 0 is the middle of the
+view the Desktop shows**, not its top-left corner, and a Window's position is
+its own top-left corner. So a Window at 0, 0 starts in the middle of the screen.
+
+A number is pixels. A share, such as \`-1/2\`, \`1/2\`, \`50%\`, or \`1/1\`, is
+a part of the view, so the Window fits any screen: the view's edges are
+\`-1/2\` and \`1/2\`, and shares and pixels combine, as in \`1/2 - 300\`.
+
+    phresh window move --process main --program <identity> --x -450 --y -320    # a 900 x 640 Window, centered
+    phresh window set-geometry --process main --program <identity> --x -1/2 --y -1/2 --width 1/2 --height 1/1    # the left half
+    phresh window maximize --process main --program <identity>    # the whole view
+
+## Read, then change, then read
+
+Every command answers with the state after it acts; add \`--json\` for the
+whole of it as data. Read before you change something the owner uses, and read
+again to see the result. To wait for something to happen rather than poll,
+each group has a \`wait\` command, which gives up after 10 seconds unless given
+\`--timeout\`.
+
 ## Do not guess
 
-Every command explains itself. \`phresh <command> --help\` describes one;
+Every command explains itself. \`phresh <command> --help\` describes one,
+with what each option does and what leaving it out means;
 \`phresh describe --all --json\` gives the complete contract of every command.
 When something fails, the error names what is wrong; read it before trying
 again. \`phresh fetch\` shows the running System at a glance.

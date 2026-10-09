@@ -29,8 +29,13 @@ import { executeDescription } from "./execution.ts"
 export default function endpointCommands(root: Command, connect: ConnectSystem) {
     const endpoints = defineCommand(root, {
         name: "endpoint",
-        description: "inspect, control, and communicate with Process Endpoints",
-        guidance: ["Select the exact Process and either its server or client Endpoint."]
+        description: "the two sides of a run: start or stop them, ask them, tell them",
+        guidance: [
+            "An Endpoint is one side of a run (Process): server, on this machine, or client, its Window. Name the run with --process (and --program for a name) and the side with --endpoint.",
+            "Only a Server answers questions (ask); both sides can be told things (publish) and heard (wait).",
+            "Before talking to a Program, read its agent documentation: phresh program agent --program <identity> names its events and what they take.",
+            "Payloads on the command line are JSON."
+        ]
     })
 
     defineCommand<EndpointOptions>(endpoints, {
@@ -39,7 +44,7 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
         requiresSystem: true,
         options: withJson(...endpointOptions),
         output: dataOutput(endpointOutput, "The selected Endpoint", endpointPresentation),
-        examples: ["phresh endpoint inspect --process main --program terminal --endpoint server"]
+        examples: ["phresh endpoint inspect --process main --program terminal --endpoint server   # whether that run's Server is running and ready"]
     }, async ({ options }) => executeEndpoint(connect, options, { $operation: "inspect" }))
 
     defineCommand<EndpointOptions & ClientOptions & ServerOptions>(endpoints, {
@@ -48,7 +53,7 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
         requiresSystem: true,
         options: withJson(...endpointOptions, ...clientOverrideOptions, ...serverOverrideOptions),
         output: dataOutput(endpointOutput, "The started Endpoint", endpointActionPresentation),
-        examples: ["phresh endpoint start --process main --program terminal --endpoint server --server-service"]
+        examples: ["phresh endpoint start --process main --program terminal --endpoint client   # opens that run's Window again, if it was closed"]
     }, async ({ options }) => {
         const client = clientLaunch(options)
         const server = serverLaunch(options)
@@ -66,7 +71,7 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
         requiresSystem: true,
         options: withJson(...endpointOptions),
         output: dataOutput(endpointOutput, "The stopped Endpoint", endpointActionPresentation),
-        examples: ["phresh endpoint stop --process main --program terminal --endpoint client"]
+        examples: ["phresh endpoint stop --process main --program terminal --endpoint client   # closes its Window; the run keeps its Server"]
     }, async ({ options }) => executeEndpoint(connect, options, { $operation: "stop" }))
 
     defineCommand<EndpointOptions & TimeoutOptions>(endpoints, {
@@ -76,7 +81,7 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
         requiresSystem: true,
         options: withJson(...endpointOptions, timeoutOption),
         output: dataOutput(endpointOutput, "The ready Server Endpoint", endpointActionPresentation),
-        examples: ["phresh endpoint wait-ready --process main --program terminal --endpoint server --timeout 30000"]
+        examples: ["phresh endpoint wait-ready --process main --program terminal --endpoint server   # waits until its Server can answer"]
     }, async ({ options }) => executeEndpoint(connect, options, {
         $operation: "waitReady",
         ...(options.timeout === undefined ? {} : { timeout: timeout(options.timeout) })
@@ -96,7 +101,7 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
             scope: value.string("Endpoint lifecycle subscription scope"),
             event: value.enumeration(["start", "stop"], "observed lifecycle event")
         }, ["scope", "event"], "Endpoint lifecycle event"), "One Endpoint lifecycle event", lifecyclePresentation),
-        examples: ["phresh endpoint wait-lifecycle --process main --program terminal --endpoint server --event start"]
+        examples: ["phresh endpoint wait-lifecycle --process main --program terminal --endpoint server --event start   # waits until its Server starts"]
     }, async ({ options }) => executeEndpoint(connect, options, {
         $operation: "waitLifecycle",
         event: options.event,
@@ -114,7 +119,7 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
             timeoutOption
         ),
         output: dataOutput(value.any("answer returned by the Server event contract"), "The Server answer", valuePresentation),
-        examples: ["phresh endpoint ask --process main --program terminal --endpoint server --event status --json"]
+        examples: ["phresh endpoint ask --process main --program terminal --endpoint server --event status --json   # asks its Server the question status"]
     }, async ({ options }) => {
         const input = payload(options.payload)
         return executeEndpoint(connect, options, {
@@ -135,7 +140,7 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
             option("--payload <json>", "arbitrary event payload as JSON")
         ),
         output: dataOutput(endpointOutput, "The Endpoint after publishing", endpointActionPresentation),
-        examples: ["phresh endpoint publish --process main --program terminal --endpoint client --event changed --payload '{\"value\":1}'"]
+        examples: ["phresh endpoint publish --process main --program terminal --endpoint client --event changed --payload '{\"value\":1}'   # tells its Client changed, with a JSON payload"]
     }, async ({ options }) => executeEndpoint(connect, options, {
         $operation: "publish",
         event: options.event,
@@ -152,7 +157,7 @@ export default function endpointCommands(root: Command, connect: ConnectSystem) 
             timeoutOption
         ),
         output: dataOutput(eventOutput("The observed Endpoint event"), "One Endpoint event", eventPresentation),
-        examples: ["phresh endpoint wait --process main --program terminal --endpoint client --event changed --json"]
+        examples: ["phresh endpoint wait --process main --program terminal --endpoint client --event changed --json   # waits until its Client publishes changed"]
     }, async ({ options }) => executeEndpoint(connect, options, {
         $operation: "wait",
         event: options.event,

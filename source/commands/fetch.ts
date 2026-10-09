@@ -47,7 +47,7 @@ export default function fetchCommand(program: Command, connect: ConnectSystem) {
         requiresSystem: true,
         options: [jsonOption],
         output: textOutput("The System's version, Desktop address, Programs, Processes, connections, and Appearance"),
-        examples: ["phresh fetch", "phresh fetch --json"]
+        examples: ["phresh fetch   # the running System at a glance", "phresh fetch --json   # the same, as data"]
     }, async ({ options }) => {
         const fetched = await fetchSystem(connect)
         if (options.json) console.log(JSON.stringify(fetched))
