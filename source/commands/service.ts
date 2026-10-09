@@ -2,9 +2,9 @@ import { parseExecuteRequest } from "@phreshos/core"
 import type { Command } from "commander"
 import { defineCommand } from "../contract/command.ts"
 import { value } from "../contract/schema.ts"
-import { dataOutput, eventOutput, eventPresentation, lifecyclePresentation, serviceListPresentation, serviceOutput, servicePresentation, valuePresentation } from "./schemas.ts"
+import { dataOutput, eventOutput, eventPresentation, lifecyclePresentation, pageOutput, serviceListPresentation, serviceOutput, servicePresentation, valuePresentation } from "./schemas.ts"
 import { connected, type ConnectSystem } from "./system-connection.ts"
-import { bounded, payload, type CommonOptions } from "./input.ts"
+import { bounded, integer, page, payload, type CommonOptions } from "./input.ts"
 import { executeDescription } from "./execution.ts"
 import { option, timeoutOption, withJson } from "./options.ts"
 
@@ -27,16 +27,20 @@ export default function serviceCommands(root: Command, connect: ConnectSystem) {
         ]
     })
 
-    defineCommand<CommonOptions & { name?: string }>(services, {
+    defineCommand<CommonOptions & { name?: string, limit: number, offset: number }>(services, {
         name: "list",
         description: executeDescription("service", "list"),
         requiresSystem: true,
-        options: withJson(option("--name <name>", "optional Process and Service name")),
-        output: dataOutput(value.array(serviceOutput, "ready Services"), "Visible Services", serviceListPresentation),
+        options: withJson(
+            option("--name <name>", "only Services with this name; left out, every one"),
+            option("--limit <count>", "maximum returned Services", { parse: value => integer(value), default: 30 }),
+            option("--offset <count>", "number of matching Services to skip", { parse: value => integer(value), default: 0 })
+        ),
+        output: dataOutput(pageOutput(serviceOutput, "ready Services"), "A bounded page of Services", serviceListPresentation),
         examples: ["phresh service list   # every Service ready now", "phresh service list --name ssh   # only Services named ssh"]
-    }, async ({ options }) => executeService(connect, {
-        $operation: "list",
-        ...(options.name === undefined ? {} : { name: options.name })
+    }, ({ options }) => connected(connect, async system => {
+        const values = await system.execute({ $domain: "service", $operation: "list", ...(options.name === undefined ? {} : { name: options.name }) })
+        return page(values, undefined, bounded(options.offset, "--offset", 0), bounded(options.limit, "--limit", 1, 100), value => value.process)
     }))
 
     defineCommand<ServiceOptions>(services, {
