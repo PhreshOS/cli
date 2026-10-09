@@ -30,11 +30,12 @@ export const programOutput = value.object({
     name: value.string("human-readable Program name"),
     version: value.string("Resolved Program version"),
     description: value.nullable(value.string("Program description")),
+    website: value.nullable(value.string("the Program's public website")),
     installed: value.boolean("whether production files are installed"),
     hasAgent: value.boolean("whether the Program provides agent documentation"),
     server: endpointDeclaration,
     client: clientDeclaration
-}, ["identity", "assetId", "name", "version", "description", "installed", "hasAgent", "server", "client"], "Program state")
+}, ["identity", "assetId", "name", "version", "description", "website", "installed", "hasAgent", "server", "client"], "Program state")
 
 export const processOutput = value.object({
     identity: value.string("unique Process identity"),
@@ -99,6 +100,7 @@ export const programPresentation: OutputPresentation = fields(
     ["Name", "name"],
     ["Version", "version"],
     ["Description", "description"],
+    ["Website", "website"],
     ["Installed", "installed"],
     ["Agent", "hasAgent"],
     ["Server", "server"],
