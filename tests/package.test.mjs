@@ -39,6 +39,13 @@ test("package contract", async () => {
 
       assert.ok(files.includes("dist/system/lifecycle.js"))
 
+      // A created project starts on this CLI's line, whichever template release it came from.
+      const template = JSON.parse(await readFile(join(repository, "dist/template/package.json"), "utf8"))
+      const line = `^${metadata.version.split(".").slice(0, 2).join(".")}.0`
+      for (const [name, range] of Object.entries({ ...template.dependencies, ...template.devDependencies })) {
+          if (name.startsWith("@phreshos/") && name !== "@phreshos/cli") assert.equal(range, line, name)
+      }
+
       assert.ok(files.includes("dist/system/service/macos.js"))
 
       assert.ok(files.includes("dist/system/service/linux.js"))

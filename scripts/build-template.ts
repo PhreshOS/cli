@@ -86,6 +86,15 @@ if (manifest.name !== release.identity || manifest.version !== release.version) 
 
 manifest.scripts = select(manifest.scripts, ["dev", "start"])
 
+// A project starts on this CLI's line, the line of the System it installs, whichever release of the
+// template it came from: a template released before the line moved still names the earlier one.
+const line = `^${metadata.version.split(".").slice(0, 2).join(".")}.0`
+
+for (const section of [manifest.dependencies, manifest.devDependencies]) {
+
+    for (const name of Object.keys(section ?? {})) if (name.startsWith("@phreshos/")) section![name] = line
+}
+
 manifest.devDependencies = {
 
     ...manifest.devDependencies,
@@ -152,6 +161,8 @@ interface PackageManifest {
     version?: unknown
 
     scripts?: Record<string, string>
+
+    dependencies?: Record<string, string>
 
     devDependencies?: Record<string, string>
 
