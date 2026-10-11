@@ -34,6 +34,7 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
         options: withJson(
             option("--installed-only", "return only installed Programs"),
             option("--startup-only", "return only Programs that start with the System"),
+            option("--pinned-only", "return only Programs pinned to the Taskbar"),
             option("--search <text>", "case-insensitive identity, name, or description search"),
             option("--limit <count>", "maximum returned Programs", { parse: value => integer(value), default: 30 }),
             option("--offset <count>", "number of matching Programs to skip", { parse: value => integer(value), default: 0 })
@@ -45,7 +46,8 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             $domain: "program",
             $operation: "list",
             ...(options.installedOnly === true ? { installed: true } : {}),
-            ...(options.startupOnly === true ? { startup: true } : {})
+            ...(options.startupOnly === true ? { startup: true } : {}),
+            ...(options.pinnedOnly === true ? { pinned: true } : {})
         })
         const selected = page(
             programs,
@@ -149,15 +151,16 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
     })))
 
     defineCommand<ProgramOptions>(programs, {
-        name: "pinned",
-        description: executeDescription("program", "pinned"),
+        name: "pinnedAt",
+        aliases: ["pinned-at"],
+        description: executeDescription("program", "pinnedAt"),
         requiresSystem: true,
         options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
-        output: dataOutput(value.boolean("whether the Program is pinned"), "The Program pinned state", { format: "value" }),
-        examples: ["phresh program pinned --program terminal   # whether Terminal is pinned to the Taskbar"]
+        output: dataOutput(value.nullable(value.string("when the Program was pinned, as an ISO time")), "When the Program was pinned, or null when it is not", { format: "value" }),
+        examples: ["phresh program pinnedAt --program terminal   # when Terminal was pinned to the Taskbar; null when it is not"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
-        $operation: "pinned",
+        $operation: "pinnedAt",
         identity: options.program
     })))
 
@@ -169,8 +172,8 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
             option("--program <identity>", "Program identity", { mandatory: true }),
             option("--unpin", "unpin rather than pin the Program")
         ),
-        output: dataOutput(value.boolean("whether the Program is pinned"), "The Program pinned state", { format: "value" }),
-        examples: ["phresh program pin --program terminal   # pins Terminal to the Taskbar", "phresh program pin --program terminal --unpin   # unpins it"]
+        output: dataOutput(value.nullable(value.string("when the Program was pinned, as an ISO time")), "When the Program was pinned, or null once unpinned", { format: "value" }),
+        examples: ["phresh program pin --program terminal   # pins Terminal to the Taskbar, after the Programs pinned before it", "phresh program pin --program terminal --unpin   # unpins it"]
     }, ({ options }) => connected(connect, system => system.execute({
         $domain: "program",
         $operation: "pin",
@@ -440,6 +443,7 @@ type ProgramLogsOptions = CommonOptions & Readonly<{
 type ProgramListOptions = CommonOptions & Readonly<{
     installedOnly?: boolean
     startupOnly?: boolean
+    pinnedOnly?: boolean
     search?: string
     limit: number
     offset: number
