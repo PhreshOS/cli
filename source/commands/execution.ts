@@ -37,6 +37,8 @@ export const executeCommandPaths = Object.freeze({
     "program.storeDelete": ["program", "store", "delete"],
     "program.query": ["program", "query"],
     "program.exitProcesses": ["program", "exitProcesses"],
+    "program.clearStorage": ["program", "clearStorage"],
+    "program.storageSize": ["program", "storageSize"],
     "program.forget": ["program", "forget"],
     "appearance.get": ["appearance", "get"],
     "appearance.update": ["appearance", "update"],

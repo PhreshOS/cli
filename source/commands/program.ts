@@ -394,6 +394,26 @@ export default function programCommands(root: Command, connect: ConnectSystem) {
     }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "exitProcesses", identity: options.program })))
 
     defineCommand<ProgramOptions>(programs, {
+        name: "clearStorage",
+        aliases: ["clear-storage"],
+        description: executeDescription("program", "clearStorage"),
+        requiresSystem: true,
+        options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
+        output: dataOutput(value.nullable(value.any("nothing")), "The Program's storage is empty", { format: "value" }),
+        examples: ["phresh program clear-storage --program notes   # ends notes and deletes what it keeps; it cannot be undone, so ask the owner first"]
+    }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "clearStorage", identity: options.program })))
+
+    defineCommand<ProgramOptions>(programs, {
+        name: "storageSize",
+        aliases: ["storage-size"],
+        description: executeDescription("program", "storageSize"),
+        requiresSystem: true,
+        options: withJson(option("--program <identity>", "Program identity", { mandatory: true })),
+        output: dataOutput(value.number("bytes"), "How many bytes the Program keeps", { format: "value" }),
+        examples: ["phresh program storage-size --program notes   # how many bytes notes keeps in the System"]
+    }, ({ options }) => connected(connect, system => system.execute({ $domain: "program", $operation: "storageSize", identity: options.program })))
+
+    defineCommand<ProgramOptions>(programs, {
         name: "forget",
         description: executeDescription("program", "forget"),
         requiresSystem: true,
