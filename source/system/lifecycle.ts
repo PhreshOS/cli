@@ -412,7 +412,7 @@ export default class SystemLifecycle {
  * update would greet the owner again and end whatever Sprout left running.
  */
 export async function provisionSprout(dependencies: Readonly<{ installed(): Promise<boolean>, install(): Promise<void> }> = {
-    installed: () => connected(connectSystem, async system => (await (await system.program.find("sprout"))?.installed()) ?? false),
+    installed: () => connected(connectSystem, async system => (await (await system.program.find("sprout"))?.installedAt() ?? null) !== null),
     install: async () => { await installProgram({ name: "sprout", announce: false }) }
 }) {
 

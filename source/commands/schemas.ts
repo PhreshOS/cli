@@ -31,11 +31,12 @@ export const programOutput = value.object({
     version: value.string("Resolved Program version"),
     description: value.nullable(value.string("Program description")),
     website: value.nullable(value.string("the Program's public website")),
-    installed: value.boolean("whether production files are installed"),
+    createdAt: value.string("when the System made this Program in this run, as an ISO time"),
+    installedAt: value.nullable(value.string("when it was first installed, as an ISO time; null without an installed form")),
     hasAgent: value.boolean("whether the Program provides agent documentation"),
     server: endpointDeclaration,
     client: clientDeclaration
-}, ["identity", "assetId", "name", "version", "description", "website", "installed", "hasAgent", "server", "client"], "Program state")
+}, ["identity", "assetId", "name", "version", "description", "website", "createdAt", "installedAt", "hasAgent", "server", "client"], "Program state")
 
 export const processOutput = value.object({
     identity: value.string("unique Process identity"),
@@ -101,7 +102,8 @@ export const programPresentation: OutputPresentation = fields(
     ["Version", "version"],
     ["Description", "description"],
     ["Website", "website"],
-    ["Installed", "installed"],
+    ["Created", "createdAt"],
+    ["Installed", "installedAt"],
     ["Agent", "hasAgent"],
     ["Server", "server"],
     ["Client", "client"]
@@ -111,7 +113,7 @@ export const programListPresentation: OutputPresentation = list("data", "Program
     { label: "Name", path: "name" },
     { label: "Identity", path: "identity" },
     { label: "Version", path: "version" },
-    { label: "Installed", path: "installed" }
+    { label: "Installed", path: "installedAt" }
 ])
 
 export const processPresentation: OutputPresentation = fields(

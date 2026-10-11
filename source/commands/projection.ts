@@ -18,7 +18,8 @@ export async function programView(program: Program) {
         name: program.name,
         version: program.version,
         description: program.description,
-        installed: await program.installed(),
+        createdAt: program.createdAt.toISOString(),
+        installedAt: (await program.installedAt())?.toISOString() ?? null,
         hasAgent: program.hasAgent,
         server: program.server,
         client: program.client

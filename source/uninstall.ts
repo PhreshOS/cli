@@ -22,9 +22,9 @@ export default async function uninstall(options: UninstallOptions = {}) {
 
       console.log(options.purge
 
-          ? `  ${dim("Its processes, installed files, stored data, and runtime record were removed.")}`
+          ? `  ${dim("Its Processes ended; its installed files, data, and Program state were removed.")}`
 
-          : `  ${dim("Its installed files were removed. Processes, stored data, and runtime state were kept.")}`)
+          : `  ${dim("Its Processes ended and its installed files were removed. Its data and Program state stay for a later install.")}`)
 
       blank()
     }

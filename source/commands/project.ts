@@ -107,10 +107,10 @@ export default function projectCommands(program: Command, coreRange: string) {
         name: "uninstall",
         description: "uninstall a local or installed Program",
         arguments: [{ syntax: "[name]", description: "name of an installed Program" }],
-        options: [option("--purge", "also remove Processes, data, and runtime state")],
+        options: [option("--purge", "also remove its data and Program state")],
         guidance: [
             "Without a name, uses the Program declared by this project.",
-            "Removes installed files while preserving Processes, data, and runtime Program state unless --purge is supplied."
+            "Ends its Processes, removes its installed files, and forgets it; its data and Program state stay for a later install unless --purge is supplied."
         ],
         requiresSystem: true,
         examples: ["phresh uninstall   # removes the Program of this folder; its data stays", "phresh uninstall terminal --purge   # removes Terminal and its data too; it cannot be undone"],

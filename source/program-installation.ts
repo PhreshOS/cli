@@ -33,7 +33,7 @@ export default async function installProgram(program: Project | ProgramDefinitio
 
     const current = await system.program.find(identity)
 
-    const replaced = await current?.installed() ?? false
+    const replaced = (await current?.installedAt() ?? null) !== null
 
     let installed: Program | null = null
 
@@ -67,7 +67,7 @@ export default async function installProgram(program: Project | ProgramDefinitio
 
         if (installed && !installationFinished) {
 
-            try { if (!await installed.installed()) await installed.forget() }
+            try { if (await installed.installedAt() === null) await installed.forget() }
 
             catch { /* Preserve the installation failure. */ }
         }
