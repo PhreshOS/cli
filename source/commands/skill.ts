@@ -69,7 +69,7 @@ says, usually by asking one of its Services:
 
     phresh program list
     phresh program agent --program <identity>
-    phresh service ask --program <identity> --process <name> --endpoint server --event <event>
+    phresh service ask --name <service> --event <event>
 
 Use what a Program offers rather than going around it: the owner sees and
 relies on the same Programs. When no Program offers what you need, the System's

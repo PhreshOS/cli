@@ -9,12 +9,12 @@ const metric: ValueContract = {
 
 const endpointDeclaration = value.nullable(value.object({
     start: value.boolean("whether a default Process starts this Endpoint"),
-    service: value.boolean("default Service role for new execution contexts")
+    service: serviceValue("the Service name its runs are reached by unless a launch says otherwise, or false for none")
 }, ["start", "service"], "resolved Server Endpoint declaration"))
 
 const clientDeclaration = value.nullable(value.object({
     start: value.boolean("whether a default Process starts this Endpoint"),
-    service: value.boolean("default Service role for new execution contexts"),
+    service: serviceValue("the Service name its runs are reached by unless a launch says otherwise, or false for none"),
     title: value.nullable(value.string("default Window title")),
     header: value.nullable(value.boolean("default Window header visibility")),
     size: value.nullable(value.object({ width: metric, height: metric }, ["width", "height"], "default Window size")),
@@ -73,15 +73,19 @@ export const endpointOutput = value.object({
     endpoint: value.enumeration(["server", "client"], "Endpoint kind"),
     declared: value.boolean("whether the Program declares this Endpoint"),
     running: value.boolean("whether the Endpoint currently has a running execution context"),
-    service: value.boolean("whether this Endpoint execution context is addressable as a Service")
+    service: serviceValue("the Service name this Endpoint holds, or false for none")
 }, ["process", "program", "endpoint", "declared", "running", "service"], "Endpoint state")
 
+/** A Service name, or false for none. */
+function serviceValue(description: string): ValueContract {
+    return { anyOf: [value.string("Service name"), value.literal(false, "no Service")], description }
+}
+
 export const serviceOutput = value.object({
-    program: value.string("owning Program identity"),
-    process: value.string("Process and Service name"),
-    endpoint: value.enumeration(["server", "client"], "Endpoint kind"),
-    available: value.boolean("whether a ready Endpoint is currently available at this address")
-}, ["program", "process", "endpoint", "available"], "Service state")
+    name: value.string("Service name"),
+    endpoint: value.enumeration(["server", "client"], "the kind of Endpoint the name must be held by; left out, either"),
+    available: value.boolean("whether an Endpoint of the addressed kind holds this name and is ready now")
+}, ["name", "available"], "Service state")
 
 export const windowOutput = value.object({
     process: value.string("owning Process identity"),
@@ -148,7 +152,9 @@ export const processListPresentation: OutputPresentation = list("data", "Process
     { label: "Identity", path: "identity" },
     { label: "Program", path: "program" },
     { label: "Server", path: "server.running" },
-    { label: "Client", path: "client.running" }
+    { label: "Server service", path: "server.service" },
+    { label: "Client", path: "client.running" },
+    { label: "Client service", path: "client.service" }
 ])
 
 export const connectionPresentation: OutputPresentation = fields(
@@ -200,17 +206,10 @@ export const endpointActionPresentation: OutputPresentation = fields(
 )
 
 export const servicePresentation: OutputPresentation = fields(
-    ["Program", "program"],
-    ["Service", "process"],
+    ["Service", "name"],
     ["Endpoint", "endpoint"],
     ["Available", "available"]
 )
-
-export const serviceListPresentation: OutputPresentation = list("data", "Service", "Services", "No matching Services", [
-    { label: "Service", path: "process" },
-    { label: "Program", path: "program" },
-    { label: "Endpoint", path: "endpoint" }
-])
 
 export const windowPresentation: OutputPresentation = fields(
     ["Process", "process"],
@@ -320,7 +319,7 @@ function endpointState(description: string) {
     return value.object({
         declared: value.boolean("whether the Program declares this Endpoint"),
         running: value.boolean("whether the Endpoint currently has a running execution context"),
-        service: value.boolean("whether this Endpoint execution context is a Service")
+        service: serviceValue("the Service name this Endpoint holds, or false for none")
     }, ["declared", "running", "service"], description)
 }
 

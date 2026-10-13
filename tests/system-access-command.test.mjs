@@ -474,31 +474,34 @@ test("only boundary values without a native flag shape retain JSON syntax", func
     ])
 })
 
-test("launch flags preserve complete Endpoint service choices", function () {
+test("launch flags name the Service each Endpoint offers, or offer none", function () {
     const program = new Command().exitOverride().name("phresh")
     accessCommands(program, async () => { throw new Error("must not connect") })
     const flags = descendants(program).flatMap(command => command.options.map(option => option.flags))
 
+    assert(flags.includes("--server-service <name>"))
+    assert(flags.includes("--client-service <name>"))
     assert(flags.includes("--no-server-service"))
     assert(flags.includes("--no-client-service"))
     assert.equal(flags.some(flag => flag.includes("private")), false)
-    assert.deepEqual(serverLaunch({ serverService: true }), { service: true })
+    assert.deepEqual(serverLaunch({ serverService: "file-picker-v1" }), { service: "file-picker-v1" })
     assert.deepEqual(serverLaunch({ serverService: false }), { service: false })
-    assert.deepEqual(clientLaunch({ clientService: true, clientTitle: "Shared" }), {
-        service: true,
+    assert.deepEqual(clientLaunch({ clientService: "board-canvas-v1", clientTitle: "Shared" }), {
+        service: "board-canvas-v1",
         title: "Shared"
     })
     assert.deepEqual(launch({
         name: "main",
         serverService: false,
-        clientService: true
+        clientService: "board-canvas-v1"
     }), {
         name: "main",
         server: { service: false },
-        client: { service: true }
+        client: { service: "board-canvas-v1" }
     })
+    assert.throws(() => launch({ serverService: "Not A Name" }), /Service name/)
     assert.throws(() => serverLaunch({ server: false, serverService: false }), /--no-server/)
-    assert.throws(() => clientLaunch({ client: false, clientService: true }), /--no-client/)
+    assert.throws(() => clientLaunch({ client: false, clientService: "board-canvas-v1" }), /--no-client/)
 })
 
 function descendants(command) {

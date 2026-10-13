@@ -127,7 +127,7 @@ export type CommonOptions = Readonly<{ json?: boolean }>
 export type ProcessCoordinates = Readonly<{ process: string, program?: string }>
 export type ClientOptions = Readonly<{
     client?: boolean
-    clientService?: boolean
+    clientService?: string | false
     clientTitle?: string
     clientWidth?: string
     clientHeight?: string
@@ -139,7 +139,7 @@ export type ClientOptions = Readonly<{
 }>
 export type ServerOptions = Readonly<{
     server?: boolean
-    serverService?: boolean
+    serverService?: string | false
 }>
 export type LaunchOptions = ClientOptions & ServerOptions & Readonly<{
     name?: string

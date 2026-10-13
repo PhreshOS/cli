@@ -15,20 +15,20 @@ export const endpointOptions = Object.freeze([
 ])
 
 export const clientOverrideOptions = Object.freeze([
-    option("--client-service", "offer this Client as a Service; left out, as the Program declares"),
+    option("--client-service <name>", "offer this Client as a Service under this name, taking it from whoever holds it; left out, as the Program declares"),
     option("--no-client-service", "do not offer this Client as a Service, even if the Program does"),
     option("--client-title <title>", "the Window's title; left out, as the Program declares"),
     option("--client-width <value>", "the Window's width: pixels, or a share of the view such as 1/2 or 50%; needs --client-height; left out, as the Program declares"),
     option("--client-height <value>", "the Window's height, as --client-width; needs --client-width"),
-    option("--client-x <value>", "where the Window's left edge is, counted from the middle of the view (0 is the middle, not the screen's edge): pixels, or a share of the view such as -1/2 for the left edge; needs --client-y; left out, where the Desktop is looking"),
-    option("--client-y <value>", "where the Window's top edge is, counted from the middle of the view, as --client-x; needs --client-x"),
+    option("--client-x <value>", "where the Window's left edge is on the plane: pixels from the plane's center, or a share of the view such as -1/2; needs --client-y; left out, where the Program declares, else centered on the plane's center, whichever part of the plane a Desktop shows"),
+    option("--client-y <value>", "where the Window's top edge is on the plane, as --client-x; needs --client-x"),
     option("--client-layer <layer>", "where the Client is drawn; left out, window, as an ordinary Window (other layers need the layers permission)", { choices: layers }),
     option("--client-minimized", "open the Window minimized; left out, open"),
     option("--client-maximized", "open the Window maximized; left out, at its size")
 ])
 
 export const serverOverrideOptions = Object.freeze([
-    option("--server-service", "offer this Server as a Service; left out, as the Program declares"),
+    option("--server-service <name>", "offer this Server as a Service under this name, taking it from whoever holds it; left out, as the Program declares"),
     option("--no-server-service", "do not offer this Server as a Service, even if the Program does")
 ])
 
