@@ -64,23 +64,40 @@ a name always goes with \`--program\`:
 ## Programs are how you work
 
 What a System can do is what its Programs offer. To do something, find the
-Program that offers it, read its agent documentation, then use it the way it
-says, usually by asking one of its Services:
+Program that offers it, read its agent documentation, then do what it says:
 
     phresh program list
     phresh program agent --program <identity>
-    phresh service ask --name <service> --event <event>
 
 Use what a Program offers rather than going around it: the owner sees and
-relies on the same Programs. When no Program offers what you need, the System's
-own operations are reachable through \`phresh execute\`; \`phresh operation
-list\` names them.
+relies on the same Programs.
+
+## Requests, as the System understands them
+
+Everything the System does is a request: a JSON object that names its domain
+and its operation, with its fields. \`phresh execute\` passes one as it is and
+answers with the result as JSON:
+
+    phresh execute '{"$domain":"endpoint","$operation":"ask","program":"<identity>","process":"<name>","endpoint":"server","event":"<event>","input":{}}'
+
+\`phresh operation list\` names every operation, and
+\`phresh operation describe --domain <domain> --operation <operation>\` gives
+the exact shape of its request and of its answer, as JSON Schema. Look a request
+up rather than guessing a field.
+
+A Program's agent documentation states what it offers as these requests. Send
+them through \`phresh execute\` as they are written. Most operations also have
+a command of their own, such as \`phresh endpoint ask\`; when you know the one
+that does the same, you may use it instead. Either way, the System receives the
+same request.
 
 ## Windows
 
 Windows live on a plane larger than the screen. **0, 0 is the middle of the
-view the Desktop shows**, not its top-left corner, and a Window's position is
-its own top-left corner. So a Window at 0, 0 starts in the middle of the screen.
+plane**, where a Desktop looks when it opens; it is not a screen's top-left
+corner, and it stays where it is when the owner moves their view. A Window's
+position is its own top-left corner, so a Window at 0, 0 starts in the middle of
+the plane.
 
 A number is pixels. A share, such as \`-1/2\`, \`1/2\`, \`50%\`, or \`1/1\`, is
 a part of the view, so the Window fits any screen: the view's edges are
