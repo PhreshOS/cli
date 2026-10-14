@@ -4,7 +4,7 @@
   "version": "0.8.2",
   "description": "The Phresh command-line interface for Program projects and system management.",
   "engines": {
-    "node": ">=20.10"
+    "node": ">=24.15.0"
   },
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",

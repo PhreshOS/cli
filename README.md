@@ -26,7 +26,7 @@ define a second System interface or transport request language.
 | Bun | `bun add --global @phreshos/cli` |
 | Yarn Classic | `yarn global add @phreshos/cli` |
 
-Node.js 20.10 or newer is required.
+Node.js 24.15 or newer is required, as for the System it installs.
 
 ```sh
 phresh create
