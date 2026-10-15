@@ -16,10 +16,10 @@ export default function systemCommands(program: Command, provided?: SystemLifecy
 
     const system = defineCommand(program, {
         name: "system",
-        description: "install and manage the PhreshOS System",
+        description: "install and run the PhreshOS System, and use what belongs to the System as a whole",
         guidance: [
-            "Choose one native System lifecycle operation.",
-            "Running-System Programs, Processes, Endpoints, and Windows are top-level capabilities, not System subcommands."
+            "Install, start, and stop the System here, or read what it is, open something, and query its records.",
+            "Programs, Processes, Endpoints, Windows, appearance, and the other parts of the running System have their own top-level commands."
         ]
     })
 
