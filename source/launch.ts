@@ -1,5 +1,6 @@
 import { Project, type ProjectMode } from "@phreshos/node"
 import type { Program, ProgramProcessRunEvent } from "@phreshos/core"
+import { constants } from "node:os"
 import { relative } from "node:path"
 import { blank, dim, heading, line } from "./style.ts"
 
@@ -25,17 +26,21 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
 
   const system = await (await import("@phreshos/node")).System.connect()
   const controller = new AbortController()
-  let interrupted = false
+  let interrupted: NodeJS.Signals | null = null
   let ended: Ended | null = null
   let attached = false
 
-  const stop = () => {
+  // Ended from outside, the run ends and its Program is forgotten before this process leaves:
+  // pressing Ctrl+C, a stop, or the terminal itself closing.
+  const stop = (signal: NodeJS.Signals) => {
     if (interrupted) return
-    interrupted = true
+    interrupted = signal
+    // A closed terminal takes the output with it; what is still written has nowhere to go.
+    if (signal === "SIGHUP") hangUp()
     controller.abort(new Error("The local Program run was interrupted"))
   }
 
-  for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, stop)
+  for (const signal of endings) process.on(signal, stop)
 
   try {
     const lifecycle = mode === "development"
@@ -58,11 +63,11 @@ export default async function launch(mode: ProjectMode, directory = process.cwd(
     try { await system.disconnect() }
     catch (error) { cleanupFailure ??= error }
 
-    for (const signal of ["SIGINT", "SIGTERM"] as const) process.off(signal, stop)
+    for (const signal of endings) process.off(signal, stop)
     if (cleanupFailure) throw cleanupFailure
   }
 
-  if (interrupted) process.exit(130)
+  if (interrupted) process.exit(128 + constants.signals[interrupted])
   if (!ended) throw new Error("The System closed before the Program ended")
 
   blank()
@@ -89,8 +94,19 @@ async function consume(lifecycle: AsyncGenerator<ProgramProcessRunEvent>): Promi
   return { process, ...ending }
 }
 
+/** The signals that end a run from outside: Ctrl+C, a stop, and the terminal closing. */
+const endings = ["SIGINT", "SIGTERM", "SIGHUP"] as const
+
+let terminalClosed = false
+
+/** Stops writing to a terminal that is gone, so a failed write cannot end the process before it cleans up. */
+function hangUp() {
+  terminalClosed = true
+  for (const stream of [process.stdout, process.stderr]) stream.on("error", () => undefined)
+}
+
 function write(stream: "stdout" | "stderr", text: string) {
-  (stream === "stderr" ? process.stderr : process.stdout).write(text)
+  if (!terminalClosed) (stream === "stderr" ? process.stderr : process.stdout).write(text)
 }
 
 async function forget(program: Program) {
