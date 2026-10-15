@@ -32,7 +32,7 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.146.0", "", {}, "sha512-XC0QsnnhVe7sLIWmYmdPw7x5P0h4W8vUU3Nv1ySgWXtvCz8NizoAEpGXA0sOYoJQV2Rl13LgURAHQ5cI5ILCSA=="],
 
-    "@phreshos/core": ["@phreshos/core@0.8.0", "", { "dependencies": { "zod": "^4.6.5" } }, "sha512-7Pc7jzj8FGcVdlttDMWSvBd34MzcYU0A9+cfHTc6Kn0OFfaZtfUcDhgeNni2vcsct8gd9KvDahkBnHkcVJH7FA=="],
+    "@phreshos/core": ["@phreshos/core@0.8.1", "", { "dependencies": { "zod": "^4.6.5" } }, "sha512-TXpsejqymvHRzfqIK+xZLXGZ7Ukl/cuFFiS1WprM7aur6FJw7R2HCk1YEO6Q+6YfutLARW7+K3L6TPK5JfqjUQ=="],
 
     "@phreshos/node": ["@phreshos/node@0.8.1", "", { "dependencies": { "@the-link/ipc": "^0.3.1", "@the-link/messagepack": "^0.2.0", "adm-zip": "^0.6.0", "jiti": "^2.7.0" }, "peerDependencies": { "@phreshos/core": "^0.8.0" } }, "sha512-30rRRLXq5V7QANH2ZHpNVsj73EeFQ4orcsYuXUC2Db5k80kHNpbr1CJIESopm61hVIRoFJ15y0sKN3Gj2P5new=="],
 

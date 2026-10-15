@@ -1,7 +1,7 @@
 {
   "name": "@phreshos/cli",
   "type": "module",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "The Phresh command-line interface for Program projects and system management.",
   "engines": {
     "node": ">=24.15.0"
